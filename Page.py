@@ -151,9 +151,9 @@ class Page(QGraphicsScene):
         dlg = EditStampDlg(stampObj)
         res = dlg.exec_()
         if res == QDialog.Accepted:
-            stampObj['stampDesc_text'] = dlg.eTitle.text()
+            stampObj['stampDesc_text'] = dlg.eTitle.toPlainText()
             stampObj['stampNbr_text'] = dlg.eNbr.text()
-            stampObj['stampValue_text'] = dlg.eValue.text()
+            stampObj['stampValue_text'] = dlg.eValue.toPlainText()
 
             print(stampObj)
             stamp.updateStamp(stampItem, stampObj)
@@ -462,11 +462,13 @@ class Page(QGraphicsScene):
             print(fileName)
             pixmap = QPixmap(fileName)
             pixmapitem = QGraphicsPixmapItem(pixmap)
-            #QGraphicsPixmapItem.ItemIs
             pixmapitem.setFlags(QGraphicsTextItem.ItemIsMovable | QGraphicsTextItem.ItemIsSelectable
                                 )
             self.addItem(pixmapitem)
 
-            #self.addPixmap(pixmap)
         else:
             return
+
+
+    def mouseDoubleClickEvent(self, event):
+        print("mouse move double clicked on page")

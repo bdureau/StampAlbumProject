@@ -28,12 +28,15 @@ class EditStampDlg(QDialog):
 
         self.setWindowFlags(Qt.Dialog)
 
-        self.eTitle = QLineEdit()
-        self.eTitle.setText(stampObj['stampDesc_text'])
+        self.eTitle = QPlainTextEdit()
+        self.eTitle.setPlainText(stampObj['stampDesc_text'])
+        self.eTitle.setFixedHeight(50)
+        #self.eTitle.setText(stampObj['stampDesc_text'])
         self.eNbr = QLineEdit()
         self.eNbr.setText(stampObj['stampNbr_text'])
-        self.eValue = QLineEdit()
-        self.eValue.setText(stampObj['stampValue_text'])
+        self.eValue = QPlainTextEdit()
+        self.eValue.setPlainText(stampObj['stampValue_text'])
+        self.eValue.setFixedHeight(30)
         l1 = QLabel()
         l1.setPixmap(stampObj['pixmapitem_image'])
 

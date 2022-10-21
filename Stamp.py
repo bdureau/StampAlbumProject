@@ -4,7 +4,7 @@ from PyQt5.QtWidgets import (
     QMenuBar, QMenu, QToolBar,QAction,QGraphicsTextItem,QGraphicsItemGroup, QGraphicsPixmapItem,
     QLineEdit,QPushButton,QDialog,QFormLayout
 )
-from PyQt5.QtGui import QBrush, QPainter, QPen, QPixmap, QPolygonF, QColor
+from PyQt5.QtGui import QBrush, QPainter, QPen, QPixmap, QPolygonF, QColor, QTextCursor, QTextBlockFormat
 import json
 from EditStampDlg import EditStampDlg
 
@@ -97,31 +97,26 @@ class Stamp:
     # Create stamp
     def createStampPix(self, scene, nbr, value, desc, boxWidth, boxHeight, x, y, pixmap):
         stampDesc = QGraphicsTextItem(desc)
+
+        cursor = stampDesc.textCursor()
+        format = QTextBlockFormat()
+        format.setAlignment(Qt.AlignCenter)
+        cursor.mergeBlockFormat(format)
+        stampDesc.setTextCursor(cursor)
         stampDesc.setData(0, "stampDesc")
         stampDesc.setPos(0,0)
-        # print(stampDesc.font().pixelSize())
-        # print(stampDesc.font().pointSize())
+
         stampDesc.setFlags(QGraphicsTextItem.ItemIsMovable | QGraphicsTextItem.ItemIsSelectable)
         print("created desc")
 
         stampBox = QGraphicsRectItem(0, 0,  boxWidth / (25.4 / 96.0), boxHeight / (25.4 / 96.0))
         boxPen = QPen()
-        #boxPen.setColor(Qt.black)
-        #boxPen.setColor(QColor.setAlpha(255))
-        ##boxPen.setColor(QColor("#FF"))
-        # print(Qt.black)
-        # print(boxPen.color().hue())
-        # print(boxPen.color().alphaF())
-        # print(boxPen.color().alpha())
-        # print(boxPen.color().valueF())
-        # print(boxPen.brush().color().value())
-        # print(boxPen.color().value().imag)
-        # print(boxPen.color().value().real)
         boxPen.setWidth(1)
         stampBox.setPen(boxPen)
-        print(stampBox.pen().color().value())
+        print(stampDesc.boundingRect().size().height())
         stampBox.setFlags(QGraphicsRectItem.ItemIsMovable | QGraphicsRectItem.ItemIsSelectable)
-        stampBox.setPos((stampDesc.boundingRect().size().width()/2) - (boxWidth / (25.4 / 96.0)/2), 40)
+        stampBox.setPos((stampDesc.boundingRect().size().width()/2) - (boxWidth / (25.4 / 96.0)/2),
+                        stampDesc.boundingRect().size().height() + 20)
         stampBox.setData(0, "stampBox")
         # stampBox.pen().width().real()
         # stampBox.pen().color().value().real()
@@ -152,7 +147,7 @@ class Stamp:
         stampNbr.setFlags(QGraphicsTextItem.ItemIsMovable | QGraphicsTextItem.ItemIsSelectable)
         #stampNbr.setPos(0 + stampBox.boundingRect().size().width() / 2 - stampNbr.boundingRect().size().width() / 2, 0 + stampBox.boundingRect().size().height())
         stampNbr.setPos(0 + stampDesc.boundingRect().size().width() / 2 - stampNbr.boundingRect().size().width() / 2,
-                        40 + stampBox.boundingRect().size().height())
+                        stampDesc.boundingRect().size().height() + 20 + stampBox.boundingRect().size().height())
         print("created nbr")
 
         stampValue = QGraphicsTextItem(value)
@@ -160,7 +155,8 @@ class Stamp:
         stampValue.setFlags(QGraphicsTextItem.ItemIsMovable | QGraphicsTextItem.ItemIsSelectable)
         #stampValue.setPos(0 + stampBox.boundingRect().size().width() / 2 - stampValue.boundingRect().size().width() / 2, 0 + stampBox.boundingRect().size().height()+ 50)
         stampValue.setPos(0 + stampDesc.boundingRect().size().width() / 2 - stampValue.boundingRect().size().width() / 2,
-                          40 + stampBox.boundingRect().size().height() + 50)
+                          stampDesc.boundingRect().size().height() + 20 + stampBox.boundingRect().size().height() +
+                          stampNbr.boundingRect().size().height() + 0)
 
         print("created value")
         group = QGraphicsItemGroup()
@@ -231,7 +227,14 @@ class Stamp:
             # 3 is a box
             if childItem.type().real == 8:
                 print(childItem.toPlainText())
+
                 childItem.setPlainText(stampObj[childItem.data(0) + '_text'])
+                cursor = childItem.textCursor()
+                format = QTextBlockFormat()
+                format.setAlignment(Qt.AlignCenter)
+                cursor.mergeBlockFormat(format)
+                childItem.setTextCursor(cursor)
+
                 childItem.setPos(boxX + (boxWidth/2) - (childItem.boundingRect().size().width() / 2), childItem.y())
 
             elif childItem.type().real == 7:

@@ -876,6 +876,7 @@ class Window(QMainWindow):
     def mouseDoubleClickEvent(self, event):
         print("mouse move double clicked")
         #print(self.last_point)
+        #super(self.getCurrentPageScene(), self).mouseDoubleClickEvent(event)
         self.getCurrentPageScene().editObject()
 
     # Delete selected objects
