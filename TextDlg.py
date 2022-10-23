@@ -15,12 +15,13 @@ from PyQt5.QtPrintSupport import QPrintPreviewDialog, QPrinter, QPrintDialog
 
 
 class TextDlg(QDialog):
-    def __init__(self, parent=None):
+    def __init__(self, txtObj=None, parent=None):
         super(TextDlg, self).__init__(parent)
         self.setWindowTitle("Add new text")
-        self.createDlg()
+        self.createDlg(txtObj)
+        #self.txtObj = txtObj1
 
-    def createDlg(self):
+    def createDlg(self, txtObj=None):
         print("create dialog")
         self.setWindowModality(Qt.ApplicationModal)
 
@@ -65,15 +66,18 @@ class TextDlg(QDialog):
 
         self.eTXT = QPlainTextEdit()
         self.eTXT.setFixedHeight(80)
-        self.eTXT.setPlainText("")
-        print(self.eTXT.font().pixelSize())
 
 
         myFont = self.eTXT.font()
         self.fontSize.setCurrentText(str(myFont.pointSize()))
         self.fontSize.currentTextChanged.connect(self.fontSizeClicked)
 
-        print(myFont)
+        if txtObj is None:
+            self.eTXT.setPlainText("")
+        else:
+            self.eTXT.setPlainText(txtObj.toPlainText())
+            self.eTXT.setFont(txtObj.font())
+
 
         flo = QFormLayout()
         flo.addRow(hLayout1)

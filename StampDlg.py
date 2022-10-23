@@ -350,10 +350,6 @@ class StampDlg(QDialog):
                     else:
                         self.photo.setPixmap(QPixmap(self.fullPhotoPath).scaledToHeight(200))
 
-
-
-
-
     def countryClicked(self, country):
         # stampCountry
         print("Country has changed")

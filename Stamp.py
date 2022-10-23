@@ -239,7 +239,7 @@ class Stamp:
 
             elif childItem.type().real == 7:
                 print("not sure")
-                #stampObj[childItem.data(0) + '_image'] = childItem.pixmap()
+
                 childItem.setPixmap(stampObj[childItem.data(0) + '_image'])
 
                 ##stampObj[childItem.data(0) + '_width'] = childItem.boundingRect().width()

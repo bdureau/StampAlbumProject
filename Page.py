@@ -15,10 +15,25 @@ from Stamp import Stamp
 from EditStampDlg import EditStampDlg
 
 class Page(QGraphicsScene):
-    def __init__(self, parent=None):
+    def __init__(self, pageType = "portrait", parent=None):
         super(Page, self).__init__(parent)
-        self.setSceneRect(0, 0, 210 / (25.4 / 96), 297 / (25.4 / 96))
-        self.addBorder(177 / (25.4 / 96.0), 272 / (25.4 / 96.0), 19 / (25.4 / 96.0), 0, 10 / (25.4 / 96.0), 0)
+        if pageType == "portrait":
+            self.setSceneRect(0, 0, 210 / (25.4 / 96), 297 / (25.4 / 96))
+            self.addBorder(177 / (25.4 / 96.0),
+                           272 / (25.4 / 96.0),
+                           19 / (25.4 / 96.0),
+                           0,
+                           #10 / (25.4 / 96.0),
+                           0,
+                           0)
+        else:
+            self.setSceneRect(0, 0, 297 / (25.4 / 96), 210 / (25.4 / 96))
+            self.addBorder(272 / (25.4 / 96.0),
+                           177 / (25.4 / 96.0),
+                           ((297-272) / 2) / (25.4 / 96.0),
+                           0,
+                           19 / (25.4 / 96.0),
+                           0)
 
     def getPageName(self):
         return ""
@@ -61,7 +76,10 @@ class Page(QGraphicsScene):
         group.addToGroup(borderBox2)
         group.addToGroup(borderBox3)
         print(group.boundingRect().size().height())
-        margin_top2 = (self.height() - group.boundingRect().size().height())/2
+        if margin_top != 0:
+            margin_top2 = margin_top
+        else:
+            margin_top2 = (self.height() - group.boundingRect().size().height())/2
         group.setPos(margin_left, margin_top2)
         group.setData(0, "borderGroup")
         group.setData(1, boxWidth)
@@ -126,23 +144,40 @@ class Page(QGraphicsScene):
                 self.editStamp(item)
             elif itemType == 8:
                 print("This is a text label")
-                self.editLabel()
+                self.editLabel(item)
 
-    def editLabel(self):
+    def editLabel(self, item):
         print("editing label")
-        d = QDialog()
-        eText = QLineEdit()
-        button = QPushButton("ok")
-        flo = QFormLayout()
-        flo.addRow("Text:", eText)
-        flo.addRow(button)
-        d.setLayout(flo)
+        # d = QDialog()
+        # eText = QLineEdit()
+        # button = QPushButton("ok")
+        # flo = QFormLayout()
+        # flo.addRow("Text:", eText)
+        # flo.addRow(button)
+        # d.setLayout(flo)
 
-        d.setWindowTitle("Edit Text label ....")
 
-        d.setWindowModality(Qt.ApplicationModal)
-        print("test3")
-        d.exec_()
+
+        # d.setWindowTitle("Edit Text label ....")
+        #
+        # d.setWindowModality(Qt.ApplicationModal)
+        # print("test3")
+        # d.exec_()
+        print(item.toPlainText())
+        dlg = TextDlg(item)
+        res = dlg.exec_()
+
+        if res == QDialog.Accepted:
+            print("Clicked ok")
+            text = dlg.eTXT.toPlainText()
+            font = dlg.eTXT.font()
+            item.setPlainText(text)
+            item.setFont(font)
+            #self.addTextLabel(text, 50, 50, font)
+
+        if res == QDialog.Rejected:
+            print("Clicked cancel")
+        #self.newLabel(item)
 
     def editStamp(self, stampItem):
         print("editing stamp")

@@ -17,6 +17,7 @@ from Databases import DB
 import sys
 import xml.etree.ElementTree as ET
 from StampDlg import StampDlg
+from PageDlg import PageDlg
 from GraphicsView import GraphicsView
 import os, time, gzip
 from TextDlg import TextDlg
@@ -55,7 +56,20 @@ class Window(QMainWindow):
     # Create a new page in a tab
     def newPage(self):
         print("new page")
-        page = Page()
+        self.pageType = "portrait"
+        pDlg = PageDlg()
+
+        res = pDlg.exec_()
+        if res == QDialog.Accepted:
+            print("Clicked ok")
+            if pDlg.pageType == "portrait":
+                print("portrait")
+                self.pageType = "portrait"
+            else:
+                print("landscape")
+                self.pageType = "landscape"
+
+        page = Page(self.pageType)
         #page.setSceneRect()
         view = GraphicsView(page)
 
