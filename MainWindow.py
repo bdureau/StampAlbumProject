@@ -13,11 +13,13 @@ from PyQt5.QtPrintSupport import QPrintPreviewDialog, QPrinter, QPrintDialog
 from Stamp import Stamp
 
 from Page import Page
+from ConfigDlg import ConfigDlg
 from Databases import DB
 import sys
 import xml.etree.ElementTree as ET
 from StampDlg import StampDlg
 from PageDlg import PageDlg
+from HelpDlg import HelpDlg
 from GraphicsView import GraphicsView
 import os, time, gzip
 from TextDlg import TextDlg
@@ -364,6 +366,7 @@ class Window(QMainWindow):
         helpToolBar = QToolBar("Help", self)
         helpToolBar.addAction(self.helpContentAction)
         helpToolBar.addAction(self.aboutAction)
+        helpToolBar.addAction(self.setupAppAction)
         self.addToolBar(helpToolBar)
 
         statusBar = QStatusBar(self)
@@ -398,6 +401,7 @@ class Window(QMainWindow):
         self.centerVerticallyAction.triggered.connect(self.centerVertically)
         self.centerHorizontallyAction.triggered.connect(self.centerHorizontally)
         # config actions
+        self.setupAppAction.triggered.connect(self.configApp)
 
         # stamp actions
         self.newStampAction.triggered.connect(self.createNewStamp)
@@ -737,7 +741,6 @@ class Window(QMainWindow):
         #self.showdialog()
 
     # help menu functions
-
     # about the application
     def about(self):
         print("This is an application for creating stamp album pages")
@@ -750,6 +753,11 @@ class Window(QMainWindow):
     # application on line help
     def help(self):
         print("this is my help file")
+        dlg = HelpDlg()
+        res = dlg.exec_()
+
+        if res == QDialog.Accepted:
+            print("Clicked ok")
 
     # align menu functions
     def alignBottom(self):
@@ -787,7 +795,6 @@ class Window(QMainWindow):
     def createText(self):
         print("create text")
         self.getCurrentPageScene().newLabel()
-
 
     # turn the grid on and off
     def gridOnOff(self):
@@ -927,6 +934,14 @@ class Window(QMainWindow):
             return False
         else:
             raise ValueError
+
+    def configApp(self):
+        print("config")
+        dlg = ConfigDlg()
+        res = dlg.exec_()
+
+        if res == QDialog.Accepted:
+            print("Clicked ok")
 
     # obsolete
     def showdialog(self):

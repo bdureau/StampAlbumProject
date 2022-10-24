@@ -12,28 +12,46 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtGui import QFont, QBrush, QPainter, QPen, QPixmap, QPolygonF, QImage, QIcon, QStandardItem, QColor
 from PyQt5.QtPrintSupport import QPrintPreviewDialog, QPrinter, QPrintDialog
 
-
+import configparser
 
 class ConfigDlg(QDialog):
     def __init__(self, parent=None):
         super(ConfigDlg, self).__init__(parent)
         self.setWindowTitle("Application configuration")
+        self.configParser = configparser.RawConfigParser()
+        self.configFilePath = r'stamp_album.cfg'
+        self.configParser.read(self.configFilePath)
         self.createDlg()
 
     def createDlg(self):
         print("create dialog")
         self.setWindowModality(Qt.ApplicationModal)
-        #self.setWindowTitle("Application configuration")
         self.setWindowFlags(Qt.Dialog)
 
         # default Copyright
-
-        # default boder type
-
+        self.eCopyRight = QLineEdit()
+        # default border type
+        self.selectedBorderCombo = QComboBox()
+        self.selectedBorderCombo.setMaximumWidth(100)
         # default country
-
+        self.selectedCountryCombo = QComboBox()
+        self.selectedCountryCombo.setMaximumWidth(100)
         # default text label font
 
         # default stamp desc font
 
         # default stamp nbr font
+
+        # ok /cancel button
+        bb = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        bb.accepted.connect(self.accept)
+        bb.rejected.connect(self.reject)
+
+        flo = QFormLayout()
+        flo.addRow("Default Copyright:", self.eCopyRight)
+        flo.addRow("Border type", self.selectedBorderCombo)
+        flo.addRow("Default Country", self.selectedCountryCombo)
+        #flo.addRow(l1)
+        flo.addRow(bb)
+
+        self.setLayout(flo)

@@ -140,7 +140,6 @@ class Page(QGraphicsScene):
 
             if itemType == 10:
                 print("This is a stamp")
-
                 self.editStamp(item)
             elif itemType == 8:
                 print("This is a text label")
@@ -148,22 +147,7 @@ class Page(QGraphicsScene):
 
     def editLabel(self, item):
         print("editing label")
-        # d = QDialog()
-        # eText = QLineEdit()
-        # button = QPushButton("ok")
-        # flo = QFormLayout()
-        # flo.addRow("Text:", eText)
-        # flo.addRow(button)
-        # d.setLayout(flo)
 
-
-
-        # d.setWindowTitle("Edit Text label ....")
-        #
-        # d.setWindowModality(Qt.ApplicationModal)
-        # print("test3")
-        # d.exec_()
-        print(item.toPlainText())
         dlg = TextDlg(item)
         res = dlg.exec_()
 
@@ -173,11 +157,9 @@ class Page(QGraphicsScene):
             font = dlg.eTXT.font()
             item.setPlainText(text)
             item.setFont(font)
-            #self.addTextLabel(text, 50, 50, font)
 
         if res == QDialog.Rejected:
             print("Clicked cancel")
-        #self.newLabel(item)
 
     def editStamp(self, stampItem):
         print("editing stamp")
@@ -190,7 +172,7 @@ class Page(QGraphicsScene):
             stampObj['stampNbr_text'] = dlg.eNbr.text()
             stampObj['stampValue_text'] = dlg.eValue.toPlainText()
 
-            print(stampObj)
+            #print(stampObj)
             stamp.updateStamp(stampItem, stampObj)
             print("Clicked ok")
 

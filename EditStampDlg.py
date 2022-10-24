@@ -40,7 +40,6 @@ class EditStampDlg(QDialog):
         l1 = QLabel()
         l1.setPixmap(stampObj['pixmapitem_image'])
 
-        #button = QPushButton("ok")
         # ok /cancel button
         bb = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         bb.accepted.connect(self.accept)
@@ -52,16 +51,8 @@ class EditStampDlg(QDialog):
         flo.addRow("Value", self.eValue)
         flo.addRow(l1)
         flo.addRow(bb)
-        #flo.addRow(button)
+
         self.setLayout(flo)
-        #self.retStampObj = stampObj
-        #self.eTitle.text()
 
-
-
-    # def accept(self):
-    #     print("accept")
-    #     #self.retStampObj['stampDesc_text'] =
-    #     self.close()
 
 

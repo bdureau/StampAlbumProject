@@ -6,10 +6,10 @@ from PyQt5.QtWidgets import (
     QGraphicsRectItem,
     QGraphicsScene, QComboBox, QRadioButton, QButtonGroup, QGroupBox, QListWidgetItem,
     QGraphicsView, QApplication, QLabel, QMainWindow, QMenuBar, QMenu, QHBoxLayout, QListView,
-    QToolBar, QAction, QGraphicsTextItem, QGraphicsItemGroup, QDialog, QPushButton, QListWidget,
+    QToolBar, QAction, QGraphicsTextItem, QGraphicsItemGroup, QDialog, QPushButton, QListWidget,QTextEdit,
     QLineEdit, QFormLayout, QStatusBar, QTabWidget, QWidget, QVBoxLayout, QDialogButtonBox, QPlainTextEdit
 )
-from PyQt5.QtGui import QFont, QBrush, QPainter, QPen, QPixmap, QPolygonF, QImage, QIcon, QStandardItem, QColor
+from PyQt5.QtGui import QFont, QBrush, QPainter, QPen, QPixmap, QPolygonF, QImage, QIcon, QStandardItem, QColor,QTextBlockFormat
 from PyQt5.QtPrintSupport import QPrintPreviewDialog, QPrinter, QPrintDialog
 
 
@@ -45,10 +45,25 @@ class TextDlg(QDialog):
         underlineButton.setIcon(QIcon("images/underline.png"))
         underlineButton.setFixedWidth(30)
 
+        justifyLeftButton = QPushButton()
+        justifyLeftButton.setIcon(QIcon("images/justify left.png"))
+        justifyLeftButton.setFixedWidth(30)
+
+        centerButton = QPushButton()
+        centerButton.setIcon(QIcon("images/justify center.png"))
+        centerButton.setFixedWidth(30)
+
+        justifyRightButton = QPushButton()
+        justifyRightButton.setIcon(QIcon("images/justify right.png"))
+        justifyRightButton.setFixedWidth(30)
+
         hLayout1.addWidget(boldButton)
         hLayout1.addWidget(italicButton)
         hLayout1.addWidget(strikeButton)
         hLayout1.addWidget(underlineButton)
+        hLayout1.addWidget(justifyLeftButton)
+        hLayout1.addWidget(centerButton)
+        hLayout1.addWidget(justifyRightButton)
 
         self.fontSize = QComboBox()
 
@@ -64,8 +79,14 @@ class TextDlg(QDialog):
         strikeButton.clicked.connect(self.strikePushed)
         underlineButton.clicked.connect(self.underlinePushed)
 
-        self.eTXT = QPlainTextEdit()
+        justifyLeftButton.clicked.connect(self.justifyLeftPushed)
+        centerButton.clicked.connect(self.centerPushed)
+        justifyRightButton.clicked.connect(self.justifyRightPushed)
+
+        self.eTXT = QTextEdit() #QPlainTextEdit()
         self.eTXT.setFixedHeight(80)
+
+        #test = QTextEdit()
 
 
         myFont = self.eTXT.font()
@@ -141,5 +162,23 @@ class TextDlg(QDialog):
     def fontSizeClicked(self):
         myFont = self.eTXT.font()
         myFont.setPointSize(int(self.fontSize.currentText()))
-        #myFont.pointSize()
         self.eTXT.setFont(myFont)
+
+    def justifyLeftPushed(self):
+        print("")
+        # cursor = self.eTXT.cursor()
+        # format = QTextBlockFormat()
+        # format.setAlignment(Qt.AlignCenter)
+        #cursor.mergeBlockFormat(format)
+        #self.eTXT.setTextCursor(cursor)
+        # set text alignment to AlignRight
+        self.eTXT.setAlignment(Qt.AlignLeft)
+        #self.eTXT.
+
+    def centerPushed(self):
+        print("")
+        self.eTXT.setAlignment(Qt.AlignCenter)
+
+    def justifyRightPushed(self):
+        print("")
+        self.eTXT.setAlignment(Qt.AlignRight)
