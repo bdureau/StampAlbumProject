@@ -13,15 +13,21 @@ from PyQt5.QtGui import QBrush, QPainter, QPen, QPixmap, QPolygonF, QImage, QIco
 from PyQt5.QtPrintSupport import QPrintPreviewDialog, QPrinter, QPrintDialog
 from Databases import DB
 from pathlib import Path
+from Stamp import Stamp
 
 class StampDlg(QDialog):
-    def __init__(self, parent=None):
+    def __init__(self, lastStampObj=None, scene=None, parent=None):
         super(StampDlg, self).__init__(parent)
         self.setWindowTitle("Create new stamp")
-        self.createDlg()
+        self.createDlg(lastStampObj)
+        self.scene = scene
 
-    def createDlg(self):
+    def createDlg(self, lastStampObj):
         print("create dialog")
+        print(lastStampObj['country'])
+        print(lastStampObj['nbr'])
+        print(lastStampObj['type'])
+        print(lastStampObj['year'])
         self.setWindowModality(Qt.ApplicationModal)
         self.setWindowFlags(Qt.Dialog)
 
@@ -139,9 +145,29 @@ class StampDlg(QDialog):
         fLayout.addRow("", rbGroup)
 
         # ok /cancel button
-        bb = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        bb.accepted.connect(self.accept)
-        bb.rejected.connect(self.reject)
+        # bb = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        # #bb.accepted.connect(self.accept)
+        # bb.accepted.connect(self.createStamp)
+        # bb.rejected.connect(self.reject)
+        createButton = QPushButton(self.tr("&Create"))
+        createButton.setDefault(True)
+
+
+        okButton = QPushButton(self.tr("&Done"))
+        #okButton.setDefault(True)
+
+        # cancelButton = QPushButton(self.tr("&Cancel"))
+        # cancelButton.setDefault(True)
+
+        buttonBox = QDialogButtonBox(Qt.Horizontal)
+        buttonBox.addButton(createButton, QDialogButtonBox.ActionRole)
+        #buttonBox.addButton(okButton, QDialogButtonBox.AcceptRole)
+        buttonBox.addButton(okButton, QDialogButtonBox.ActionRole)
+
+        #buttonBox.addButton(cancelButton, QDialogButtonBox.ActionRole)
+        #buttonBox.accepted.connect(self.accept)
+        okButton.clicked.connect(self.accept)
+        createButton.clicked.connect(self.createStamp)
 
         hLayoutAll = QHBoxLayout()
         hLayoutAll.addLayout(vLayout1)
@@ -150,14 +176,18 @@ class StampDlg(QDialog):
 
         vLayoutAll = QVBoxLayout()
         vLayoutAll.addLayout(hLayoutAll)
-        vLayoutAll.addWidget(bb)
+        vLayoutAll.addWidget(buttonBox)
         self.setLayout(vLayoutAll)
 
-        self.populateData()
+        self.populateData(lastStampObj)
 
-    def populateData(self):
+    def populateData(self,lastStampObj):
 
-        self.currentCountry = ""
+        if lastStampObj['country'] is not None:
+            self.currentCountry = lastStampObj['country']
+        else:
+            self.currentCountry = ""
+
         # get the list of countries from the databases available
         self.retCountryCombo = []
         self.db = None
@@ -181,7 +211,11 @@ class StampDlg(QDialog):
         # select the first country available
         self.selectedCountryCombo.addItems(self.retCountryCombo)
 
-        self.selectedCountryCombo.setCurrentIndex(0)
+
+        if lastStampObj['country'] is not None:
+            self.selectedCountryCombo.setCurrentText(lastStampObj['country'])
+        else:
+            self.selectedCountryCombo.setCurrentIndex(0)
 
         self.currentCountry = self.selectedCountryCombo.currentText()
 
@@ -198,10 +232,20 @@ class StampDlg(QDialog):
         self.stampTypeCombo.clear()
         self.stampTypeCombo.addItems(retStampType)
 
+        if lastStampObj['type'] is not None:
+            self.stampTypeCombo.setCurrentText(lastStampObj['type'])
+
         # get the available years from the current country open DB
         retYearList = self.db.loadYearList(self.stampTypeCombo.currentText())
         self.yearsList.clear()
         self.yearsList.addItems(retYearList)
+
+        if lastStampObj['year'] is not None:
+            yearItem = self.yearsList.findItems(lastStampObj['year'], Qt.MatchExactly)
+            if len(yearItem) > 0:
+                self.yearsList.setCurrentItem(yearItem[0])
+            else:
+                self.yearsList.setCurrentRow(0)
 
         if len(self.yearsList.selectedItems()) < 1:
             self.yearsList.setCurrentRow(0)
@@ -218,6 +262,13 @@ class StampDlg(QDialog):
             model.appendRow(myitem)
 
         self.stampNbrList.setModel(model)
+
+        # if lastStampObj['nbr'] is not None:
+        #     nbrItem = self.stampNbrList.findItems(lastStampObj['nbr'], Qt.MatchExactly)
+        #     if len(nbrItem) > 0:
+        #         self.stampNbrList.setCurrentItem(nbrItem[0])
+        #     else:
+        #         self.stampNbrList.setCurrentRow(0)
 
         if len(self.stampNbrList.selectedIndexes()) < 1:
             self.stampNbrList.setCurrentIndex(self.stampNbrList.model().index(0, 0))
@@ -284,7 +335,7 @@ class StampDlg(QDialog):
         retitem = self.stampNbrList.model().item(index.row(), 0)
         self.setStampInfo(retitem)
 
-    def setStampInfo(self,retitem):
+    def setStampInfo(self, retitem):
         if self.db is not None:
             print("select pochette")
             # get pochette for the current stamp
@@ -497,3 +548,20 @@ class StampDlg(QDialog):
         if self.db is not None:
             ret = self.db.getCurrentBox(box)
         return ret
+
+    def createStamp(self):
+        stampDesc = self.eStampDescription.toPlainText()
+
+        stampValue = self.eValue.text()
+        pixmap = ""
+        if self.fullPhotoPath is not None:
+            pixmap = self.fullPhotoPath
+
+        ret = self.getBoxInfo(self.pochetteList.currentItem().text())
+        width = ret[0]
+        height = ret[1]
+        stampNbr = self.stampNbrList.model().item(0, 0).text()
+
+        stamp = Stamp()
+        stamp.createStamp(self.scene, str(stampNbr), str(stampValue), str(stampDesc),
+                          float(width), float(height), float(0), float(0), pixmap)

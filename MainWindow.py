@@ -38,6 +38,11 @@ class Window(QMainWindow):
         self.setMaximumWidth(222 / (25.4 / 96))
         self.resize(222 / (25.4 / 96), 800)
         self.pageCount = 0
+        self.lastStampObj = {}
+        self.lastStampObj['country'] = None
+        self.lastStampObj['type'] = None
+        self.lastStampObj['nbr'] = None
+        self.lastStampObj['year'] = None
 
         # start with no grid
         self.gridOn = False
@@ -732,7 +737,12 @@ class Window(QMainWindow):
     # stamp menu functions
     def createNewStamp(self):
         print("creating new stamp")
-        self.getCurrentPageScene().newStamp()
+        stamp = self.getCurrentPageScene().newStamp(self.lastStampObj)
+        if stamp is not None:
+            self.lastStampObj['year'] = stamp['year']
+            self.lastStampObj['type'] = stamp['type']
+            self.lastStampObj['country'] = stamp['country']
+            self.lastStampObj['nbr'] = stamp['nbr']
 
     # edit current selected stamp
     def editStamp(self):

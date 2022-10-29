@@ -8,7 +8,8 @@ from PyQt5.QtWidgets import (
     QToolBar, QAction, QGraphicsTextItem, QGraphicsItemGroup, QDialog, QPushButton,
     QLineEdit, QFormLayout, QStatusBar, QTabWidget, QWidget, QVBoxLayout, QDialogButtonBox, QPlainTextEdit
 )
-from PyQt5.QtGui import QBrush, QPainter, QPen, QPixmap, QPolygonF, QImage, QIcon, QColor, QFont
+from PyQt5.QtGui import QBrush, QPainter, QPen, QPixmap, QPolygonF, QImage, QIcon, QColor, QFont, QTextCursor, QTextBlockFormat
+
 from PyQt5.QtPrintSupport import QPrintPreviewDialog, QPrinter, QPrintDialog
 import importlib
 custom_mimeType = "application/x-qgraphicsitems"
@@ -54,6 +55,8 @@ def item_to_ds(it, ds):
                 ds << child.pos()
                 ds.writeInt(child.pen().width())
                 ds.writeInt(child.pen().color().value())
+                ds.writeInt(child.data(1)) #box width
+                ds.writeInt(child.data(2)) # box height
             if child.__class__.__name__ == "QGraphicsTextItem":
                 print("QGraphicsTextItem")
                 ds.writeQString(child.__class__.__name__)
@@ -120,10 +123,14 @@ def ds_to_item(ds):
         pen = QPen()
         pen.setWidth(ds.readInt())
         #pen.setColor(ds.readInt())
-        #not sure how to get the ecolor working !!!
+        #not sure how to get the color working !!!
         penC = ds.readInt()
         print(penC)
         print("done with pen")
+        boxW = ds.readInt()
+        boxWidth = boxW / (25.4 / 96.0)
+        boxH = ds.readInt()
+        boxHeight = boxH / (25.4 / 96.0)
 
         # QGraphicsTextItem
         class2 = ds.readQString()
@@ -176,12 +183,25 @@ def ds_to_item(ds):
         stampDesc.setData(0, "stampDesc")
         stampDesc.setPos(pos2.x(), pos2.y())
         stampDesc.setFont(font2)
-        print(stampDesc.boundingRect().size().width())
+        #print(stampDesc.boundingRect().size().width())
         stampDesc.setFlags(QGraphicsTextItem.ItemIsMovable | QGraphicsTextItem.ItemIsSelectable)
         print("created desc")
+        stampDesc.setTextWidth(stampDesc.boundingRect().size().width())
+        cursor = stampDesc.textCursor()
+        cursor.select(QTextCursor.Document)
+        format = QTextBlockFormat()
+        format.setAlignment(Qt.AlignCenter)
+        cursor.mergeBlockFormat(format)
+        cursor.clearSelection()
+        stampDesc.setTextCursor(cursor)
 
-        stampBox = QGraphicsRectItem(0, 0, bounding_rect.width(), bounding_rect.height())
-        stampBox.setPos(pos1.x(), pos1.y())
+        #stampBox = QGraphicsRectItem(0, 0, bounding_rect.width(), bounding_rect.height())
+        stampBox = QGraphicsRectItem(0, 0, boxWidth, boxHeight)
+
+        #stampBox.setPos(pos1.x(), pos1.y())
+        stampBox.setPos(pos2.x() + (stampDesc.boundingRect().size().width() / 2) - (boxWidth/2),
+                        pos2.y() + stampDesc.boundingRect().size().height() +20)
+                        #pos1.y())
         ##boxPen = QPen()
         ##boxPen.setColor(Qt.black)
         ##boxPen.setWidth(1)
@@ -189,16 +209,21 @@ def ds_to_item(ds):
 
         stampBox.setFlags(QGraphicsRectItem.ItemIsMovable | QGraphicsRectItem.ItemIsSelectable)
         stampBox.setData(0, "stampBox")
+        stampBox.setData(1, boxW)
+        stampBox.setData(2, boxH)
         print("created box")
 
         pixmapitem = QGraphicsPixmapItem(pixmap)
         print("got pixmap")
 
-        print(stampBox.boundingRect().size().width())
-        print(pixmapitem.boundingRect().size().width())
+        #print(stampBox.boundingRect().size().width())
+        #print(pixmapitem.boundingRect().size().width())
         # calculate scale
-        scale1 = (stampBox.boundingRect().size().width() - 4) / (pixmapitem.boundingRect().size().width())
-        scale2 = (stampBox.boundingRect().size().height() - 4) / (pixmapitem.boundingRect().size().height())
+        #scale1 = (stampBox.boundingRect().size().width() - 4) / (pixmapitem.boundingRect().size().width())
+        #scale2 = (stampBox.boundingRect().size().height() - 4) / (pixmapitem.boundingRect().size().height())
+
+        scale1 = (boxWidth - 4) / (pixmapitem.boundingRect().size().width())
+        scale2 = (boxHeight - 4) / (pixmapitem.boundingRect().size().height())
 
         if scale1 < scale2:
             image_scale = scale1
@@ -208,7 +233,11 @@ def ds_to_item(ds):
         pixmapitem.setScale(image_scale)
         print("set scale pixmap")
         #pixmapitem.setPos(0 + stampBox.boundingRect().size().width() / 2 - (image_scale * pixmapitem.boundingRect().size().width()) / 2, 0)
-        pixmapitem.setPos(pos5.x(), pos5.y())
+        #pixmapitem.setPos(pos5.x(), pos5.y())
+        pixmapitem.setPos(pos2.x() + (stampDesc.boundingRect().size().width() / 2) - (image_scale * pixmapitem.boundingRect().size().width() / 2),
+                          pos2.y() + stampDesc.boundingRect().size().height() + 20 + (boxHeight / 2 - (image_scale * pixmapitem.boundingRect().size().height()) / 2))
+        #boxHeight / 2 - (image_scale * childItem.boundingRect().size().height()) / 2
+                          #pos5.y())
         pixmapitem.setData(0, "pixmapitem")
 
         print("created pixmap")
@@ -217,14 +246,47 @@ def ds_to_item(ds):
 
         stampNbr.setFlags(QGraphicsTextItem.ItemIsMovable | QGraphicsTextItem.ItemIsSelectable)
         #stampNbr.setPos(0 + stampBox.boundingRect().size().width() / 2 - stampNbr.boundingRect().size().width() / 2, 0 + stampBox.boundingRect().size().height())
-        stampNbr.setPos(pos3.x(), pos3.y())
+
         print("created nbr")
+
+        stampNbr.setTextWidth(stampNbr.boundingRect().size().width())
+        cursor = stampNbr.textCursor()
+        cursor.select(QTextCursor.Document)
+        format = QTextBlockFormat()
+        format.setAlignment(Qt.AlignCenter)
+        cursor.mergeBlockFormat(format)
+        cursor.clearSelection()
+        stampNbr.setTextCursor(cursor)
+        #stampNbr.setPos(pos3.x(), pos3.y())
+        stampNbr.setPos(pos2.x() + stampDesc.boundingRect().size().width() / 2 - stampNbr.boundingRect().size().width() / 2,
+                        pos2.y() + stampDesc.boundingRect().size().height() + 20 + boxHeight)
+
+
         stampValue = QGraphicsTextItem(value)
         stampValue.setData(0, "stampValue")
         stampValue.setFlags(QGraphicsTextItem.ItemIsMovable | QGraphicsTextItem.ItemIsSelectable)
-        #stampValue.setPos(0 + stampBox.boundingRect().size().width() / 2 - stampValue.boundingRect().size().width() / 2,  0 + stampBox.boundingRect().size().height() + 50)
-        stampValue.setPos(pos4.x(), pos4.y())
+
+
         print("created value")
+
+        stampValue.setTextWidth(stampValue.boundingRect().size().width())
+        cursor = stampValue.textCursor()
+        cursor.select(QTextCursor.Document)
+        format = QTextBlockFormat()
+        format.setAlignment(Qt.AlignCenter)
+        cursor.mergeBlockFormat(format)
+        cursor.clearSelection()
+        stampValue.setTextCursor(cursor)
+        #stampValue.setPos(pos4.x(), pos4.y())
+        stampValue.setPos(
+             pos2.x() + (stampDesc.boundingRect().size().width() / 2) - (stampValue.boundingRect().size().width() / 2),
+             pos2.y() + stampDesc.boundingRect().size().height() + 20 + boxHeight +
+             stampNbr.boundingRect().size().height() + 0)
+        # stampValue.setPos(
+        #     0 + boxWidth / 2 - stampValue.boundingRect().size().width() / 2,
+        #     stampDesc.boundingRect().size().height() + 20 + boxHeight +
+        #     stampNbr.boundingRect().size().height() + 0)
+
         #group = QGraphicsItemGroup()
         it.addToGroup(stampBox)
         it.addToGroup(stampDesc)

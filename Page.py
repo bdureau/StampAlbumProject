@@ -105,6 +105,7 @@ class Page(QGraphicsScene):
         textLabel.setPos(x, y)
         textLabel.setFlags(QGraphicsTextItem.ItemIsMovable | QGraphicsTextItem.ItemIsSelectable)
         #print(textLabel.data(0))
+        textLabel.setSelected(True)
         self.addItem(textLabel)
 
     def clearPage(self):
@@ -173,6 +174,11 @@ class Page(QGraphicsScene):
             stampObj['stampValue_text'] = dlg.eValue.toPlainText()
 
             #print(stampObj)
+            ret = dlg.getBoxInfo(dlg.pochetteList.currentItem().text())
+            width = ret[0]
+            stampObj['stampBox_boxWidth'] = width
+            height = ret[1]
+            stampObj['stampBox_boxHeight'] = height
             stamp.updateStamp(stampItem, stampObj)
             print("Clicked ok")
 
@@ -258,32 +264,37 @@ class Page(QGraphicsScene):
         group.setFlags(QGraphicsItemGroup.ItemIsMovable | QGraphicsItemGroup.ItemIsSelectable)
 
     # create a new stamp
-    def newStamp(self):
+    def newStamp(self,lastStampObj):
         print("New Stamp")
-        dlg = StampDlg()
+        dlg = StampDlg(lastStampObj, self)
         res = dlg.exec_()
         if res == QDialog.Accepted:
-            print("Clicked ok")
-            print(dlg.eYear.text())
-            stampDesc = dlg.eStampDescription.toPlainText()
-            print(dlg.eStampDescription2.toPlainText())
-            stampValue = dlg.eValue.text()
-            pixmap = ""
-            if dlg.fullPhotoPath is not None:
-                pixmap = dlg.fullPhotoPath
-
-            print(dlg.pochetteList.currentItem().text())
-            ret = dlg.getBoxInfo(dlg.pochetteList.currentItem().text())
-            width = ret[0]
-            height = ret[1]
+            print("Clicked Done")
+            # print(dlg.eYear.text())
+            # stampDesc = dlg.eStampDescription.toPlainText()
+            # print(dlg.eStampDescription2.toPlainText())
+            # stampValue = dlg.eValue.text()
+            # pixmap = ""
+            # if dlg.fullPhotoPath is not None:
+            #     pixmap = dlg.fullPhotoPath
+            #
+            # print(dlg.pochetteList.currentItem().text())
+            # ret = dlg.getBoxInfo(dlg.pochetteList.currentItem().text())
+            # width = ret[0]
+            # height = ret[1]
             stampNbr = dlg.stampNbrList.model().item(0, 0).text()
+            #
+            # stamp = Stamp()
+            # stamp.createStamp(self, str(stampNbr), str(stampValue), str(stampDesc),
+            #                   float(width), float(height), float(0), float(0), pixmap)
+            lastStampObj['year'] = dlg.eYear.text()
+            lastStampObj['type'] = dlg.stampTypeCombo.currentText()
+            lastStampObj['country'] = dlg.currentCountry
+            lastStampObj['nbr'] = stampNbr
 
-            stamp = Stamp()
-            stamp.createStamp(self, str(stampNbr), str(stampValue), str(stampDesc),
-                              float(width), float(height), float(0), float(0), pixmap)
-
-        if res == QDialog.Rejected:
-            print("Clicked cancel")
+            return lastStampObj
+        # if res == QDialog.Rejected:
+        #     print("Clicked cancel")
 
     # Add some text
     def newLabel(self):
