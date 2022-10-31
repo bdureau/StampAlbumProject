@@ -52,7 +52,7 @@ class Window(QMainWindow):
         palette.setColor(self.tabs.backgroundRole(), Qt.lightGray)
         self.tabs.setPalette(palette)
         self.tabs.resize(300, 200)
-        self.newPage()
+        self.newPage(None, True)
         self.setCentralWidget(self.tabs)
 
         self._createActions()
@@ -61,22 +61,28 @@ class Window(QMainWindow):
         self._connectActions()
 
     # Create a new page in a tab
-    def newPage(self):
+    def newPage(self, _pageType=None, border=None):
         print("new page")
-        self.pageType = "portrait"
-        pDlg = PageDlg()
+        print(_pageType)
+        if _pageType is not None and (_pageType == 'portrait' or _pageType == 'landscape'):
+            self.pageType = _pageType
+        else:
+            self.pageType = "portrait"
+            pDlg = PageDlg()
 
-        res = pDlg.exec_()
-        if res == QDialog.Accepted:
-            print("Clicked ok")
-            if pDlg.pageType == "portrait":
-                print("portrait")
-                self.pageType = "portrait"
-            else:
-                print("landscape")
-                self.pageType = "landscape"
+            res = pDlg.exec_()
+            if res == QDialog.Accepted:
+                print("Clicked ok")
+                if pDlg.pageType == "portrait":
+                    print("portrait")
+                    self.pageType = "portrait"
+                    border = True
+                else:
+                    print("landscape")
+                    self.pageType = "landscape"
+                    border = True
 
-        page = Page(self.pageType)
+        page = Page(self.pageType, border)
         #page.setSceneRect()
         view = GraphicsView(page)
 
@@ -385,8 +391,9 @@ class Window(QMainWindow):
         self.openAction.triggered.connect(self.openAlbumFile)
         # self.saveAction.triggered.connect(self.saveFile)
         self.saveAction.triggered.connect(self.saveAlbumToFile)
+        self.printAction.triggered.connect(self.printAllPagesPDF)
         self.printPDFAction.triggered.connect(self.printPagePDF)
-        self.printPreviewAction.triggered.connect(self.printPreview)
+        self.printPreviewAction.triggered.connect(self.printPreviewAllPages)
         self.printAction.triggered.connect(self.printPage)
 
         self.exitAction.triggered.connect(self.close)
@@ -442,7 +449,7 @@ class Window(QMainWindow):
         # Delete all pages
         self.deleteAllPages()
         # Create one empty page
-        self.newPage()
+        self.newPage(None, True)
 
     # open an album from a file
     def openAlbumFile(self):
@@ -472,9 +479,12 @@ class Window(QMainWindow):
         myroot = mytree.getroot()
         #print(myroot)
         for it in myroot.findall('page'):
+            print("before")
+            print(it.attrib.get("type"))
+            print("after")
             # create new page
-            self.newPage()
-
+            self.newPage(str(it.attrib.get("type")), False)
+            print("after page created")
             # get the current page
             currentPage = self.getCurrentPageScene()
             # Open the text label
@@ -543,15 +553,16 @@ class Window(QMainWindow):
                 print(stampNbr)
                 stampValue = stamp.find('stampValue').text
                 print(stampValue)
-                pixmapitem = stamp.find('pixmapitem').text
-
+                pixmapitem = stamp.find('pixmapItem').text
+                print("before stamp")
                 stamp = Stamp()
+                print("before pix")
                 pixmap = self.bytesToPixmap(pixmapitem)
-
+                print("after pix")
                 stamp.createStampPix(currentPage, str(stampNbr), str(stampValue), str(stampDesc),
                                      float(width) * (25.4 / 96.0), float(height) * (25.4 / 96.0),
                                      float(x), float(y), pixmap)
-
+                print("after stamp")
     # save an album to a file
     def saveAlbumToFile(self):
         print("Save album to file")
@@ -572,7 +583,7 @@ class Window(QMainWindow):
             self.tabs.setCurrentIndex(x)
 
             currentScene = self.getCurrentPageScene()
-            page = ET.SubElement(root, "page", name="%s" % x)
+            page = ET.SubElement(root, "page", name="%s" % x, type="%s" % currentScene.pageType)
 
             items = currentScene.items()
             for item in items:
@@ -647,6 +658,131 @@ class Window(QMainWindow):
         ET.ElementTree(root).write(f)
         f.close()
 
+    # print all pages
+    def printAllPagesPDF(self):
+        print("print all pages")
+        printer = QPrinter(QPrinter.HighResolution)
+        printer.setPageSize(QtGui.QPagedPaintDevice.A4)
+        printer.setOutputFormat(QPrinter.PdfFormat)
+
+        # TODO select the file to print
+        printer.setOutputFileName("album4.pdf")
+        scale = printer.resolution() / 96.0
+
+        printer.setPageMargins(0, 0, 0, 0, QPrinter.Unit.Millimeter)
+        p = QPainter(printer)
+        for x in range(self.tabs.count()):
+            self.tabs.setCurrentIndex(x)
+            currentScene = self.getCurrentPageScene()
+
+            # first unselect all objects
+            for item in currentScene.items():
+                item.setSelected(False)
+
+            if currentScene.pageType == "portrait":
+                printer.setPageOrientation(0)
+                print("Portrait")
+            else:
+                printer.setPageOrientation(1)
+                print("Landscape")
+            if x > 0:
+                printer.newPage()
+            print("Page2")
+            source = QtCore.QRectF(0, 0, currentScene.width(), currentScene.height())
+            target = QRectF(0, 0, source.size().width() * scale, source.size().height() * scale)
+            print("Page3")
+            currentScene.render(p, target, source)
+            print("Page4")
+
+        p.end()
+
+
+    # print all pages
+    def printPreviewAllPagesOld(self):
+        print("print all pages")
+        previewDialog = QPrintPreviewDialog()
+
+        previewDialog.printer().setResolution(QPrinter.HighResolution)
+        previewDialog.printer().setOutputFormat(QPrinter.PdfFormat)
+        previewDialog.printer().setPageSize(QtGui.QPagedPaintDevice.A4)
+        previewDialog.exec_()
+
+        # TODO select the file to print
+        #printer.setOutputFileName("album4.pdf")
+        scale = previewDialog.printer().resolution() / 96.0
+
+        previewDialog.printer().setPageMargins(0, 0, 0, 0, QPrinter.Unit.Millimeter)
+        p = QPainter(previewDialog.printer())
+        for x in range(self.tabs.count()):
+            self.tabs.setCurrentIndex(x)
+            currentScene = self.getCurrentPageScene()
+
+            # first unselect all objects
+            for item in currentScene.items():
+                item.setSelected(False)
+
+            if currentScene.pageType == "portrait":
+                previewDialog.printer().setPageOrientation(0)
+                print("Portrait")
+            else:
+                previewDialog.printer().setPageOrientation(1)
+                print("Landscape")
+            if x > 0:
+                previewDialog.printer().newPage()
+            print("Page2")
+            source = QtCore.QRectF(0, 0, currentScene.width(), currentScene.height())
+            target = QRectF(0, 0, source.size().width() * scale, source.size().height() * scale)
+            print("Page3")
+            currentScene.render(p, target, source)
+            print("Page4")
+
+        p.end()
+
+
+
+    # print all pages
+    def printPreviewAllPages(self):
+        print("print all pages")
+        previewDialog = QPrintPreviewDialog()
+
+        previewDialog.printer().setResolution(QPrinter.HighResolution)
+        previewDialog.printer().setOutputFormat(QPrinter.PdfFormat)
+        previewDialog.printer().setPageSize(QtGui.QPagedPaintDevice.A4)
+
+        previewDialog.paintRequested.connect(self.createPreview)
+
+        previewDialog.exec_()
+
+    def createPreview(self, printer):
+        scale = printer.resolution() / 96.0
+        printer.setPageMargins(0, 0, 0, 0, QPrinter.Unit.Millimeter)
+
+        p = QPainter(printer)
+        for x in range(self.tabs.count()):
+            self.tabs.setCurrentIndex(x)
+
+            currentScene = self.getCurrentPageScene()
+
+            if currentScene.pageType == "portrait":
+                printer.setPageOrientation(0)
+                #printer.orientation().Portrait
+            else:
+                printer.setPageOrientation(1)
+                #printer.orientation().Landscape
+
+            if x > 0:
+                printer.newPage()
+
+            # first unselect all objects
+            for item in currentScene.items():
+                item.setSelected(False)
+
+            source = QtCore.QRectF(0, 0, currentScene.width(), currentScene.height())
+            target = QRectF(0, 0, source.size().width() * scale, source.size().height() * scale)
+
+            currentScene.render(p, target, source)
+
+        p.end()
     # print current page and save it to PDF
     def printPagePDF(self):
         print("print to PDF")
@@ -858,7 +994,7 @@ class Window(QMainWindow):
         return bytes(ba.toBase64()).decode()
 
     def bytesToPixmap(self, pixmap_bytes):
-        print(pixmap_bytes)
+        #print(pixmap_bytes)
         # convert bytes to QPixmap
         ba = QtCore.QByteArray().fromBase64(pixmap_bytes.encode())
         pixmap = QtGui.QPixmap()

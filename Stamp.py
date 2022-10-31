@@ -61,7 +61,7 @@ class Stamp:
         pixmapitem.setScale(image_scale)
 
         pixmapitem.setPos(0+stampBox.boundingRect().size().width()/2-(image_scale*pixmapitem.boundingRect().size().width())/2, 0)
-        pixmapitem.setData(0, "pixmapitem")
+        pixmapitem.setData(0, "pixmapItem")
 
         stampDesc = QGraphicsTextItem(desc)
         stampDesc.setData(0, "stampDesc")
@@ -147,7 +147,7 @@ class Stamp:
                     image_scale * pixmapitem.boundingRect().size().width()) / 2,
                           stampBox.y() + stampBox.boundingRect().size().height() / 2 - (
                     image_scale * pixmapitem.boundingRect().size().height()) / 2)
-        pixmapitem.setData(0, "pixmapitem")
+        pixmapitem.setData(0, "pixmapItem")
 
 
         stampNbr = QGraphicsTextItem(nbr)

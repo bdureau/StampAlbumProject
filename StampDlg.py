@@ -19,15 +19,13 @@ class StampDlg(QDialog):
     def __init__(self, lastStampObj=None, scene=None, parent=None):
         super(StampDlg, self).__init__(parent)
         self.setWindowTitle("Create new stamp")
+        self.currentStampNbr = ""
         self.createDlg(lastStampObj)
         self.scene = scene
 
+
     def createDlg(self, lastStampObj):
         print("create dialog")
-        print(lastStampObj['country'])
-        print(lastStampObj['nbr'])
-        print(lastStampObj['type'])
-        print(lastStampObj['year'])
         self.setWindowModality(Qt.ApplicationModal)
         self.setWindowFlags(Qt.Dialog)
 
@@ -82,7 +80,6 @@ class StampDlg(QDialog):
         vLayout2.addLayout(hLayout2)
         # preview stamp photo
         self.photo = QLabel()
-
         self.photo.setFixedHeight(200)
         self.photo.setFixedWidth(200)
         self.photo.setPixmap(QPixmap(""))
@@ -274,6 +271,7 @@ class StampDlg(QDialog):
             self.stampNbrList.setCurrentIndex(self.stampNbrList.model().index(0, 0))
 
         retitem = self.stampNbrList.model().item(0, 0)
+        self.currentStampNbr = retitem.text()
 
         # get pochette for the current stamp
         stampType = self.stampTypeCombo.currentText()
@@ -334,6 +332,7 @@ class StampDlg(QDialog):
         print("New stamp %s" % index.row())
         retitem = self.stampNbrList.model().item(index.row(), 0)
         self.setStampInfo(retitem)
+        self.currentStampNbr = retitem.text()
 
     def setStampInfo(self, retitem):
         if self.db is not None:
@@ -560,7 +559,9 @@ class StampDlg(QDialog):
         ret = self.getBoxInfo(self.pochetteList.currentItem().text())
         width = ret[0]
         height = ret[1]
-        stampNbr = self.stampNbrList.model().item(0, 0).text()
+        print(self.stampNbrList.currentIndex())
+        stampNbr = self.currentStampNbr #self.stampNbrList.model().item(0, 0).text()
+        print("stampNbr:%s", stampNbr)
 
         stamp = Stamp()
         stamp.createStamp(self.scene, str(stampNbr), str(stampValue), str(stampDesc),

@@ -1,6 +1,6 @@
 
 from PyQt5.QtCore import QPointF, Qt, QRectF
-from PyQt5 import QtCore, QtGui
+from PyQt5 import QtCore, QtGui, QtPrintSupport
 from PyQt5.QtWidgets import (
     QGraphicsRectItem, QGraphicsScene, QGraphicsView, QApplication,
     QLabel, QMainWindow, QMenuBar, QMenu, QToolBar, QAction,
@@ -15,11 +15,13 @@ from Stamp import Stamp
 from EditStampDlg import EditStampDlg
 
 class Page(QGraphicsScene):
-    def __init__(self, pageType = "portrait", parent=None):
+    def __init__(self, pageType = "portrait", border=None, parent=None):
         super(Page, self).__init__(parent)
+        self.pageType = pageType
         if pageType == "portrait":
             self.setSceneRect(0, 0, 210 / (25.4 / 96), 297 / (25.4 / 96))
-            self.addBorder(177 / (25.4 / 96.0),
+            if border is not None and border:
+                self.addBorder(177 / (25.4 / 96.0),
                            272 / (25.4 / 96.0),
                            19 / (25.4 / 96.0),
                            0,
@@ -28,7 +30,8 @@ class Page(QGraphicsScene):
                            0)
         else:
             self.setSceneRect(0, 0, 297 / (25.4 / 96), 210 / (25.4 / 96))
-            self.addBorder(272 / (25.4 / 96.0),
+            if border is not None and border:
+                self.addBorder(272 / (25.4 / 96.0),
                            177 / (25.4 / 96.0),
                            ((297-272) / 2) / (25.4 / 96.0),
                            0,
@@ -179,6 +182,7 @@ class Page(QGraphicsScene):
             stampObj['stampBox_boxWidth'] = width
             height = ret[1]
             stampObj['stampBox_boxHeight'] = height
+            stampObj['pixmapItem_image'] = dlg.photo.pixmap()
             stamp.updateStamp(stampItem, stampObj)
             print("Clicked ok")
 
@@ -193,6 +197,13 @@ class Page(QGraphicsScene):
         printer = QPrinter(QPrinter.HighResolution)
 
         printer.setPageSize(QtGui.QPagedPaintDevice.A4)
+
+
+        if self.pageType == "portrait":
+            printer.setPageOrientation(0)
+        else:
+            printer.setPageOrientation(1)
+
         printer.setOutputFormat(QPrinter.PdfFormat)
 
         # TODO select the file to print
@@ -217,6 +228,10 @@ class Page(QGraphicsScene):
         previewDialog.printer().setResolution(QPrinter.HighResolution)
         previewDialog.printer().setOutputFormat(QPrinter.PdfFormat)
         previewDialog.printer().setPageSize(QtGui.QPagedPaintDevice.A4)
+        if self.pageType == "portrait":
+            previewDialog.printer().setPageOrientation(0)
+        else:
+            previewDialog.printer().setPageOrientation(1)
 
         previewDialog.paintRequested.connect(self.createPreview)
         previewDialog.exec_()
@@ -236,6 +251,7 @@ class Page(QGraphicsScene):
         target = QRectF(0, 0, source.size().width() * scale, source.size().height() * scale)
 
         self.render(p, target, source)
+
         p.end()
 
     # need to implement
@@ -282,7 +298,9 @@ class Page(QGraphicsScene):
             # ret = dlg.getBoxInfo(dlg.pochetteList.currentItem().text())
             # width = ret[0]
             # height = ret[1]
-            stampNbr = dlg.stampNbrList.model().item(0, 0).text()
+
+            #stampNbr = dlg.stampNbrList.model().item(0, 0).text()
+            stampNbr = dlg.currentStampNbr
             #
             # stamp = Stamp()
             # stamp.createStamp(self, str(stampNbr), str(stampValue), str(stampDesc),

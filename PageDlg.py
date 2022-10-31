@@ -45,12 +45,16 @@ class PageDlg(QDialog):
         vLayout1 = QVBoxLayout()
 
         vbox = QVBoxLayout()
-        rbGroup.setLayout(vbox)
+        hBox = QHBoxLayout()
+        rbGroup.setLayout(hBox)
 
         vbox.addWidget(rbtn1)
         vbox.addWidget(rbtn2)
+        #vbox.addWidget(self.photo)
+        hBox.addLayout(vbox)
+        hBox.addWidget(self.photo)
         vLayout1.addWidget(rbGroup)
-        vLayout1.addWidget(self.photo)
+        #vLayout1.addWidget(self.photo)
         # ok /cancel button
         bb = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         bb.accepted.connect(self.accept)

@@ -9,7 +9,7 @@ from PyQt5.QtWidgets import (
     QToolBar, QAction, QGraphicsTextItem, QGraphicsItemGroup, QDialog, QPushButton, QListWidget,QTextEdit,
     QLineEdit, QFormLayout, QStatusBar, QTabWidget, QWidget, QVBoxLayout, QDialogButtonBox, QPlainTextEdit
 )
-from PyQt5.QtGui import QFont, QBrush, QPainter, QPen, QPixmap, QPolygonF, QImage, QIcon, QStandardItem, QColor,QTextBlockFormat
+from PyQt5.QtGui import QFont, QBrush, QPainter, QPen, QPixmap, QPolygonF, QImage, QIcon, QStandardItem, QColor,QTextBlockFormat, QTextCursor
 from PyQt5.QtPrintSupport import QPrintPreviewDialog, QPrinter, QPrintDialog
 
 
@@ -19,7 +19,6 @@ class TextDlg(QDialog):
         super(TextDlg, self).__init__(parent)
         self.setWindowTitle("Add new text")
         self.createDlg(txtObj)
-        #self.txtObj = txtObj1
 
     def createDlg(self, txtObj=None):
         print("create dialog")
@@ -84,10 +83,8 @@ class TextDlg(QDialog):
         justifyRightButton.clicked.connect(self.justifyRightPushed)
 
         self.eTXT = QTextEdit() #QPlainTextEdit()
+        #self.eTXT = QPlainTextEdit()
         self.eTXT.setFixedHeight(80)
-
-        #test = QTextEdit()
-
 
         myFont = self.eTXT.font()
         self.fontSize.setCurrentText(str(myFont.pointSize()))
@@ -111,13 +108,7 @@ class TextDlg(QDialog):
         bb.rejected.connect(self.reject)
         flo.addWidget(bb)
         self.eTXT.setFocus()
-        # res = self.exec_()
-        # if res == QDialog.Accepted:
-        #     print("Clicked ok")
-        #     self.getCurrentPageScene().addTextLabel(self.eTXT.toPlainText())
-        #
-        # if res == QDialog.Rejected:
-        #     print("Clicked cancel")
+
 
     def boldPushed(self):
         if self.eTXT.font().bold() == True:
@@ -166,14 +157,17 @@ class TextDlg(QDialog):
 
     def justifyLeftPushed(self):
         print("")
+        # self.eTXT.setFixedWidth(10)
         # cursor = self.eTXT.cursor()
+        # cursor.select(QTextCursor.Document)
         # format = QTextBlockFormat()
         # format.setAlignment(Qt.AlignCenter)
-        #cursor.mergeBlockFormat(format)
+        # cursor.mergeBlockFormat(format)
+        # cursor.clearSelection()
         #self.eTXT.setTextCursor(cursor)
         # set text alignment to AlignRight
         self.eTXT.setAlignment(Qt.AlignLeft)
-        #self.eTXT.
+
 
     def centerPushed(self):
         print("")

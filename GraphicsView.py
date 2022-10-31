@@ -266,9 +266,7 @@ def ds_to_item(ds):
         stampValue.setData(0, "stampValue")
         stampValue.setFlags(QGraphicsTextItem.ItemIsMovable | QGraphicsTextItem.ItemIsSelectable)
 
-
         print("created value")
-
         stampValue.setTextWidth(stampValue.boundingRect().size().width())
         cursor = stampValue.textCursor()
         cursor.select(QTextCursor.Document)

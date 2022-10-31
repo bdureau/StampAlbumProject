@@ -3,7 +3,7 @@ from PyQt5.QtCore import QPointF, Qt, QPoint, QByteArray, QRectF
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtWidgets import (
     QMessageBox,
-    QGraphicsRectItem,
+    QGraphicsRectItem,QFileDialog,
     QGraphicsScene, QComboBox, QRadioButton, QButtonGroup, QGroupBox, QListWidgetItem,
     QGraphicsView, QApplication, QLabel, QMainWindow, QMenuBar, QMenu, QHBoxLayout, QListView,
     QToolBar, QAction, QGraphicsTextItem, QGraphicsItemGroup, QDialog, QPushButton, QListWidget,
@@ -24,9 +24,7 @@ class EditStampDlg(QDialog):
 
     def createDlg(self, stampObj):
         print("create dialog")
-        #print(stampObj)
         self.setWindowModality(Qt.ApplicationModal)
-
         self.setWindowFlags(Qt.Dialog)
 
         self.eTitle = QPlainTextEdit()
@@ -39,8 +37,23 @@ class EditStampDlg(QDialog):
         self.eValue = QPlainTextEdit()
         self.eValue.setPlainText(stampObj['stampValue_text'])
         self.eValue.setFixedHeight(30)
-        l1 = QLabel()
-        l1.setPixmap(stampObj['pixmapitem_image'])
+
+        # image
+        self.photo = QLabel()
+        self.photo.setFixedHeight(200)
+        self.photo.setFixedWidth(200)
+        pix = QPixmap(stampObj['pixmapItem_image'])
+        if pix.width() > pix.height():
+            self.photo.setPixmap(QPixmap(stampObj['pixmapItem_image']).scaledToWidth(200))
+        else:
+            self.photo.setPixmap(QPixmap(stampObj['pixmapItem_image']).scaledToHeight(200))
+
+        # change image button
+        imageButton = QPushButton(self.tr("&Change image ..."))
+        buttonBox = QDialogButtonBox(Qt.Horizontal)
+        buttonBox.addButton(imageButton, QDialogButtonBox.ActionRole)
+        imageButton.clicked.connect(self.loadImage)
+
 
         # pochettes type
         vLayout1 = QVBoxLayout()
@@ -60,7 +73,8 @@ class EditStampDlg(QDialog):
         flo.addRow("Title:", self.eTitle)
         flo.addRow("Nbr", self.eNbr)
         flo.addRow("Value", self.eValue)
-        flo.addRow(l1)
+        flo.addRow(self.photo)
+        flo.addRow(buttonBox)
         flo.addRow(bb)
 
         # pochettes type
@@ -78,8 +92,6 @@ class EditStampDlg(QDialog):
 
         self.setLayout(hLayout2)
         self.populateData(stampObj)
-
-
 
     def populateData(self, stampObj):
         print("")
@@ -118,3 +130,22 @@ class EditStampDlg(QDialog):
         if self.db is not None:
             ret = self.db.getCurrentBox(box)
         return ret
+
+    def loadImage(self):
+        print("load image")
+        options = QFileDialog.Options()
+        options |= QFileDialog.DontUseNativeDialog
+        fileName, _ = QFileDialog.getOpenFileName(self, "Select picture", "",
+                                                  ("all pictures (*.jpg *.jpeg *.png);;PNG (*.png)"),
+                                                  options=options)
+        #return fileName
+        if self.photo is not None:
+            pix = QPixmap(fileName)
+            print(pix)
+            if pix.width() > pix.height():
+                self.photo.setPixmap(QPixmap(fileName).scaledToWidth(200))
+            else:
+                self.photo.setPixmap(QPixmap(fileName).scaledToHeight(200))
+
+    def changeFont(self):
+        print("change font")
