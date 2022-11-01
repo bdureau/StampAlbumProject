@@ -3,7 +3,7 @@ from PyQt5 import QtCore, QtWidgets, QtGui
 from PyQt5.QtWidgets import (
     QMessageBox, QGraphicsPixmapItem,
     QGraphicsRectItem,
-    QGraphicsScene,QFileDialog,
+    QGraphicsScene, QFileDialog,
     QGraphicsView, QApplication, QLabel, QMainWindow, QMenuBar, QMenu,
     QToolBar, QAction, QGraphicsTextItem, QGraphicsItemGroup, QDialog, QPushButton,
     QLineEdit, QFormLayout, QStatusBar, QTabWidget, QWidget, QVBoxLayout, QDialogButtonBox, QPlainTextEdit
@@ -24,8 +24,18 @@ from GraphicsView import GraphicsView
 import os, time, gzip
 from TextDlg import TextDlg
 
+import gettext
 
 
+# localedir = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'locale')
+# print(localedir)
+# translate = gettext.translation('MainWindow', localedir, fallback=True)
+#_ = translate.gettext
+gettext.find("MainWindow")
+translate = gettext.translation('MainWindow', localedir='locale', languages=['fr'])
+#translate = gettext.translation('MainWindow', localedir='locale', fallback=True)
+translate.install()
+_ = translate.gettext
 
 class Window(QMainWindow):
     """Main Window."""
@@ -62,8 +72,6 @@ class Window(QMainWindow):
 
     # Create a new page in a tab
     def newPage(self, _pageType=None, border=None):
-        print("new page")
-        print(_pageType)
         if _pageType is not None and (_pageType == 'portrait' or _pageType == 'landscape'):
             self.pageType = _pageType
         else:
@@ -72,7 +80,6 @@ class Window(QMainWindow):
 
             res = pDlg.exec_()
             if res == QDialog.Accepted:
-                print("Clicked ok")
                 if pDlg.pageType == "portrait":
                     print("portrait")
                     self.pageType = "portrait"
@@ -83,7 +90,7 @@ class Window(QMainWindow):
                     border = True
 
         page = Page(self.pageType, border)
-        #page.setSceneRect()
+
         view = GraphicsView(page)
 
         view.resize(210 / (25.4 / 96), 297 / (25.4 / 96))
@@ -123,7 +130,7 @@ class Window(QMainWindow):
     def _createMenuBar(self):
         menuBar = self.menuBar()
         # Creating menus using a QMenu object
-        fileMenu = QMenu("&File", self)
+        fileMenu = QMenu(_("&File"), self)
         menuBar.addMenu(fileMenu)
         fileMenu.addAction(self.newAction)
         fileMenu.addAction(self.openAction)
@@ -133,17 +140,17 @@ class Window(QMainWindow):
         fileMenu.addAction(self.printPDFAction)
         fileMenu.addAction(self.exitAction)
         # Creating menus using a title
-        editMenu = menuBar.addMenu("&Edit")
+        editMenu = menuBar.addMenu(_("&Edit"))
         editMenu.addAction(self.copyAction)
         editMenu.addAction(self.pasteAction)
         editMenu.addAction(self.cutAction)
         # stamp menu
-        stampMenu = menuBar.addMenu("&Stamp")
+        stampMenu = menuBar.addMenu(_("&Stamp"))
         stampMenu.addAction(self.newStampAction)
         stampMenu.addAction(self.editStampAction)
 
         # align menu
-        alignMenu = menuBar.addMenu("Align")
+        alignMenu = menuBar.addMenu(_("Align"))
         alignMenu.addAction(self.alignLeftAction)
         alignMenu.addAction(self.alignRightAction)
         alignMenu.addAction(self.alignTopAction)
@@ -154,23 +161,23 @@ class Window(QMainWindow):
         alignMenu.addAction(self.distributeHorizontallyAction)
 
         # page menu
-        pageMenu = menuBar.addMenu("Page")
+        pageMenu = menuBar.addMenu(_("Page"))
         pageMenu.addAction(self.newPageAction)
         pageMenu.addAction(self.deletePageAction)
         pageMenu.addAction(self.drawGridAction)
 
         # object menu
-        objectMenu = menuBar.addMenu("Objects")
+        objectMenu = menuBar.addMenu(_("Objects"))
         objectMenu.addAction(self.newTextAction)
         objectMenu.addAction(self.newImageAction)
         objectMenu.addAction(self.newBorderAction)
         objectMenu.addAction(self.newCopyRightAction)
 
         # Config menu
-        configMenu = menuBar.addMenu("&Config")
+        configMenu = menuBar.addMenu(_("&Config"))
         configMenu.addAction(self.setupAppAction)
         # help menu
-        helpMenu = menuBar.addMenu("&Help")
+        helpMenu = menuBar.addMenu(_("&Help"))
         helpMenu.addAction(self.helpContentAction)
         helpMenu.addAction(self.aboutAction)
 
@@ -178,164 +185,164 @@ class Window(QMainWindow):
         # Creating action
         # New
         self.newAction = QAction(self)
-        self.newAction.setText("&New")
+        self.newAction.setText(_("&New"))
         iconNew = QIcon()
         iconNew.addPixmap(QPixmap("images/new.png"), QIcon.Normal, QIcon.Off)
         self.newAction.setIcon(iconNew)
 
         # Open
-        self.openAction = QAction("&Open...", self)
+        self.openAction = QAction(_("&Open..."), self)
         iconOpen = QIcon()
         iconOpen.addPixmap(QPixmap("images/open.png"), QIcon.Normal, QIcon.Off)
         self.openAction.setIcon(iconOpen)
         self.openAction.setObjectName("actionOpen")
 
         # Save
-        self.saveAction = QAction("&Save", self)
+        self.saveAction = QAction(_("&Save"), self)
         iconSave = QIcon()
         iconSave.addPixmap(QPixmap("images/save.png"), QIcon.Normal, QIcon.Off)
         self.saveAction.setIcon(iconSave)
         self.saveAction.setObjectName("actionSave")
 
         # print actions
-        self.printAction = QAction("&Print...", self)
+        self.printAction = QAction(_("&Print..."), self)
         iconPrint = QIcon()
         iconPrint.addPixmap(QPixmap("images/print.png"), QIcon.Normal, QIcon.Off)
         self.printAction.setIcon(iconPrint)
         self.printAction.setObjectName("printAction")
 
         # print preview
-        self.printPreviewAction = QAction("&Print preview...", self)
+        self.printPreviewAction = QAction(_("&Print preview..."), self)
         iconPrintPreview = QIcon()
         iconPrintPreview.addPixmap(QPixmap("images/printprev.png"), QIcon.Normal, QIcon.Off)
         self.printPreviewAction.setIcon(iconPrintPreview)
         self.printPreviewAction.setObjectName("printPreviewAction")
 
         # print PDF
-        self.printPDFAction = QAction("&Print PDF...", self)
+        self.printPDFAction = QAction(_("&Print PDF..."), self)
         iconPrintPDF = QIcon()
         iconPrintPDF.addPixmap(QPixmap("images/pdf.png"), QIcon.Normal, QIcon.Off)
         self.printPDFAction.setIcon(iconPrintPDF)
         self.printPDFAction.setObjectName("printPDFAction")
 
         # exit
-        self.exitAction = QAction("&Exit", self)
+        self.exitAction = QAction(_("&Exit"), self)
         iconExit = QIcon()
         iconExit.addPixmap(QPixmap("images/exit.png"), QIcon.Normal, QIcon.Off)
         self.exitAction.setIcon(iconExit)
         self.exitAction.setObjectName("exitAction")
 
         # Edit actions
-        self.copyAction = QAction("&Copy", self)
+        self.copyAction = QAction(_("&Copy"), self)
         iconCopy = QIcon()
         iconCopy.addPixmap(QPixmap("images/copy.png"), QIcon.Normal, QIcon.Off)
         self.copyAction.setIcon(iconCopy)
 
-        self.pasteAction = QAction("&Paste", self)
+        self.pasteAction = QAction(_("&Paste"), self)
         iconPaste = QIcon()
         iconPaste.addPixmap(QPixmap("images/paste.png"), QIcon.Normal, QIcon.Off)
         self.pasteAction.setIcon(iconPaste)
 
-        self.cutAction = QAction("C&ut", self)
+        self.cutAction = QAction(_("C&ut"), self)
         iconCut = QIcon()
         iconCut.addPixmap(QPixmap("images/cut.png"), QIcon.Normal, QIcon.Off)
         self.cutAction.setIcon(iconCut)
 
         # stamp actions
-        self.newStampAction = QAction("New Stamp ...", self)
-        self.editStampAction = QAction("Edit Current Stamp ...", self)
+        self.newStampAction = QAction(_("New Stamp ..."), self)
+        self.editStampAction = QAction(_("Edit Current Stamp ..."), self)
 
         # pages action
-        self.newPageAction = QAction("New Page ...", self)
+        self.newPageAction = QAction(_("New Page ..."), self)
         iconNewPage  = QIcon()
         iconNewPage.addPixmap(QPixmap("images/page.png"), QIcon.Normal, QIcon.Off)
         self.newPageAction.setIcon(iconNewPage)
 
-        self.deletePageAction = QAction("Delete Page ...", self)
+        self.deletePageAction = QAction(_("Delete Page ..."), self)
         iconDeletePage  = QIcon()
         iconDeletePage.addPixmap(QPixmap("images/delete_page.png"), QIcon.Normal, QIcon.Off)
         self.deletePageAction.setIcon(iconDeletePage)
 
-        self.drawGridAction = QAction("Grid on/off", self)
+        self.drawGridAction = QAction(_("Grid on/off"), self)
         iconDrawGrid  = QIcon()
         iconDrawGrid.addPixmap(QPixmap("images/grid.png"), QIcon.Normal, QIcon.Off)
         self.drawGridAction.setIcon(iconDrawGrid)
 
         # object action
-        self.newTextAction = QAction("New text ...", self)
+        self.newTextAction = QAction(_("New text ..."), self)
         iconNewText  = QIcon()
         iconNewText.addPixmap(QPixmap("images/text.png"), QIcon.Normal, QIcon.Off)
         self.newTextAction.setIcon(iconNewText)
 
-        self.newImageAction = QAction("New Image ...", self)
+        self.newImageAction = QAction(_("New Image ..."), self)
         iconNewImage  = QIcon()
         iconNewImage.addPixmap(QPixmap("images/image.png"), QIcon.Normal, QIcon.Off)
         self.newImageAction.setIcon(iconNewImage)
 
-        self.newCopyRightAction = QAction("New copyright", self)
+        self.newCopyRightAction = QAction(_("New copyright"), self)
         iconCopyright = QIcon()
         iconCopyright.addPixmap(QPixmap("images/copyright.png"), QIcon.Normal, QIcon.Off)
         self.newCopyRightAction.setIcon(iconCopyright)
 
-        self.newBorderAction = QAction("New Page border", self)
+        self.newBorderAction = QAction(_("New Page border"), self)
         iconNewBorder = QIcon()
         iconNewBorder.addPixmap(QPixmap("images/border.png"), QIcon.Normal, QIcon.Off)
         self.newBorderAction.setIcon(iconNewBorder)
 
         # align actions
-        self.alignLeftAction = QAction("Align Left", self)
+        self.alignLeftAction = QAction(_("Align Left"), self)
         iconAlignLeft = QIcon()
         iconAlignLeft.addPixmap(QPixmap("images/align_left.png"), QIcon.Normal, QIcon.Off)
         self.alignLeftAction.setIcon(iconAlignLeft)
 
-        self.alignRightAction = QAction("Align Right", self)
+        self.alignRightAction = QAction(_("Align Right"), self)
         iconAlignRight = QIcon()
         iconAlignRight.addPixmap(QPixmap("images/align_right.png"), QIcon.Normal, QIcon.Off)
         self.alignRightAction.setIcon(iconAlignRight)
 
-        self.alignTopAction = QAction("Align Top", self)
+        self.alignTopAction = QAction(_("Align Top"), self)
         iconAlignTop = QIcon()
         iconAlignTop.addPixmap(QPixmap("images/align_top.png"), QIcon.Normal, QIcon.Off)
         self.alignTopAction.setIcon(iconAlignTop)
 
-        self.alignBottomAction = QAction("Align Bottom", self)
+        self.alignBottomAction = QAction(_("Align Bottom"), self)
         iconAlignBottom = QIcon()
         iconAlignBottom.addPixmap(QPixmap("images/align_bottom.png"), QIcon.Normal, QIcon.Off)
         self.alignBottomAction.setIcon(iconAlignBottom)
 
-        self.distributeVerticallyAction = QAction("Distribute Vertically", self)
+        self.distributeVerticallyAction = QAction(_("Distribute Vertically"), self)
         iconDistributeVertically = QIcon()
         iconDistributeVertically.addPixmap(QPixmap("images/distribute_vertical.png"), QIcon.Normal, QIcon.Off)
         self.distributeVerticallyAction.setIcon(iconDistributeVertically)
 
-        self.distributeHorizontallyAction = QAction("Distribute Horizontally", self)
+        self.distributeHorizontallyAction = QAction(_("Distribute Horizontally"), self)
         iconDistributeHorizontally = QIcon()
         iconDistributeHorizontally.addPixmap(QPixmap("images/distribute_horiz.png"), QIcon.Normal, QIcon.Off)
         self.distributeHorizontallyAction.setIcon(iconDistributeHorizontally)
 
-        self.centerHorizontallyAction = QAction("Center Horizontally", self)
+        self.centerHorizontallyAction = QAction(_("Center Horizontally"), self)
         iconCenterHorizontally = QIcon()
         iconCenterHorizontally.addPixmap(QPixmap("images/center_horizontal.png"), QIcon.Normal, QIcon.Off)
         self.centerHorizontallyAction.setIcon(iconCenterHorizontally)
 
-        self.centerVerticallyAction = QAction("Center Vertically", self)
+        self.centerVerticallyAction = QAction(_("Center Vertically"), self)
         iconCenterVertically = QIcon()
         iconCenterVertically.addPixmap(QPixmap("images/center_vertical.png"), QIcon.Normal, QIcon.Off)
         self.centerVerticallyAction.setIcon(iconCenterVertically)
 
         # config action
-        self.setupAppAction = QAction("Setup application", self)
+        self.setupAppAction = QAction(_("Setup application"), self)
         iconSetup = QIcon()
         iconSetup.addPixmap(QPixmap("images/config.png"), QIcon.Normal, QIcon.Off)
         self.setupAppAction.setIcon(iconSetup)
 
         # help actions
-        self.helpContentAction = QAction("&Help Content", self)
+        self.helpContentAction = QAction(_("&Help Content"), self)
         iconHelp = QIcon()
         iconHelp.addPixmap(QPixmap("images/help.png"), QIcon.Normal, QIcon.Off)
         self.helpContentAction.setIcon(iconHelp)
 
-        self.aboutAction = QAction("&About", self)
+        self.aboutAction = QAction(_("&About"), self)
         iconAbout = QIcon()
         iconAbout.addPixmap(QPixmap("images/about.png"), QIcon.Normal, QIcon.Off)
         self.aboutAction.setIcon(iconAbout)
@@ -442,7 +449,7 @@ class Window(QMainWindow):
         print("creating new File")
         # Ask user about confirmation on deleting all pages
         qm = QMessageBox()
-        ret = qm.question(self, '', "Are you sure you want to delete all the pages?", qm.Yes | qm.No)
+        ret = qm.question(self, '', _("Are you sure you want to delete all the pages?"), qm.Yes | qm.No)
 
         if ret == qm.No:
             return
@@ -687,12 +694,12 @@ class Window(QMainWindow):
                 print("Landscape")
             if x > 0:
                 printer.newPage()
-            print("Page2")
+
             source = QtCore.QRectF(0, 0, currentScene.width(), currentScene.height())
             target = QRectF(0, 0, source.size().width() * scale, source.size().height() * scale)
-            print("Page3")
+
             currentScene.render(p, target, source)
-            print("Page4")
+
 
         p.end()
 
@@ -729,12 +736,11 @@ class Window(QMainWindow):
                 print("Landscape")
             if x > 0:
                 previewDialog.printer().newPage()
-            print("Page2")
+
             source = QtCore.QRectF(0, 0, currentScene.width(), currentScene.height())
             target = QRectF(0, 0, source.size().width() * scale, source.size().height() * scale)
-            print("Page3")
+
             currentScene.render(p, target, source)
-            print("Page4")
 
         p.end()
 
@@ -765,10 +771,8 @@ class Window(QMainWindow):
 
             if currentScene.pageType == "portrait":
                 printer.setPageOrientation(0)
-                #printer.orientation().Portrait
             else:
                 printer.setPageOrientation(1)
-                #printer.orientation().Landscape
 
             if x > 0:
                 printer.newPage()
@@ -786,13 +790,11 @@ class Window(QMainWindow):
     # print current page and save it to PDF
     def printPagePDF(self):
         print("print to PDF")
-        # self.page.printPagePDF()
         self.getCurrentPageScene().printPagePDF()
 
     # print preview the current page
     def printPreview(self):
         print("Print preview page")
-        # self.page.printPreview()
         self.getCurrentPageScene().printPreview()
 
     # review !!!!
@@ -856,18 +858,15 @@ class Window(QMainWindow):
     # edit menu functions
     # copy selected object(s)
     def copy(self):
-        print("copy")
         self.getCurrentPage().copy_items()
 
     # cut selected object(s)
     def cut(self):
-        print("cut")
         self.getCurrentPage().copy_items()
         self.getCurrentPageScene().removeItems()
 
     # paste objects that have been copied or cut to the current page
     def paste(self):
-        print("paste")
         self.getCurrentPage().paste_items()
 
     # stamp menu functions
@@ -882,23 +881,19 @@ class Window(QMainWindow):
 
     # edit current selected stamp
     def editStamp(self):
-        print("Edit new stamp")
         self.getCurrentPageScene().editObject()
-        #self.showdialog()
 
     # help menu functions
     # about the application
     def about(self):
-        print("This is an application for creating stamp album pages")
         aboutMsg = QMessageBox()
-        aboutMsg.setWindowTitle("About Stamp Album")
-        aboutMsg.setText("Stamp Album ver5.0 \n Copyright Boris du Reau 2022")
+        aboutMsg.setWindowTitle(_("About Stamp Album"))
+        aboutMsg.setText(_("Stamp Album ver5.0 \n Copyright Boris du Reau 2022"))
         aboutMsg.setIcon(QMessageBox.Information)
         aboutMsg.exec_()
 
     # application on line help
     def help(self):
-        print("this is my help file")
         dlg = HelpDlg()
         res = dlg.exec_()
 
@@ -907,36 +902,29 @@ class Window(QMainWindow):
 
     # align menu functions
     def alignBottom(self):
-        print("align object to bottom")
         self.getCurrentPageScene().alignBottom()
 
     def alignTop(self):
-        print("align object to top")
         self.getCurrentPageScene().alignTop()
 
     def alignLeft(self):
-        print("align object to left")
         self.getCurrentPageScene().alignLeft()
 
     def alignRight(self):
-        print("align object to Right")
         self.getCurrentPageScene().alignRight()
 
     def distributeHorizontally(self):
-        print("distribute object horizontally")
         self.getCurrentPageScene().distributeHorizontally()
 
     def distributeVertically(self):
-        print("distribute object vertically")
         self.getCurrentPageScene().distributeVertically()
 
     def centerHorizontally(self):
-        print("center H")
         self.getCurrentPageScene().centerHorizontally()
 
     def centerVertically(self):
-        print("Center V")
         self.getCurrentPageScene().centerVertically()
+
     # misc functions
     def createText(self):
         print("create text")
@@ -944,8 +932,6 @@ class Window(QMainWindow):
 
     # turn the grid on and off
     def gridOnOff(self):
-        # for child in self.tabs.currentWidget().children():
-        #     if child.__class__.__name__ == "QGraphicsView":
         child = self.getCurrentPageScene()
         if self.gridOn:
             child.setBackgroundBrush(QBrush(self.deleteGrid()))
@@ -956,7 +942,6 @@ class Window(QMainWindow):
 
     # used to draw the grid
     def drawGrid(self):
-        print("draw grid")
         self.pixmap = QPixmap(10, 10)
         pixmapWidth = self.pixmap.width() - 1
         painter = QPainter()
@@ -971,7 +956,6 @@ class Window(QMainWindow):
 
     # used to delete the grid
     def deleteGrid(self):
-        print("draw grid")
         self.pixmap = QPixmap(10, 10)
         pixmapWidth = self.pixmap.width() - 1
         painter = QPainter()
@@ -994,7 +978,6 @@ class Window(QMainWindow):
         return bytes(ba.toBase64()).decode()
 
     def bytesToPixmap(self, pixmap_bytes):
-        #print(pixmap_bytes)
         # convert bytes to QPixmap
         ba = QtCore.QByteArray().fromBase64(pixmap_bytes.encode())
         pixmap = QtGui.QPixmap()
@@ -1042,24 +1025,21 @@ class Window(QMainWindow):
     # need to review
     def mouseDoubleClickEvent(self, event):
         print("mouse move double clicked")
-        #print(self.last_point)
-        #super(self.getCurrentPageScene(), self).mouseDoubleClickEvent(event)
         self.getCurrentPageScene().editObject()
 
     # Delete selected objects
     # or edit object
     def keyPressEvent(self, event):
+        # delete an object
         if event.key() == Qt.Key_Delete:
-            print("catched delete")
             qm = QMessageBox()
-            ret = qm.question(self, '', "Are you sure you want to delete those objects?", qm.Yes | qm.No)
+            ret = qm.question(self, '', _("Are you sure you want to delete those objects?"), qm.Yes | qm.No)
 
             if ret == qm.No:
                 return
             self.getCurrentPageScene().removeItems()
-
+        #edit an object
         elif event.key() == Qt.Key_E:
-            print("catched edit")
             self.getCurrentPageScene().editObject()
 
     # add a copyright to the page

@@ -14,6 +14,12 @@ from TextDlg import TextDlg
 from Stamp import Stamp
 from EditStampDlg import EditStampDlg
 
+import gettext
+gettext.find("PageDlg")
+translate = gettext.translation('PageDlg', localedir='locale', languages=['fr'])
+translate.install()
+_ = translate.gettext
+
 class Page(QGraphicsScene):
     def __init__(self, pageType = "portrait", border=None, parent=None):
         super(Page, self).__init__(parent)
@@ -41,7 +47,6 @@ class Page(QGraphicsScene):
     def getPageName(self):
         return ""
     def addBorder(self, boxWidth, boxHeight, margin_left, margin_right, margin_top, margin_bottom):
-        print("")
         borderBox = QGraphicsRectItem(0, 0, boxWidth, boxHeight)
         boxPen = QPen()
         boxPen.setColor(Qt.black)
@@ -96,18 +101,10 @@ class Page(QGraphicsScene):
 
         if font is not None:
             textLabel.setFont(font)
-        print(textLabel.opacity())
-        #textLabel.setOpacity(0.10)
-        print(textLabel.font().bold())
-        print(textLabel.font().italic())
-        print(textLabel.font().pointSize())
-        print(textLabel.font().underline())
-        print(textLabel.font().pixelSize())
-
 
         textLabel.setPos(x, y)
         textLabel.setFlags(QGraphicsTextItem.ItemIsMovable | QGraphicsTextItem.ItemIsSelectable)
-        #print(textLabel.data(0))
+
         textLabel.setSelected(True)
         self.addItem(textLabel)
 
@@ -122,7 +119,6 @@ class Page(QGraphicsScene):
             self.removeItem(item)
 
     def editObject(self):
-        print("editlabel")
         items = self.selectedItems()
         nbrOfItems = 0
         for item in items:
@@ -136,27 +132,24 @@ class Page(QGraphicsScene):
             print("no items selected")
             return
 
-        print("We are good to go")
         itemType = 0
         for item in items:
-            print(item.type().real)
+
             itemType = item.type().real
 
             if itemType == 10:
-                print("This is a stamp")
+                # This is a stamp
                 self.editStamp(item)
             elif itemType == 8:
-                print("This is a text label")
+                # This is a text label
                 self.editLabel(item)
 
     def editLabel(self, item):
-        print("editing label")
 
         dlg = TextDlg(item)
         res = dlg.exec_()
 
         if res == QDialog.Accepted:
-            print("Clicked ok")
             text = dlg.eTXT.toPlainText()
             font = dlg.eTXT.font()
             item.setPlainText(text)
@@ -166,7 +159,6 @@ class Page(QGraphicsScene):
             print("Clicked cancel")
 
     def editStamp(self, stampItem):
-        print("editing stamp")
         stamp = Stamp()
         stampObj = stamp.readStamp(stampItem)
         dlg = EditStampDlg(stampObj)
@@ -176,7 +168,6 @@ class Page(QGraphicsScene):
             stampObj['stampNbr_text'] = dlg.eNbr.text()
             stampObj['stampValue_text'] = dlg.eValue.toPlainText()
 
-            #print(stampObj)
             ret = dlg.getBoxInfo(dlg.pochetteList.currentItem().text())
             width = ret[0]
             stampObj['stampBox_boxWidth'] = width
@@ -184,11 +175,10 @@ class Page(QGraphicsScene):
             stampObj['stampBox_boxHeight'] = height
             stampObj['pixmapItem_image'] = dlg.photo.pixmap()
             stamp.updateStamp(stampItem, stampObj)
-            print("Clicked ok")
+
 
 
     def printPagePDF(self):
-        print("Print page to PDF")
 
         # first unselect all objects
         for item in self.items():
@@ -331,7 +321,6 @@ class Page(QGraphicsScene):
 
     # create a new copy right and add it at the bottom right of the page
     def newCopyRight(self):
-        print("Create new copyright")
         text = "CopyRight © Boris du Reau 2022"
         font = QFont()
         font.setPointSize(8)

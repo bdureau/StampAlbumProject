@@ -12,16 +12,19 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtGui import QFont, QBrush, QPainter, QPen, QPixmap, QPolygonF, QImage, QIcon, QStandardItem, QColor,QTextBlockFormat, QTextCursor
 from PyQt5.QtPrintSupport import QPrintPreviewDialog, QPrinter, QPrintDialog
 
-
+import gettext
+gettext.find("TextDlg")
+translate = gettext.translation('TextDlg', localedir='locale', languages=['fr'])
+translate.install()
+_ = translate.gettext
 
 class TextDlg(QDialog):
     def __init__(self, txtObj=None, parent=None):
         super(TextDlg, self).__init__(parent)
-        self.setWindowTitle("Add new text")
+        self.setWindowTitle(_("Add new text"))
         self.createDlg(txtObj)
 
     def createDlg(self, txtObj=None):
-        print("create dialog")
         self.setWindowModality(Qt.ApplicationModal)
 
         self.setWindowFlags(Qt.Dialog)
@@ -82,8 +85,7 @@ class TextDlg(QDialog):
         centerButton.clicked.connect(self.centerPushed)
         justifyRightButton.clicked.connect(self.justifyRightPushed)
 
-        self.eTXT = QTextEdit() #QPlainTextEdit()
-        #self.eTXT = QPlainTextEdit()
+        self.eTXT = QTextEdit()
         self.eTXT.setFixedHeight(80)
 
         myFont = self.eTXT.font()
@@ -157,15 +159,7 @@ class TextDlg(QDialog):
 
     def justifyLeftPushed(self):
         print("")
-        # self.eTXT.setFixedWidth(10)
-        # cursor = self.eTXT.cursor()
-        # cursor.select(QTextCursor.Document)
-        # format = QTextBlockFormat()
-        # format.setAlignment(Qt.AlignCenter)
-        # cursor.mergeBlockFormat(format)
-        # cursor.clearSelection()
-        #self.eTXT.setTextCursor(cursor)
-        # set text alignment to AlignRight
+        # set text alignment to AlignLeft
         self.eTXT.setAlignment(Qt.AlignLeft)
 
 

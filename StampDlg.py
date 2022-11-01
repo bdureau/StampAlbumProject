@@ -15,23 +15,28 @@ from Databases import DB
 from pathlib import Path
 from Stamp import Stamp
 
+import gettext
+gettext.find("StampDlg")
+translate = gettext.translation('StampDlg', localedir='locale', languages=['fr'])
+translate.install()
+_ = translate.gettext
+
 class StampDlg(QDialog):
     def __init__(self, lastStampObj=None, scene=None, parent=None):
         super(StampDlg, self).__init__(parent)
-        self.setWindowTitle("Create new stamp")
+        self.setWindowTitle(_("Create new stamp"))
         self.currentStampNbr = ""
         self.createDlg(lastStampObj)
         self.scene = scene
 
 
     def createDlg(self, lastStampObj):
-        print("create dialog")
         self.setWindowModality(Qt.ApplicationModal)
         self.setWindowFlags(Qt.Dialog)
 
         # pochettes type
         vLayout1 = QVBoxLayout()
-        pochettesType = QLabel("Pochette type")
+        pochettesType = QLabel(_("Pochette type"))
         self.pochetteList = QListWidget()
         self.pochetteList.setMaximumWidth(150)
         vLayout1.addWidget(pochettesType)
@@ -39,10 +44,9 @@ class StampDlg(QDialog):
 
         # where to go if the pochette is clicked
         self.pochetteList.itemClicked.connect(self.pochetteClicked)
-        print("create dialog2")
 
         # Years
-        years = QLabel("Years:")
+        years = QLabel(_("Years:"))
         self.yearsList = QListWidget()
         self.yearsList.setMaximumWidth(100)
         vLayoutYear = QVBoxLayout()
@@ -57,7 +61,7 @@ class StampDlg(QDialog):
 
 
         # stamp nbr
-        stampNbr = QLabel("Stamp nbr:")
+        stampNbr = QLabel(_("Stamp nbr:"))
         self.stampNbrList = QListView()
         self.stampNbrList.setMaximumWidth(100)
         vLayoutStampNbr = QVBoxLayout()
@@ -68,7 +72,7 @@ class StampDlg(QDialog):
         # where to go if the stamp is clicked
         # self.stampNbrList.itemClicked.connect(self.stampClicked)
         self.stampNbrList.clicked.connect(self.stampClicked)
-        print("create dialog4")
+
 
         # hlayout to group them
         hLayout2 = QHBoxLayout()
@@ -106,14 +110,14 @@ class StampDlg(QDialog):
         self.eValue.setMaximumWidth(150)
 
         # descChoiceLbl = QLabel("Select the description to use:")
-        rbtn1 = QRadioButton('Use description 1')
-        rbtn2 = QRadioButton('Use description 2')
-        rbtn3 = QRadioButton('Use description 1 and 2')
-        rbtn4 = QRadioButton('No description')
+        rbtn1 = QRadioButton(_('Use description 1'))
+        rbtn2 = QRadioButton(_('Use description 2'))
+        rbtn3 = QRadioButton(_('Use description 1 and 2'))
+        rbtn4 = QRadioButton(_('No description'))
 
         rbtn3.setChecked(True)
 
-        rbGroup = QGroupBox("Select the description to use:")
+        rbGroup = QGroupBox(_("Select the description to use:"))
         vbox = QVBoxLayout()
         rbGroup.setLayout(vbox)
 
@@ -129,15 +133,15 @@ class StampDlg(QDialog):
 
 
         fLayout = QFormLayout()
-        fLayout.addRow("Stamp type:", self.stampTypeCombo)
-        fLayout.addRow("Selected country:", self.selectedCountryCombo)
-        fLayout.addRow("Witdh:", self.eWidth)
-        fLayout.addRow("Height:", self.eHeight)
-        fLayout.addRow("Year:", self.eYear)
-        fLayout.addRow("Value:", self.eValue)
+        fLayout.addRow(_("Stamp type:"), self.stampTypeCombo)
+        fLayout.addRow(_("Selected country:"), self.selectedCountryCombo)
+        fLayout.addRow(_("Witdh:"), self.eWidth)
+        fLayout.addRow(_("Height:"), self.eHeight)
+        fLayout.addRow(_("Year:"), self.eYear)
+        fLayout.addRow(_("Value:"), self.eValue)
 
-        fLayout.addRow("Stamp description:", self.eStampDescription)
-        fLayout.addRow("Stamp description2:", self.eStampDescription2)
+        fLayout.addRow(_("Stamp description:"), self.eStampDescription)
+        fLayout.addRow(_("Stamp description2:"), self.eStampDescription2)
 
         fLayout.addRow("", rbGroup)
 
@@ -146,11 +150,11 @@ class StampDlg(QDialog):
         # #bb.accepted.connect(self.accept)
         # bb.accepted.connect(self.createStamp)
         # bb.rejected.connect(self.reject)
-        createButton = QPushButton(self.tr("&Create"))
+        createButton = QPushButton(self.tr(_("&Create")))
         createButton.setDefault(True)
 
 
-        okButton = QPushButton(self.tr("&Done"))
+        okButton = QPushButton(self.tr(_("&Done")))
         #okButton.setDefault(True)
 
         # cancelButton = QPushButton(self.tr("&Cancel"))
@@ -291,20 +295,20 @@ class StampDlg(QDialog):
 
     def yearChanged(self, year):
         if year is not None:
-            print("year text has changed: %s" % year)
-            print(year.text())
+            #print("year text has changed: %s" % year)
+            #print(year.text())
             self.yearClicked(year)
 
     # year has changed, let's retrieve all the stamps for that year
     def yearClicked(self, year):
         # stampYear, stampCountry, stampType
-        print("year has changed")
-        print("New year class %s" % year)
-        print("New year %s" % year.text())
+        #print("year has changed")
+        #print("New year class %s" % year)
+        #print("New year %s" % year.text())
         #print("Reloading years")
         if year.text() != "":
             if self.db is not None:
-                print("Reloading stamplist")
+                #print("Reloading stamplist")
                 #self.stampNbrList.model().removeRow(0)
                 # load all available stamp number for the current year
                 retStampNbrList = self.db.loadStampList(self.stampTypeCombo.currentText(),
@@ -328,15 +332,15 @@ class StampDlg(QDialog):
     # stamp has changed let's change the image and all the stamp properties
     def stampClicked(self, index):
         # stampKey, stampCountry
-        print("stamp has changed")
-        print("New stamp %s" % index.row())
+        #print("stamp has changed")
+        #print("New stamp %s" % index.row())
         retitem = self.stampNbrList.model().item(index.row(), 0)
         self.setStampInfo(retitem)
         self.currentStampNbr = retitem.text()
 
     def setStampInfo(self, retitem):
         if self.db is not None:
-            print("select pochette")
+            #print("select pochette")
             # get pochette for the current stamp
             stampType = self.stampTypeCombo.currentText()
             stampYear = self.yearsList.currentItem().text()
@@ -362,12 +366,12 @@ class StampDlg(QDialog):
             self.eStampDescription.setPlainText("")
             self.eStampDescription2.setPlainText("")
 
-            print("get all stamp info")
+            #print("get all stamp info")
             # get all stamp info
-            print(stampNbr)
-            print(stampKey)
+            #print(stampNbr)
+            #print(stampKey)
             retStampInfo = self.db.stampChanged(stampNbr, stampKey)
-            print("get all stamp info done")
+            #print("get all stamp info done")
             if len(retStampInfo) > 0:
                 # nbr,year,valuecolor, stampDescription,width, height,sub_nbr,stampDescription1
                 self.eWidth.setText(retStampInfo[4])
@@ -402,22 +406,22 @@ class StampDlg(QDialog):
 
     def countryClicked(self, country):
         # stampCountry
-        print("Country has changed")
-        print("New country is: %s" % country)
+        #print("Country has changed")
+        #print("New country is: %s" % country)
         if country != "":
             if self.db is not None:
                 self.db.OpenCountryDB(country)
                 self.currentCountry = country
                 # get the stamp type from the current country open DB
-                print("Reloading stamp type")
+                #print("Reloading stamp type")
                 self.stampTypeCombo.clear()
                 retStampType = self.db.loadStampType()
                 self.stampTypeCombo.addItems(retStampType)
 
     def stampTypeClicked(self, stampType):
         # stampType, stampCountry
-        print("Stamp type has changed")
-        print("New stamp type is %s" % stampType)
+        #print("Stamp type has changed")
+        #print("New stamp type is %s" % stampType)
         # minYear = self.db.getMinYearForType(stampType)
         # self.db.loadStampList(stampType, minYear)
         if stampType != "":
@@ -559,9 +563,9 @@ class StampDlg(QDialog):
         ret = self.getBoxInfo(self.pochetteList.currentItem().text())
         width = ret[0]
         height = ret[1]
-        print(self.stampNbrList.currentIndex())
+        #print(self.stampNbrList.currentIndex())
         stampNbr = self.currentStampNbr #self.stampNbrList.model().item(0, 0).text()
-        print("stampNbr:%s", stampNbr)
+        #print("stampNbr:%s", stampNbr)
 
         stamp = Stamp()
         stamp.createStamp(self.scene, str(stampNbr), str(stampValue), str(stampDesc),

@@ -2,8 +2,7 @@ from os import walk
 from PyQt5.QtCore import QPointF, Qt, QPoint, QByteArray, QRectF
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtWidgets import (
-    QMessageBox,
-    QGraphicsRectItem,
+    QMessageBox, QGraphicsRectItem,
     QGraphicsScene, QComboBox, QRadioButton, QButtonGroup, QGroupBox, QListWidgetItem,
     QGraphicsView, QApplication, QLabel, QMainWindow, QMenuBar, QMenu, QHBoxLayout, QListView,
     QToolBar, QAction, QGraphicsTextItem, QGraphicsItemGroup, QDialog, QPushButton, QListWidget,
@@ -14,17 +13,22 @@ from PyQt5.QtPrintSupport import QPrintPreviewDialog, QPrinter, QPrintDialog
 
 import configparser
 
+import gettext
+gettext.find("ConfigDlg")
+translate = gettext.translation('ConfigDlg', localedir='locale', languages=['fr'])
+translate.install()
+_ = translate.gettext
+
 class ConfigDlg(QDialog):
     def __init__(self, parent=None):
         super(ConfigDlg, self).__init__(parent)
-        self.setWindowTitle("Application configuration")
+        self.setWindowTitle(_("Application configuration"))
         self.configParser = configparser.RawConfigParser()
         self.configFilePath = r'stamp_album.cfg'
         self.configParser.read(self.configFilePath)
         self.createDlg()
 
     def createDlg(self):
-        print("create dialog")
         self.setWindowModality(Qt.ApplicationModal)
         self.setWindowFlags(Qt.Dialog)
 
@@ -48,10 +52,10 @@ class ConfigDlg(QDialog):
         bb.rejected.connect(self.reject)
 
         flo = QFormLayout()
-        flo.addRow("Default Copyright:", self.eCopyRight)
-        flo.addRow("Border type", self.selectedBorderCombo)
-        flo.addRow("Default Country", self.selectedCountryCombo)
-        #flo.addRow(l1)
+        flo.addRow(_("Default Copyright:"), self.eCopyRight)
+        flo.addRow(_("Border type"), self.selectedBorderCombo)
+        flo.addRow(_("Default Country"), self.selectedCountryCombo)
+
         flo.addRow(bb)
 
         self.setLayout(flo)

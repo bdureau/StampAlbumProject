@@ -3,7 +3,7 @@ from PyQt5.QtCore import QPointF, Qt, QPoint, QByteArray, QRectF
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtWidgets import (
     QMessageBox,
-    QGraphicsRectItem,QFileDialog,
+    QGraphicsRectItem, QFileDialog,
     QGraphicsScene, QComboBox, QRadioButton, QButtonGroup, QGroupBox, QListWidgetItem,
     QGraphicsView, QApplication, QLabel, QMainWindow, QMenuBar, QMenu, QHBoxLayout, QListView,
     QToolBar, QAction, QGraphicsTextItem, QGraphicsItemGroup, QDialog, QPushButton, QListWidget,
@@ -13,17 +13,21 @@ from PyQt5.QtGui import QBrush, QPainter, QPen, QPixmap, QPolygonF, QImage, QIco
 from PyQt5.QtPrintSupport import QPrintPreviewDialog, QPrinter, QPrintDialog
 from Databases import DB
 
+import gettext
+gettext.find("EditStampDlg")
+translate = gettext.translation('EditStampDlg', localedir='locale', languages=['fr'])
+translate.install()
+_ = translate.gettext
+
 
 class EditStampDlg(QDialog):
     def __init__(self, stampObj, parent=None):
-        print("init dialog go")
         super(EditStampDlg, self).__init__(parent)
-        self.setWindowTitle("Edit stamp")
+        self.setWindowTitle(_("Edit stamp"))
         self.setWindowModality(Qt.ApplicationModal)
         self.createDlg(stampObj)
 
     def createDlg(self, stampObj):
-        print("create dialog")
         self.setWindowModality(Qt.ApplicationModal)
         self.setWindowFlags(Qt.Dialog)
 
@@ -49,7 +53,7 @@ class EditStampDlg(QDialog):
             self.photo.setPixmap(QPixmap(stampObj['pixmapItem_image']).scaledToHeight(200))
 
         # change image button
-        imageButton = QPushButton(self.tr("&Change image ..."))
+        imageButton = QPushButton(self.tr(_("&Change image ...")))
         buttonBox = QDialogButtonBox(Qt.Horizontal)
         buttonBox.addButton(imageButton, QDialogButtonBox.ActionRole)
         imageButton.clicked.connect(self.loadImage)
@@ -57,7 +61,7 @@ class EditStampDlg(QDialog):
 
         # pochettes type
         vLayout1 = QVBoxLayout()
-        pochettesType = QLabel("Pochette type")
+        pochettesType = QLabel(_("Pochette type"))
         self.pochetteList = QListWidget()
         self.pochetteList.setMaximumWidth(150)
         vLayout1.addWidget(pochettesType)
@@ -70,22 +74,21 @@ class EditStampDlg(QDialog):
         bb.rejected.connect(self.reject)
 
         flo = QFormLayout()
-        flo.addRow("Title:", self.eTitle)
-        flo.addRow("Nbr", self.eNbr)
-        flo.addRow("Value", self.eValue)
+        flo.addRow(_("Title:"), self.eTitle)
+        flo.addRow(_("Nbr"), self.eNbr)
+        flo.addRow(_("Value"), self.eValue)
         flo.addRow(self.photo)
         flo.addRow(buttonBox)
         flo.addRow(bb)
 
         # pochettes type
         vLayout1 = QVBoxLayout()
-        pochettesType = QLabel("Pochette type")
+        pochettesType = QLabel(_("Pochette type"))
         self.pochetteList = QListWidget()
         self.pochetteList.setMaximumWidth(150)
         vLayout1.addWidget(pochettesType)
         vLayout1.addWidget(self.pochetteList)
 
-        #vLayout1.addLayout(flo)
         hLayout2 = QHBoxLayout()
         hLayout2.addLayout(vLayout1)
         hLayout2.addLayout(flo)
@@ -110,7 +113,7 @@ class EditStampDlg(QDialog):
         if len(self.stampCountries) > 0:
             self.db = DB(self.stampCountries[0])
 
-        # get the list of availble stamp box from the master db
+        # get the list of available stamp box from the master db
         retBoxList = self.db.loadBoxList()
         self.pochetteList.clear()
         self.pochetteList.addItems(retBoxList)
@@ -132,7 +135,6 @@ class EditStampDlg(QDialog):
         return ret
 
     def loadImage(self):
-        print("load image")
         options = QFileDialog.Options()
         options |= QFileDialog.DontUseNativeDialog
         fileName, _ = QFileDialog.getOpenFileName(self, "Select picture", "",

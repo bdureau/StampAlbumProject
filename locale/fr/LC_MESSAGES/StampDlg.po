@@ -1,0 +1,93 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2022-11-01 09:52+0100\n"
+"PO-Revision-Date: 2022-11-01 10:02+0100\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=cp1252\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+"X-Generator: Poedit 3.2\n"
+
+#: StampDlg.py:27
+msgid "Create new stamp"
+msgstr "Créer timbre"
+
+#: StampDlg.py:39
+msgid "Pochette type"
+msgstr "Type de pochette"
+
+#: StampDlg.py:49
+msgid "Years:"
+msgstr "Années:"
+
+#: StampDlg.py:64
+msgid "Stamp nbr:"
+msgstr "Numéro timbre:"
+
+#: StampDlg.py:113
+msgid "Use description 1"
+msgstr "Utiliser description 1"
+
+#: StampDlg.py:114
+msgid "Use description 2"
+msgstr "Utiliser description 2"
+
+#: StampDlg.py:115
+msgid "Use description 1 and 2"
+msgstr "Utiliser description 1 et 2"
+
+#: StampDlg.py:116
+msgid "No description"
+msgstr "Pas de description"
+
+#: StampDlg.py:120
+msgid "Select the description to use:"
+msgstr "Choisir la description à utiliser"
+
+#: StampDlg.py:136
+msgid "Stamp type:"
+msgstr "Type de timbre:"
+
+#: StampDlg.py:137
+msgid "Selected country:"
+msgstr "Choisir le pays:"
+
+#: StampDlg.py:138
+msgid "Witdh:"
+msgstr "Largeur:"
+
+#: StampDlg.py:139
+msgid "Height:"
+msgstr "Hauteur:"
+
+#: StampDlg.py:140
+msgid "Year:"
+msgstr "Année:"
+
+#: StampDlg.py:141
+msgid "Value:"
+msgstr "Valeur:"
+
+#: StampDlg.py:143
+msgid "Stamp description:"
+msgstr "Description du timbre:"
+
+#: StampDlg.py:144
+msgid "Stamp description2:"
+msgstr "Description du timbre 2:"
+
+#: StampDlg.py:153
+msgid "&Create"
+msgstr "&Créer"
+
+#: StampDlg.py:157
+msgid "&Done"
+msgstr "&Fermer"

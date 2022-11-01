@@ -1,0 +1,189 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2022-10-31 21:07+0100\n"
+"PO-Revision-Date: 2022-11-01 09:29+0100\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=cp1252\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+"X-Generator: Poedit 3.2\n"
+
+#: MainWindow.py:128
+msgid "&File"
+msgstr "&Fichier"
+
+#: MainWindow.py:138
+msgid "&Edit"
+msgstr "&Editer"
+
+#: MainWindow.py:148
+msgid "&Stamp"
+msgstr "&Timbre"
+
+#: MainWindow.py:153
+msgid "Align"
+msgstr "Aligner"
+
+#: MainWindow.py:164
+msgid "Page"
+msgstr "Page"
+
+#: MainWindow.py:170
+msgid "Objects"
+msgstr "Objets"
+
+#: MainWindow.py:177
+msgid "&Config"
+msgstr "&Configuration"
+
+#: MainWindow.py:180
+msgid "&Help"
+msgstr "&Aide"
+
+#: MainWindow.py:188
+msgid "&New"
+msgstr "&Nouveau"
+
+#: MainWindow.py:194
+msgid "&Open..."
+msgstr "&Ouvrir"
+
+#: MainWindow.py:201
+msgid "&Save"
+msgstr "&Sauvegarder"
+
+#: MainWindow.py:208
+msgid "&Print..."
+msgstr "&Imprimer…"
+
+#: MainWindow.py:215
+msgid "&Print preview..."
+msgstr "Apperçu impression"
+
+#: MainWindow.py:222
+msgid "&Print PDF..."
+msgstr "Convertir en PDF ..."
+
+#: MainWindow.py:229
+msgid "&Exit"
+msgstr "Quitter"
+
+#: MainWindow.py:236
+msgid "&Copy"
+msgstr "Cpoier"
+
+#: MainWindow.py:241
+msgid "&Paste"
+msgstr "Coller"
+
+#: MainWindow.py:246
+msgid "C&ut"
+msgstr "Couper"
+
+#: MainWindow.py:252
+msgid "New Stamp ..."
+msgstr "Nouveau timbre.."
+
+#: MainWindow.py:253
+msgid "Edit Current Stamp ..."
+msgstr "Modifer timbre"
+
+#: MainWindow.py:256
+msgid "New Page ..."
+msgstr "Nouvelle page"
+
+#: MainWindow.py:261
+msgid "Delete Page ..."
+msgstr "Effacer page .."
+
+#: MainWindow.py:266
+msgid "Grid on/off"
+msgstr "Grille"
+
+#: MainWindow.py:272
+msgid "New text ..."
+msgstr "Nouveau texte ..."
+
+#: MainWindow.py:277
+msgid "New Image ..."
+msgstr "Nouvelle image ..."
+
+#: MainWindow.py:282
+msgid "New copyright"
+msgstr "Nouveau copyright"
+
+#: MainWindow.py:287
+msgid "New Page border"
+msgstr "Encadrement page"
+
+#: MainWindow.py:293
+msgid "Align Left"
+msgstr "Aligner à gauche"
+
+#: MainWindow.py:298
+msgid "Align Right"
+msgstr "Aligner à droite"
+
+#: MainWindow.py:303
+msgid "Align Top"
+msgstr "Aligner top"
+
+#: MainWindow.py:308
+msgid "Align Bottom"
+msgstr "Aligner en bas"
+
+#: MainWindow.py:313
+msgid "Distribute Vertically"
+msgstr "Distribuer verticallement"
+
+#: MainWindow.py:318
+msgid "Distribute Horizontally"
+msgstr "Distribuer horizontallement"
+
+#: MainWindow.py:323
+msgid "Center Horizontally"
+msgstr "Centrer horizontallement"
+
+#: MainWindow.py:328
+msgid "Center Vertically"
+msgstr "Centrer verticallement"
+
+#: MainWindow.py:334
+msgid "Setup application"
+msgstr "Configurer application"
+
+#: MainWindow.py:340
+msgid "&Help Content"
+msgstr "Manuel"
+
+#: MainWindow.py:345
+msgid "&About"
+msgstr "A propos"
+
+#: MainWindow.py:452
+msgid "Are you sure you want to delete all the pages?"
+msgstr "Etes vous certain d effacer toutes les pages?"
+
+#: MainWindow.py:890
+msgid "About Stamp Album"
+msgstr "A propos de Stamp Album"
+
+#: MainWindow.py:891
+msgid ""
+"Stamp Album ver5.0 \n"
+" Copyright Boris du Reau 2022"
+msgstr ""
+"Stamp Album ver5.0 \n"
+" Copyright Boris du Reau 2022"
+
+#: MainWindow.py:1036
+msgid "Are you sure you want to delete those objects?"
+msgstr "Etes vous certains de vouloir effacer tous les objets?"

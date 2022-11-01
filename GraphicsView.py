@@ -3,25 +3,22 @@ from PyQt5 import QtCore, QtWidgets, QtGui
 from PyQt5.QtWidgets import (
     QMessageBox, QGraphicsPixmapItem,
     QGraphicsRectItem,
-    QGraphicsScene,QFileDialog,
-    QGraphicsView, QApplication, QLabel, QMainWindow, QMenuBar, QMenu,
+    QGraphicsScene, QFileDialog, QGraphicsView, QApplication, QLabel, QMainWindow, QMenuBar, QMenu,
     QToolBar, QAction, QGraphicsTextItem, QGraphicsItemGroup, QDialog, QPushButton,
     QLineEdit, QFormLayout, QStatusBar, QTabWidget, QWidget, QVBoxLayout, QDialogButtonBox, QPlainTextEdit
 )
-from PyQt5.QtGui import QBrush, QPainter, QPen, QPixmap, QPolygonF, QImage, QIcon, QColor, QFont, QTextCursor, QTextBlockFormat
+from PyQt5.QtGui import QBrush, QPainter, QPen, QPixmap, QPolygonF, QImage, QIcon, QColor, QFont, QTextCursor, \
+    QTextBlockFormat
 
 from PyQt5.QtPrintSupport import QPrintPreviewDialog, QPrinter, QPrintDialog
 import importlib
 custom_mimeType = "application/x-qgraphicsitems"
 
 
-
-
 # serialise the item
 def item_to_ds(it, ds):
     if not isinstance(it, QtWidgets.QGraphicsItem):
         return
-    print("item_to_ds I am an instance of QGraphicsItem")
     ds.writeQString(it.__class__.__module__)
     ds.writeQString(it.__class__.__name__)
     # save the flag
@@ -33,7 +30,6 @@ def item_to_ds(it, ds):
 
     # we have a simple text object
     if it.__class__.__name__ == "QGraphicsTextItem":
-        print("we have a QGraphicsTextItem")
         ds.writeQString(it.toPlainText())
         # get the font
         ds.writeBool(it.font().bold())
@@ -44,21 +40,19 @@ def item_to_ds(it, ds):
 
     # we have a stamp object
     if it.__class__.__name__ == "QGraphicsItemGroup" and it.data(0) == "stampGroup":
-        print("we have QGraphicsItemGroup")
+
         for child in it.childItems():
-            #print(child.__class__.__name__)
+
             if child.__class__.__name__ == "QGraphicsRectItem":
-                print("QGraphicsRectItem")
                 ds.writeQString(child.__class__.__name__)
-                #print(child.boundingRect())
                 ds << child.boundingRect()
                 ds << child.pos()
                 ds.writeInt(child.pen().width())
                 ds.writeInt(child.pen().color().value())
                 ds.writeInt(child.data(1)) #box width
                 ds.writeInt(child.data(2)) # box height
+
             if child.__class__.__name__ == "QGraphicsTextItem":
-                print("QGraphicsTextItem")
                 ds.writeQString(child.__class__.__name__)
                 ds.writeQString(child.toPlainText())
                 ds << child.pos()
@@ -67,27 +61,24 @@ def item_to_ds(it, ds):
                 ds.writeBool(child.font().strikeOut())
                 ds.writeBool(child.font().underline())
                 ds.writeInt(child.font().pointSize())
+
             if child.__class__.__name__ == "QGraphicsPixmapItem":
                 print("QGraphicsPixmapItem")
                 ds.writeQString(child.__class__.__name__)
                 ds.writeQVariant(child.pixmap())
                 ds << child.pos()
 
-
-    print("after text")
     ds.writeFloat(it.opacity())
-    print("after opacity")
     ds.writeFloat(it.rotation())
-    print("after rotation")
     ds.writeFloat(it.scale())
-    print("after scale")
+
     if isinstance(it, QtWidgets.QAbstractGraphicsShapeItem):
         ds << it.brush() << it.pen()
         print(it.pen())
         print(it.brush())
     if isinstance(it, QtWidgets.QGraphicsPathItem):
         ds << it.path()
-    print("end of item to DS")
+
 
 
 def ds_to_item(ds):
@@ -247,7 +238,7 @@ def ds_to_item(ds):
         stampNbr.setFlags(QGraphicsTextItem.ItemIsMovable | QGraphicsTextItem.ItemIsSelectable)
         #stampNbr.setPos(0 + stampBox.boundingRect().size().width() / 2 - stampNbr.boundingRect().size().width() / 2, 0 + stampBox.boundingRect().size().height())
 
-        print("created nbr")
+        #print("created nbr")
 
         stampNbr.setTextWidth(stampNbr.boundingRect().size().width())
         cursor = stampNbr.textCursor()
@@ -351,7 +342,6 @@ class GraphicsView(QtWidgets.QGraphicsView):
 
     @QtCore.pyqtSlot()
     def paste_items(self):
-        print("paste")
         pos2 = QtCore.QPointF(40, 40)
 
         clipboard = QtGui.QGuiApplication.clipboard()
@@ -360,7 +350,5 @@ class GraphicsView(QtWidgets.QGraphicsView):
             ba = mimedata.data(custom_mimeType)
             ds = QtCore.QDataStream(ba)
             while not ds.atEnd():
-                print("Add item")
                 it = ds_to_item(ds)
-                print("Boris:%s" % it.data(0))
                 self.scene().addItem(it)
