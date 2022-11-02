@@ -206,12 +206,15 @@ class StampDlg(QDialog):
         if len(self.stampCountries) > 0:
             self.db = DB(self.stampCountries[0])
 
-        for country in self.stampCountries:
-            self.retCountryCombo.append(country)
+        print("test-1")
 
+        for country in self.stampCountries:
+            print(country)
+            self.retCountryCombo.append(country)
+        print("test0")
         # select the first country available
         self.selectedCountryCombo.addItems(self.retCountryCombo)
-
+        print("test")
 
         if lastStampObj['country'] is not None:
             self.selectedCountryCombo.setCurrentText(lastStampObj['country'])
@@ -413,9 +416,10 @@ class StampDlg(QDialog):
                 self.db.OpenCountryDB(country)
                 self.currentCountry = country
                 # get the stamp type from the current country open DB
-                #print("Reloading stamp type")
+                print("Reloading stamp type")
                 self.stampTypeCombo.clear()
                 retStampType = self.db.loadStampType()
+                print("after Reloading stamp type")
                 self.stampTypeCombo.addItems(retStampType)
 
     def stampTypeClicked(self, stampType):

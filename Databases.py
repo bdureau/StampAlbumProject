@@ -1,21 +1,37 @@
 import pyodbc
+import sqlite3
 
 class DB:
     def __init__(self, country):
         print(country)
         self.countryCursor = None
-        self.dbCurMaster = self.OpenDB(r'Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=databases\master.mdb;')
-        self.countryCursor = self.OpenCountryDB(country)
+        self.dbtype = "sqlite"
+        if self.dbtype == "sqlite":
+            conMaster = sqlite3.connect("databases/master.db")
+            self.dbCurMaster = conMaster.cursor()
+            conCountry = sqlite3.connect("databases/" + country + ".db")
+            self.countryCursor = conCountry.cursor()
+            print("cursor open")
+        else:
+            self.dbCurMaster = self.OpenDB(r'Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=databases\master.mdb;')
+            self.countryCursor = self.OpenCountryDB(country)
 
 
     def OpenCountryDB(self, country):
         print("OpenDB %s" % country)
         if self.countryCursor is not None:
             print("closing db")
-            self.countryCursor = None
+
             self.countryCursor.close()
-        self.dbCurCountry = self.OpenDB(
-            r'Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=databases\\' + country + '.mdb' + ';')
+            self.countryCursor = None
+
+        if self.dbtype == "sqlite":
+            conCountry = sqlite3.connect("databases/" + country + ".db")
+            self.dbCurCountry = conCountry.cursor()
+            print("done")
+        else:
+            self.dbCurCountry = self.OpenDB(
+                r'Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=databases\\' + country + '.mdb' + ';')
 
     def OpenDB(self, database):
         conn = pyodbc.connect(database)
@@ -23,18 +39,15 @@ class DB:
         return cursor
 
     def DBExecute(self, cursor, statment):
-        #print("before execute")
-        cursor.execute(statment)
-        #print("after execute")
-        return cursor
+        res = cursor.execute(statment)
+        return res
 
     def loadBoxList(self):
-        res = self.DBExecute(self.dbCurMaster, "SELECT pochette FROM StampBox order by lx,ly asc")
         print("load list")
+        res = self.DBExecute(self.dbCurMaster, "SELECT pochette FROM StampBox order by lx,ly asc")
+        print("after load list")
         ret = []
         for row in res.fetchall():
-            #print(row[0])
-            #pochetteList.addItem(row[0])
             ret.append(row[0])
         return ret
 
@@ -49,11 +62,17 @@ class DB:
         return ret
 
     def loadStampType(self):
-        res = self.DBExecute(self.dbCurCountry, "SELECT distinct type  FROM Stamp_List")
+        print("before execute stamp type")
+        res = self.DBExecute(self.dbCurCountry, "SELECT distinct type FROM Stamp_List order by type asc")
+        print("after execute")
         ret = []
         for row in res.fetchall():
-            #print(row[0])
+            print("test row")
             ret.append(row[0])
+            print(row[0])
+
+        print("after execute2")
+        print(ret)
         return ret
 
     def loadStampList(self, stampType, year):
