@@ -243,6 +243,7 @@ class Window(QMainWindow):
         iconPaste.addPixmap(QPixmap("images/paste.png"), QIcon.Normal, QIcon.Off)
         self.pasteAction.setIcon(iconPaste)
 
+
         self.cutAction = QAction(_("C&ut"), self)
         iconCut = QIcon()
         iconCut.addPixmap(QPixmap("images/cut.png"), QIcon.Normal, QIcon.Off)
@@ -472,23 +473,30 @@ class Window(QMainWindow):
 
         options = QFileDialog.Options()
         options |= QFileDialog.DontUseNativeDialog
+        #fileName, _ = QFileDialog.getOpenFileName(self, "QFileDialog.getOpenFileName()", "",
+        #                                          "Album Files (*.sta);Xml Files (*.xml)", options=options)
         fileName, _ = QFileDialog.getOpenFileName(self, "QFileDialog.getOpenFileName()", "",
                                                   "Album Files (*.sta)", options=options)
         if fileName:
             print(fileName)
+            fileNameArray = fileName.split(".")
+            print(fileNameArray[1])
         else:
             return
 
-        f = gzip.open(fileName, 'r')
+        if (fileNameArray[1]=="sta"):
+            f = gzip.open(fileName, 'r')
+        else:
+            f = open(fileName, 'r')
         #mytree = ET.parse(fileName)
         mytree = ET.parse(f)
         f.close()
         myroot = mytree.getroot()
         #print(myroot)
         for it in myroot.findall('page'):
-            print("before")
-            print(it.attrib.get("type"))
-            print("after")
+            #print("before")
+            #print(it.attrib.get("type"))
+            #print("after")
             # create new page
             self.newPage(str(it.attrib.get("type")), False)
             print("after page created")
@@ -497,7 +505,7 @@ class Window(QMainWindow):
             # Open the text label
             textLabelsItems = it.findall('textLabel')
             for textLabel in textLabelsItems:
-                print("labels!!")
+                #print("labels!!")
                 label = textLabel.find('label').text
 
                 font = textLabel.find('font')
@@ -564,7 +572,9 @@ class Window(QMainWindow):
                 print("before stamp")
                 stamp = Stamp()
                 print("before pix")
+                print(pixmapitem)
                 pixmap = self.bytesToPixmap(pixmapitem)
+                #pixmap = self.bytesToPixmap2(pixmapitem)
                 print("after pix")
                 stamp.createStampPix(currentPage, str(stampNbr), str(stampValue), str(stampDesc),
                                      float(width) * (25.4 / 96.0), float(height) * (25.4 / 96.0),
@@ -790,7 +800,16 @@ class Window(QMainWindow):
     # print current page and save it to PDF
     def printPagePDF(self):
         print("print to PDF")
-        self.getCurrentPageScene().printPagePDF()
+        options = QFileDialog.Options()
+        options |= QFileDialog.DontUseNativeDialog
+        fileName2, _ = QFileDialog.getSaveFileName(self, "QFileDialog.getSaveFileName()", "album.pdf",
+                                                   "(*.pdf)", options=options)
+        print("Save album to file3")
+        if fileName2:
+            print(fileName2)
+        else:
+            return
+        self.getCurrentPageScene().printPagePDF(fileName2)
 
     # print preview the current page
     def printPreview(self):
@@ -888,7 +907,7 @@ class Window(QMainWindow):
     def about(self):
         aboutMsg = QMessageBox()
         aboutMsg.setWindowTitle(_("About Stamp Album"))
-        aboutMsg.setText(_("Stamp Album ver5.0 \n Copyright Boris du Reau 2022"))
+        aboutMsg.setText(_("Stamp Album ver5.0 \n Copyright Boris du Reau 2022-2023"))
         aboutMsg.setIcon(QMessageBox.Information)
         aboutMsg.exec_()
 
@@ -982,6 +1001,14 @@ class Window(QMainWindow):
         ba = QtCore.QByteArray().fromBase64(pixmap_bytes.encode())
         pixmap = QtGui.QPixmap()
         ok = pixmap.loadFromData(ba, "PNG")
+        assert ok
+        return pixmap
+
+    def bytesToPixmap2(self, pixmap_bytes):
+        # convert bytes to QPixmap
+        ba = QtCore.QByteArray().fromBase64(pixmap_bytes.encode())
+        pixmap = QtGui.QPixmap()
+        ok = pixmap.loadFromData(ba, "JPG")
         assert ok
         return pixmap
 

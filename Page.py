@@ -178,7 +178,8 @@ class Page(QGraphicsScene):
 
 
 
-    def printPagePDF(self):
+    def printPagePDF(self,fileName2):
+
 
         # first unselect all objects
         for item in self.items():
@@ -197,7 +198,8 @@ class Page(QGraphicsScene):
         printer.setOutputFormat(QPrinter.PdfFormat)
 
         # TODO select the file to print
-        printer.setOutputFileName("album.pdf")
+
+        printer.setOutputFileName(fileName2)
         scale = printer.resolution() / 96.0
 
         printer.setPageMargins(0, 0, 0, 0, QPrinter.Unit.Millimeter)

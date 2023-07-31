@@ -78,7 +78,7 @@ msgstr "Quitter"
 
 #: MainWindow.py:236
 msgid "&Copy"
-msgstr "Cpoier"
+msgstr "Copier"
 
 #: MainWindow.py:241
 msgid "&Paste"
