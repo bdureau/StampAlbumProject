@@ -1,0 +1,93 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2022-11-01 09:52+0100\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=cp1252\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+
+
+#: StampDlg.py:27
+msgid "Create new stamp"
+msgstr ""
+
+#: StampDlg.py:39
+msgid "Pochette type"
+msgstr ""
+
+#: StampDlg.py:49
+msgid "Years:"
+msgstr ""
+
+#: StampDlg.py:64
+msgid "Stamp nbr:"
+msgstr ""
+
+#: StampDlg.py:113
+msgid "Use description 1"
+msgstr ""
+
+#: StampDlg.py:114
+msgid "Use description 2"
+msgstr ""
+
+#: StampDlg.py:115
+msgid "Use description 1 and 2"
+msgstr ""
+
+#: StampDlg.py:116
+msgid "No description"
+msgstr ""
+
+#: StampDlg.py:120
+msgid "Select the description to use:"
+msgstr ""
+
+#: StampDlg.py:136
+msgid "Stamp type:"
+msgstr ""
+
+#: StampDlg.py:137
+msgid "Selected country:"
+msgstr ""
+
+#: StampDlg.py:138
+msgid "Witdh:"
+msgstr ""
+
+#: StampDlg.py:139
+msgid "Height:"
+msgstr ""
+
+#: StampDlg.py:140
+msgid "Year:"
+msgstr ""
+
+#: StampDlg.py:141
+msgid "Value:"
+msgstr ""
+
+#: StampDlg.py:143
+msgid "Stamp description:"
+msgstr ""
+
+#: StampDlg.py:144
+msgid "Stamp description2:"
+msgstr ""
+
+#: StampDlg.py:153
+msgid "&Create"
+msgstr ""
+
+#: StampDlg.py:157
+msgid "&Done"
+msgstr ""
+

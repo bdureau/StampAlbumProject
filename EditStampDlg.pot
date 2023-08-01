@@ -1,0 +1,41 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2022-11-01 08:53+0100\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=cp1252\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+
+
+#: EditStampDlg.py:26
+msgid "Edit stamp"
+msgstr ""
+
+#: EditStampDlg.py:56
+msgid "&Change image ..."
+msgstr ""
+
+#: EditStampDlg.py:64 EditStampDlg.py:86
+msgid "Pochette type"
+msgstr ""
+
+#: EditStampDlg.py:77
+msgid "Title:"
+msgstr ""
+
+#: EditStampDlg.py:78
+msgid "Nbr"
+msgstr ""
+
+#: EditStampDlg.py:79
+msgid "Value"
+msgstr ""
+
