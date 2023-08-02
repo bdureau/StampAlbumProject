@@ -197,8 +197,6 @@ class Page(QGraphicsScene):
 
         printer.setOutputFormat(QPrinter.PdfFormat)
 
-        # TODO select the file to print
-
         printer.setOutputFileName(fileName2)
         scale = printer.resolution() / 96.0
 
@@ -323,17 +321,19 @@ class Page(QGraphicsScene):
 
     # create a new copy right and add it at the bottom right of the page
     def newCopyRight(self):
-        text = "CopyRight © Boris du Reau 2022"
+        #todo, do it from config
+        text = "CopyRight © Boris du Reau 2023"
         font = QFont()
-        font.setPointSize(8)
-        self.addTextLabel(text, 565, 1045, font)
+        font.setPointSize(6)
+        #self.addTextLabel(text, 565, 1045, font)
+        self.addTextLabel(text, 80, 1045, font)
 
     def alignTop(self):
         print("")
         topY = 0.0
         if self.countSelectedItems() > 1:
             for it in self.items():
-                if topY == 0 and it.isSelected() and it.parentItem() is None:
+                if topY == 0.0 and it.isSelected() and it.parentItem() is None:
                     topY = it.y()
                 if it.y() < topY and it.isSelected() and it.parentItem() is None:
                     topY = it.y()
@@ -345,17 +345,26 @@ class Page(QGraphicsScene):
             print("More than 1 item need to be selected fo aligning object")
 
     def alignBottom(self):
-        print("")
+        print("align bottom")
         topY = 0.0
+        topH = 0.0
         if self.countSelectedItems() > 1:
             for it in self.items():
-                print("it.y()%f" % it.y())
+                #print("it.y()%f" % it.y())
                 if it.y() > topY and it.isSelected() and it.parentItem() is None:
                     topY = it.y()
-            print(topY)
+                    #print(topY)
+                if it.boundingRect().height() > topH and it.isSelected() and it.parentItem() is None:
+                    topH = it.boundingRect().height()
+                    print("topH:")
+                    print(topH)
             for it2 in self.items():
                 if it2.isSelected() and it2.parentItem() is None:
-                    it2.setPos(it2.x(), topY)
+                    it2.setPos(it2.x(), topY +(topH - it2.boundingRect().height()))
+                    #print(it2.Type)
+                    #print(it2.boundingRect().height())
+                    #print(it2.boundingRect().width())
+
         else:
             print("More than 1 item need to be selected fo aligning object")
 

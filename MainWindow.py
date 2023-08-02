@@ -564,6 +564,8 @@ class Window(QMainWindow):
 
                 stampDesc = stamp.find('stampDesc').text
                 print(stampDesc)
+                if stampDesc is None:
+                    stampDesc =""
                 stampNbr = stamp.find('stampNbr').text
                 print(stampNbr)
                 stampValue = stamp.find('stampValue').text
@@ -572,10 +574,10 @@ class Window(QMainWindow):
                 print("before stamp")
                 stamp = Stamp()
                 print("before pix")
-                print(pixmapitem)
+                #print(pixmapitem)
                 pixmap = self.bytesToPixmap(pixmapitem)
                 #pixmap = self.bytesToPixmap2(pixmapitem)
-                print("after pix")
+                #print("after pix")
                 stamp.createStampPix(currentPage, str(stampNbr), str(stampValue), str(stampDesc),
                                      float(width) * (25.4 / 96.0), float(height) * (25.4 / 96.0),
                                      float(x), float(y), pixmap)
