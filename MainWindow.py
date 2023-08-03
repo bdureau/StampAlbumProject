@@ -481,10 +481,12 @@ class Window(QMainWindow):
             print(fileName)
             fileNameArray = fileName.split(".")
             print(fileNameArray[1])
+            print(len(fileNameArray))
         else:
             return
 
-        if (fileNameArray[1]=="sta"):
+        #if (fileNameArray[1]=="sta"):
+        if (fileNameArray[len(fileNameArray)-1] == "sta"):
             f = gzip.open(fileName, 'r')
         else:
             f = open(fileName, 'r')
@@ -550,6 +552,8 @@ class Window(QMainWindow):
             stampItems = it.findall('stampGroup')
             for stamp in stampItems:
                 print("stamps!!")
+                print(stamp)
+                #print(stamp.stampPos)
                 pos = stamp.find('stampPos')
                 x = pos.find('x').text
                 print(x)
@@ -570,10 +574,15 @@ class Window(QMainWindow):
                 print(stampNbr)
                 stampValue = stamp.find('stampValue').text
                 print(stampValue)
-                pixmapitem = stamp.find('pixmapItem').text
+                print("after Value")
+                try:
+                    pixmapitem = stamp.find('pixmapItem').text
+                except:
+                    print("An exception occurred")
                 print("before stamp")
                 stamp = Stamp()
                 print("before pix")
+
                 #print(pixmapitem)
                 pixmap = self.bytesToPixmap(pixmapitem)
                 #pixmap = self.bytesToPixmap2(pixmapitem)
@@ -592,8 +601,16 @@ class Window(QMainWindow):
                                                   "Album Files (*.sta)", options=options)
         if fileName:
             print(fileName)
+            fileNameArray = fileName.split(".")
+            print(fileNameArray[1])
+            print(len(fileNameArray))
         else:
             return
+
+        if (fileNameArray[len(fileNameArray) - 1] == "sta"):
+            print(fileName.rsplit('.', maxsplit=1)[0])
+            fileName = fileName.rsplit('.', maxsplit=1)[0]
+
 
         #fileName = "albumfile.xml"
         root = ET.Element("album")
@@ -909,7 +926,7 @@ class Window(QMainWindow):
     def about(self):
         aboutMsg = QMessageBox()
         aboutMsg.setWindowTitle(_("About Stamp Album"))
-        aboutMsg.setText(_("Stamp Album ver5.0 \n Copyright Boris du Reau 2022-2023"))
+        aboutMsg.setText(_("Stamp Album ver5.0 \n Copyright Boris du Reau 2003-2023"))
         aboutMsg.setIcon(QMessageBox.Information)
         aboutMsg.exec_()
 

@@ -20,6 +20,9 @@ translate = gettext.translation('PageDlg', localedir='locale', languages=['fr'])
 translate.install()
 _ = translate.gettext
 
+import configparser
+
+
 class Page(QGraphicsScene):
     def __init__(self, pageType = "portrait", border=None, parent=None):
         super(Page, self).__init__(parent)
@@ -321,8 +324,16 @@ class Page(QGraphicsScene):
 
     # create a new copy right and add it at the bottom right of the page
     def newCopyRight(self):
+        text = "CopyRight © Boris du Reau 2003-2023"
         #todo, do it from config
-        text = "CopyRight © Boris du Reau 2023"
+        configParser = configparser.RawConfigParser()
+        configFilePath = r'stamp_album.cfg'
+        configParser.read(configFilePath)
+        if configParser.has_section('CONF'):
+            conf = configParser['CONF']
+            if configParser.has_option('CONF', 'copyright'):
+                text = conf['copyright']
+
         font = QFont()
         font.setPointSize(6)
         #self.addTextLabel(text, 565, 1045, font)

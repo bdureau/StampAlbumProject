@@ -123,12 +123,27 @@ class DB:
             width = row[0]
             height = row[1]
 
+        if width == "":
+            width = "0"
+        if height == "":
+            height = "0"
+        print("width")
+        print(width)
 
         # attempt to get a valid pochette from the master db if cannot find one then select the first one
         query2 = "SELECT pochette FROM StampBox where lx = " + width + " and ly =" + height
+        print("before query")
         res2 = self.DBExecute(self.dbCurMaster, query2)
+        print("after query")
         for row2 in res2.fetchall():
+            #print(row2[0])
             ret.append(row2[0])
+
+        print(len(ret))
+        if len(ret) == 0:
+            print("empty")
+            ret.append('Pochette 30x41')
+        print(ret)
         return ret
 
     def stampChanged(self, stampNbr, Key):

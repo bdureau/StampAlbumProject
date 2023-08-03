@@ -106,12 +106,12 @@ class ConfigDlg(QDialog):
                 self.selectedDatabaseCombo.setCurrentText(str(conf['database type']))
         else:
             self.configParser["CONF"] = {
-                "copyright": "CopyRight © Boris du Reau 2022",
+                "copyright": "CopyRight © Boris du Reau 2003-2023",
                 "default country": "France",
                 "type encadrement": "type 1",
                 "database type": "sqlite"
             }
-            self.eCopyRight.setText("CopyRight © Boris du Reau 2022")
+            #self.eCopyRight.setText("CopyRight © Boris du Reau 2023")
             # Write the above sections to stamp_album.cfg file
             with open(self.configFilePath, 'w') as config:
                 self.configParser.write(config)
@@ -124,7 +124,7 @@ class ConfigDlg(QDialog):
             "type encadrement": self.selectedBorderCombo.currentText(),
             "database type": self.selectedDatabaseCombo.currentText()
         }
-        self.eCopyRight.setText("CopyRight © Boris du Reau 2022")
+        #self.eCopyRight.setText("CopyRight © Boris du Reau 2022")
         # Write the above sections to stamp_album.cfg file
         with open(self.configFilePath, 'w') as config:
             self.configParser.write(config)

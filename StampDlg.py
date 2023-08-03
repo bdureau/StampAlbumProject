@@ -28,6 +28,11 @@ class StampDlg(QDialog):
         self.currentStampNbr = ""
         self.createDlg(lastStampObj)
         self.scene = scene
+        if lastStampObj['country'] is not None:
+            print(lastStampObj['country'])
+            print(lastStampObj['year'])
+            print(lastStampObj['type'])
+            print(lastStampObj['nbr'])
 
 
     def createDlg(self, lastStampObj):
@@ -258,26 +263,39 @@ class StampDlg(QDialog):
 
         # load all available stamp number for the current year
         retStampNbrList = self.db.loadStampList(self.stampTypeCombo.currentText(), self.yearsList.currentItem().text())
+        print(len(retStampNbrList))
 
         model = QtGui.QStandardItemModel(self.stampNbrList)
+        myIndex = 0
+        i = 0
         for it in retStampNbrList:
+
             myitem = QStandardItem(str(it[1]))
             myitem.setData(it[0], 256)
             model.appendRow(myitem)
 
+            if lastStampObj['nbr'] is not None:
+                if str(it[1]) == lastStampObj['nbr']:
+                    print("found it !!")
+                    print(lastStampObj['nbr'])
+                    myIndex = i
+            i = i + 1
         self.stampNbrList.setModel(model)
 
-        # if lastStampObj['nbr'] is not None:
-        #     nbrItem = self.stampNbrList.findItems(lastStampObj['nbr'], Qt.MatchExactly)
-        #     if len(nbrItem) > 0:
-        #         self.stampNbrList.setCurrentItem(nbrItem[0])
-        #     else:
-        #         self.stampNbrList.setCurrentRow(0)
+
+            #nbrItem = self.stampNbrList.findItems(lastStampObj['nbr'], Qt.MatchExactly)
+            #print(nbrItem)
+             #if len(nbrItem) > 0:
+             #    self.stampNbrList.setCurrentItem(nbrItem[0])
+             #else:
+             #    self.stampNbrList.setCurrentRow(0)
 
         if len(self.stampNbrList.selectedIndexes()) < 1:
-            self.stampNbrList.setCurrentIndex(self.stampNbrList.model().index(0, 0))
+            self.stampNbrList.setCurrentIndex(self.stampNbrList.model().index(myIndex, 0))
 
-        retitem = self.stampNbrList.model().item(0, 0)
+        print("step2")
+
+        retitem = self.stampNbrList.model().item(myIndex, 0)
         self.currentStampNbr = retitem.text()
 
         # get pochette for the current stamp
@@ -295,6 +313,9 @@ class StampDlg(QDialog):
                 self.pochetteList.setCurrentItem(pochetteItem[0])
             else:
                 self.pochetteList.setCurrentRow(0)
+        #else:
+        #    self.pochetteList.setCurrentRow(0)
+        self.setStampInfo(retitem)
 
     def yearChanged(self, year):
         if year is not None:
@@ -350,17 +371,22 @@ class StampDlg(QDialog):
             stampNbr = retitem.text()
             stampKey = retitem.data(256)
 
+            print("retPochette")
             retPochette = self.db.getPochette(stampNbr, stampType, stampYear, stampKey)
+            print(retPochette)
 
             if len(retPochette) > 0:
-                # print(retPochette[0])
+                print(retPochette[0])
                 pochetteItem = self.pochetteList.findItems(retPochette[0], Qt.MatchExactly)
 
                 if len(pochetteItem) > 0:
                     self.pochetteList.setCurrentItem(pochetteItem[0])
                 else:
+                    print("retPochette2")
                     self.pochetteList.setCurrentRow(0)
-
+            else:
+                print("retPochette3")
+                self.pochetteList.setCurrentRow(0)
             # blank stamp info
             self.eWidth.setText("")
             self.eHeight.setText("")
