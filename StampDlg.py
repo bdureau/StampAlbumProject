@@ -34,6 +34,20 @@ class StampDlg(QDialog):
             print(lastStampObj['type'])
             print(lastStampObj['nbr'])
 
+    def keyPressEvent(self, e):
+        print(e.key())
+
+
+        if e.key() == Qt.Key_Down:
+            #print("down")
+            self.stampClicked(self.stampNbrList.currentIndex())
+        if e.key() == Qt.Key_Up:
+            #print("up")
+            self.stampClicked(self.stampNbrList.currentIndex())
+
+        #QListView.keyPressEvent(self, e)
+
+
 
     def createDlg(self, lastStampObj):
         self.setWindowModality(Qt.ApplicationModal)
@@ -77,7 +91,13 @@ class StampDlg(QDialog):
         # where to go if the stamp is clicked
         # self.stampNbrList.itemClicked.connect(self.stampClicked)
         self.stampNbrList.clicked.connect(self.stampClicked)
-
+        #self.stampNbrList.selectionChanged.connect(self.stampClicked)
+        #self.stampNbrList.currentChanged.connect(self.stampClicked)
+        #self.stampNbrList.currentIndex.connect(self.stampClicked)
+        #self.stampNbrList.doubleClicked.connect(self.stampClicked)
+        #self.stampNbrList.activated.connect(self.stampClicked)
+        #self.stampNbrList.entered.connect(self.stampClicked)
+        #self.stampNbrList.selectionModel().currentIndex().
 
         # hlayout to group them
         hLayout2 = QHBoxLayout()
@@ -263,7 +283,7 @@ class StampDlg(QDialog):
 
         # load all available stamp number for the current year
         retStampNbrList = self.db.loadStampList(self.stampTypeCombo.currentText(), self.yearsList.currentItem().text())
-        print(len(retStampNbrList))
+        #print(len(retStampNbrList))
 
         model = QtGui.QStandardItemModel(self.stampNbrList)
         myIndex = 0
@@ -371,9 +391,7 @@ class StampDlg(QDialog):
             stampNbr = retitem.text()
             stampKey = retitem.data(256)
 
-            print("retPochette")
             retPochette = self.db.getPochette(stampNbr, stampType, stampYear, stampKey)
-            print(retPochette)
 
             if len(retPochette) > 0:
                 print(retPochette[0])
@@ -382,11 +400,10 @@ class StampDlg(QDialog):
                 if len(pochetteItem) > 0:
                     self.pochetteList.setCurrentItem(pochetteItem[0])
                 else:
-                    print("retPochette2")
                     self.pochetteList.setCurrentRow(0)
             else:
-                print("retPochette3")
                 self.pochetteList.setCurrentRow(0)
+
             # blank stamp info
             self.eWidth.setText("")
             self.eHeight.setText("")
@@ -397,8 +414,6 @@ class StampDlg(QDialog):
 
             #print("get all stamp info")
             # get all stamp info
-            #print(stampNbr)
-            #print(stampKey)
             retStampInfo = self.db.stampChanged(stampNbr, stampKey)
             #print("get all stamp info done")
             if len(retStampInfo) > 0:

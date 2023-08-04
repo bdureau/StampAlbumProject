@@ -7,12 +7,13 @@ from PyQt5.QtWidgets import (
     QGraphicsTextItem, QGraphicsItemGroup,
     QGraphicsPixmapItem, QDialog, QLineEdit, QPushButton, QFormLayout, QFileDialog
     )
-from PyQt5.QtGui import QBrush, QPainter, QPen, QPixmap, QPolygonF, QFont
+from PyQt5.QtGui import QBrush, QPainter, QPen, QPixmap, QPolygonF, QFont, QTextCursor, QTextBlockFormat
 from PyQt5.QtPrintSupport import QPrintPreviewDialog, QPrinter, QPrintDialog
 from StampDlg import StampDlg
 from TextDlg import TextDlg
 from Stamp import Stamp
 from EditStampDlg import EditStampDlg
+
 
 import gettext
 gettext.find("PageDlg")
@@ -98,12 +99,22 @@ class Page(QGraphicsScene):
         group.setData(3, margin_left)
         self.addItem(group)
 
-    def addTextLabel(self, text, x=20, y=20, font=None):
+    def addTextLabel(self, text, x=20, y=20, font=None, align=Qt.AlignLeft):
         textLabel = QGraphicsTextItem(text)
         textLabel.setData(0, "textLabel")
 
         if font is not None:
             textLabel.setFont(font)
+        textLabel.setTextWidth(textLabel.boundingRect().size().width())
+
+        cursor = textLabel.textCursor()
+        cursor.select(QTextCursor.Document)
+        format = QTextBlockFormat()
+        format.setAlignment(align)
+        cursor.mergeBlockFormat(format)
+        cursor.clearSelection()
+        textLabel.setTextCursor(cursor)
+
 
         textLabel.setPos(x, y)
         textLabel.setFlags(QGraphicsTextItem.ItemIsMovable | QGraphicsTextItem.ItemIsSelectable)
@@ -151,12 +162,40 @@ class Page(QGraphicsScene):
 
         dlg = TextDlg(item)
         res = dlg.exec_()
-
+        print("edit label")
         if res == QDialog.Accepted:
             text = dlg.eTXT.toPlainText()
+
             font = dlg.eTXT.font()
             item.setPlainText(text)
             item.setFont(font)
+            # dummy text label to calculate the size correctly
+            textLabel = QGraphicsTextItem(text)
+            textLabel.setFont(font)
+
+            item.setTextWidth(textLabel.boundingRect().size().width())
+            print("edit format")
+            cursor = item.textCursor()
+            cursor.select(QTextCursor.Document)
+            format = QTextBlockFormat()
+
+            align = dlg.eTXT.alignment()
+            if align == Qt.AlignLeft:
+                print("Qt.AlignLeft")
+            if align == Qt.AlignRight:
+                print("Qt.AlignRight")
+            if align == Qt.AlignCenter:
+                print("Qt.AlignCenter")
+            print(align)
+            format.setAlignment(align)
+            cursor.mergeBlockFormat(format)
+            cursor.clearSelection()
+            item.setTextCursor(cursor)
+
+            item.setFlags(QGraphicsTextItem.ItemIsMovable | QGraphicsTextItem.ItemIsSelectable)
+
+            #self.removeItem(item)
+            #self.addItem(item)
 
         if res == QDialog.Rejected:
             print("Clicked cancel")
@@ -317,7 +356,9 @@ class Page(QGraphicsScene):
             print("Clicked ok")
             text = dlg.eTXT.toPlainText()
             font = dlg.eTXT.font()
-            self.addTextLabel(text, 50,50, font)
+            align = dlg.eTXT.alignment()
+
+            self.addTextLabel(text, 50, 50, font, align)
 
         if res == QDialog.Rejected:
             print("Clicked cancel")
@@ -336,8 +377,7 @@ class Page(QGraphicsScene):
 
         font = QFont()
         font.setPointSize(6)
-        #self.addTextLabel(text, 565, 1045, font)
-        self.addTextLabel(text, 80, 1045, font)
+        self.addTextLabel(text, 80, 1045, font, Qt.AlignLeft)
 
     def alignTop(self):
         print("")

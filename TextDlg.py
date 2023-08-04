@@ -97,6 +97,21 @@ class TextDlg(QDialog):
         else:
             self.eTXT.setPlainText(txtObj.toPlainText())
             self.eTXT.setFont(txtObj.font())
+            #self.eTXT.setAlignment(txtObj.alignment())
+            #self.eTXT.setAlignment()
+            cursor = txtObj.textCursor()
+            cursor.select(QTextCursor.Document)
+            format = QTextBlockFormat()
+            cursor.mergeBlockFormat(format)
+            #cursor.select(format)
+            cursor.clearSelection()
+
+            # unfortunately does not get the alignment...
+            align = format.alignment()
+            #align = Qt.AlignRight
+            print(align)
+            self.eTXT.selectAll()
+            self.eTXT.setAlignment(align)
 
 
         flo = QFormLayout()

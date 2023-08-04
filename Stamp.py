@@ -189,10 +189,19 @@ class Stamp:
         print(stampObj)
         return stampObj
 
+    # def updateStamp2(self, stampItem, stampObj):
+    #     myScene = stampItem.scene()
+    #     myScene.removeItem(stampItem)
+    #     self.createStampPix(myScene, nbr, value, desc, boxWidth, boxHeight, x, y, pixmap):
+    #
+    #     return stampObj
+
     def updateStamp(self, stampItem, stampObj):
         childrenItems = stampItem.childItems()
         boxWidth = stampObj['stampBox_boxWidth'] / (25.4 / 96.0)
         boxHeight = stampObj['stampBox_boxHeight'] / (25.4 / 96.0)
+        stampDescWidth = 0
+        stampDescHeight = 0
         stampNbrHeight = 0
         boxX = 0
         boxY = 0
@@ -207,8 +216,11 @@ class Stamp:
             # 7 is a pixmap item
             # 3 is a box
             if childItem.type().real == 8:
-                childItem.setTextWidth(stampItem.boundingRect().size().width())
+                # create a dummy object call desc in order to get the new text size!!
+                desc = QGraphicsTextItem(stampObj[childItem.data(0) + '_text'])
                 childItem.setPlainText(stampObj[childItem.data(0) + '_text'])
+                childItem.setTextWidth(desc.boundingRect().size().width())
+
 
                 cursor = childItem.textCursor()
                 cursor.select(QTextCursor.Document)
@@ -221,15 +233,18 @@ class Stamp:
                 if childItem.data(0) == 'stampDesc':
                     childItem.setPos(boxX + (boxWidth/2) - (childItem.boundingRect().size().width() / 2),
                                  boxY -(childItem.boundingRect().size().height() + 20))
+                    childItem.setFlags(QGraphicsTextItem.ItemIsMovable | QGraphicsTextItem.ItemIsSelectable)
 
                 elif childItem.data(0) == 'stampNbr':
                     childItem.setPos(boxX + (boxWidth / 2) - (childItem.boundingRect().size().width() / 2),
                                      boxY + boxHeight)
+                    childItem.setFlags(QGraphicsTextItem.ItemIsMovable | QGraphicsTextItem.ItemIsSelectable)
                     stampNbrHeight = childItem.boundingRect().size().height()
 
                 elif childItem.data(0) == 'stampValue':
                     childItem.setPos(boxX + (boxWidth / 2) - (childItem.boundingRect().size().width() / 2),
                                      boxY + boxHeight + stampNbrHeight)
+                    childItem.setFlags(QGraphicsTextItem.ItemIsMovable | QGraphicsTextItem.ItemIsSelectable)
 
 
             elif childItem.type().real == 7:
@@ -253,14 +268,31 @@ class Stamp:
 
             elif childItem.type().real == 3:
                 print("we have a box")
+                childItem.setFlags(QGraphicsRectItem.ItemIsMovable | QGraphicsRectItem.ItemIsSelectable)
+
                 childItem.setRect(0, 0, boxWidth, boxHeight)
                 childItem.setData(1, stampObj['stampBox_boxWidth'])
                 childItem.setData(2, stampObj['stampBox_boxHeight'])
 
-        # let's remove and re-add all items so that it recaculate the group
+        # let's remove and re-add all items so that it recalculate the group
+        #group = QGraphicsItemGroup()
         for childItem in childrenItems:
             stampItem.removeFromGroup(childItem)
             stampItem.addToGroup(childItem)
+            # print(childItem.data(0))
+            # print(childItem.boundingRect().size().width())
+        #     group.addToGroup(childItem)
+        # group.setFlags(QGraphicsItemGroup.ItemIsMovable | QGraphicsItemGroup.ItemIsSelectable)
+        # group.setData(0, "stampGroup")
+        # group.setPos(0,0)
+        # print(group.boundingRect().size().width())
+        # group.boundingRect().size().setWidth(200.0)
+
+
+        #myScene = stampItem.scene()
+        #myScene.removeItem(stampItem)
+        #myScene.addItem(group)
+
 
         return stampObj
 
