@@ -565,11 +565,21 @@ class Window(QMainWindow):
                 print(width)
                 height = sizeBox.find('height').text
                 print(height)
+                try:
+                    stampBox_width = sizeBox.find('stampBox_width').text
+                    print(stampBox_width)
+                    stampBox_height = sizeBox.find('stampBox_height').text
+                    print(stampBox_height)
+                    use_new = 1
+                except:
+                    print("An exception occurred")
+                    use_new = 0
 
                 stampDesc = stamp.find('stampDesc').text
                 print(stampDesc)
+
                 if stampDesc is None:
-                    stampDesc =""
+                    stampDesc = ""
                 stampNbr = stamp.find('stampNbr').text
                 print(stampNbr)
                 stampValue = stamp.find('stampValue').text
@@ -587,9 +597,18 @@ class Window(QMainWindow):
                 pixmap = self.bytesToPixmap(pixmapitem)
                 #pixmap = self.bytesToPixmap2(pixmapitem)
                 #print("after pix")
-                stamp.createStampPix(currentPage, str(stampNbr), str(stampValue), str(stampDesc),
-                                     float(width) * (25.4 / 96.0), float(height) * (25.4 / 96.0),
-                                     float(x), float(y), pixmap)
+                #stamp.createStampPix(currentPage, str(stampNbr), str(stampValue), str(stampDesc),
+                #                     float(width) * (25.4 / 96.0), float(height) * (25.4 / 96.0),
+                #                     float(x), float(y), pixmap)
+
+                if use_new == 1:
+                    stamp.createStampPix(currentPage, str(stampNbr), str(stampValue), str(stampDesc),
+                                        float(stampBox_width), float(stampBox_height),
+                                        float(x), float(y), pixmap)
+                else:
+                    stamp.createStampPix(currentPage, str(stampNbr), str(stampValue), str(stampDesc),
+                                        float(width) * (25.4 / 96.0), float(height) * (25.4 / 96.0),
+                                        float(x), float(y), pixmap)
                 print("after stamp")
     # save an album to a file
     def saveAlbumToFile(self):
@@ -611,8 +630,6 @@ class Window(QMainWindow):
             print(fileName.rsplit('.', maxsplit=1)[0])
             fileName = fileName.rsplit('.', maxsplit=1)[0]
 
-
-        #fileName = "albumfile.xml"
         root = ET.Element("album")
 
         for x in range(self.tabs.count()):
@@ -684,6 +701,8 @@ class Window(QMainWindow):
                             size = ET.SubElement(stamp, stampItem.data(0))
                             ET.SubElement(size, "width").text = str(stampItem.boundingRect().width())
                             ET.SubElement(size, "height").text = str(stampItem.boundingRect().height())
+                            ET.SubElement(size, "stampBox_width").text = str(int(stampItem.data(1)))
+                            ET.SubElement(size, "stampBox_height").text = str(int(stampItem.data(2)))
 
         print("finished")
         tree = ET.ElementTree(root)
@@ -732,7 +751,6 @@ class Window(QMainWindow):
 
         p.end()
 
-
     # print all pages
     def printPreviewAllPagesOld(self):
         print("print all pages")
@@ -772,8 +790,6 @@ class Window(QMainWindow):
             currentScene.render(p, target, source)
 
         p.end()
-
-
 
     # print all pages
     def printPreviewAllPages(self):

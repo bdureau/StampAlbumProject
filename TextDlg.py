@@ -108,10 +108,11 @@ class TextDlg(QDialog):
 
             # unfortunately does not get the alignment...
             align = format.alignment()
-            #align = Qt.AlignRight
+            #align = Qt.AlignCenter
             print(align)
             self.eTXT.selectAll()
             self.eTXT.setAlignment(align)
+
 
 
         flo = QFormLayout()

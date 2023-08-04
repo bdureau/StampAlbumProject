@@ -99,7 +99,7 @@ class Page(QGraphicsScene):
         group.setData(3, margin_left)
         self.addItem(group)
 
-    def addTextLabel(self, text, x=20, y=20, font=None, align=Qt.AlignLeft):
+    def addTextLabel(self, text, x=20, y=20, font=None, align=Qt.AlignCenter):
         textLabel = QGraphicsTextItem(text)
         textLabel.setData(0, "textLabel")
 
@@ -363,7 +363,7 @@ class Page(QGraphicsScene):
         if res == QDialog.Rejected:
             print("Clicked cancel")
 
-    # create a new copy right and add it at the bottom right of the page
+    # create a new copyright and add it at the bottom right of the page
     def newCopyRight(self):
         text = "CopyRight © Boris du Reau 2003-2023"
         #todo, do it from config

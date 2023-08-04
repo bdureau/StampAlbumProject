@@ -171,10 +171,7 @@ class StampDlg(QDialog):
         fLayout.addRow("", rbGroup)
 
         # ok /cancel button
-        # bb = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        # #bb.accepted.connect(self.accept)
-        # bb.accepted.connect(self.createStamp)
-        # bb.rejected.connect(self.reject)
+
         createButton = QPushButton(self.tr(_("&Create")))
         createButton.setDefault(True)
 
