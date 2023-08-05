@@ -109,16 +109,34 @@ class Window(QMainWindow):
         palette.setColor(tab1.backgroundRole(), Qt.lightGray)
         tab1.setPalette(palette)
         self.pageCount = self.pageCount + 1
-        currentPage = self.tabs.addTab(tab1, "Page " + str(self.pageCount))
-        self.tabs.setCurrentIndex(currentPage)
+        #currentPage = self.tabs.addTab(tab1, "Page " + str(self.pageCount))
+        currentPage = self.tabs.insertTab(self.tabs.currentIndex()+1, tab1, "Page " + str(self.tabs.count().real))
 
+        # rename all pages after insert
+        #for tab in self.tabs:
+        #    self.tabs.currentWidget().setWindowTitle("toto")
+
+        for x in range(0, self.tabs.count().real):
+            self.tabs.setCurrentIndex(x)
+            self.tabs.setTabText(self.tabs.currentIndex(), "Page " + str(x+1))
+
+        self.tabs.setCurrentIndex(currentPage)
         return page
 
     # delete current page
     def deleteCurrentPage(self):
+        qm = QMessageBox()
+        ret = qm.question(self, '', "Are you sure you want to delete the current page?", qm.Yes | qm.No)
+
+        if ret == qm.No:
+            return
         # only allow delete if number of page is greater than one
         if self.tabs.count().real > 0:
             self.tabs.removeTab(self.tabs.currentIndex())
+
+            for x in range(0, self.tabs.count().real):
+                self.tabs.setCurrentIndex(x)
+                self.tabs.setTabText(self.tabs.currentIndex(), "Page " + str(x + 1))
 
     # remove all pages
     def deleteAllPages(self):
@@ -948,11 +966,15 @@ class Window(QMainWindow):
 
     # application on line help
     def help(self):
-        dlg = HelpDlg()
-        res = dlg.exec_()
-
-        if res == QDialog.Accepted:
-            print("Clicked ok")
+        #os.system('xdg-open ' + "Help/StampAlbum Manuel utilisateur 01-08-2023.pdf")
+        #os.startfile("Help/StampAlbum Manuel utilisateur 01-08-2023.pdf")
+        if sys.platform.startswith('win32'):
+            os.startfile("Help\\StampAlbum Manuel utilisateur 01-08-2023.pdf")
+        # dlg = HelpDlg()
+        # res = dlg.exec_()
+        #
+        # if res == QDialog.Accepted:
+        #     print("Clicked ok")
 
     # align menu functions
     def alignBottom(self):
