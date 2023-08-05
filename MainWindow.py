@@ -147,8 +147,16 @@ class Window(QMainWindow):
 
     def deleteAlbum(self):
         print("delete current album")
+        qm = QMessageBox()
+        ret = qm.question(self, '', "Are you sure you want to delete the entire album?", qm.Yes | qm.No)
+
+        if ret == qm.No:
+            return
+        self.deleteAllPages()
+
     def newBorder(self):
         print("change border")
+
     def _createMenuBar(self):
         menuBar = self.menuBar()
         # Creating menus using a QMenu object
@@ -390,6 +398,7 @@ class Window(QMainWindow):
         fileToolBar.addAction(self.saveAction)
         fileToolBar.addAction(self.printPDFAction)
         fileToolBar.addAction(self.printPreviewAction)
+        fileToolBar.addAction(self.exitAction)
 
         # Edit toolbar
         editToolBar = QToolBar("Edit", self)

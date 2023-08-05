@@ -50,6 +50,7 @@ class Page(QGraphicsScene):
 
     def getPageName(self):
         return ""
+
     def addBorder(self, boxWidth, boxHeight, margin_left, margin_right, margin_top, margin_bottom):
         borderBox = QGraphicsRectItem(0, 0, boxWidth, boxHeight)
         boxPen = QPen()
@@ -99,7 +100,7 @@ class Page(QGraphicsScene):
         group.setData(3, margin_left)
         self.addItem(group)
 
-    def addTextLabel(self, text, x=20, y=20, font=None, align=Qt.AlignCenter):
+    def addTextLabel(self, text, x=20, y=20, font=None, align=Qt.AlignCenter, labelType ="textLabel"):
         textLabel = QGraphicsTextItem(text)
         textLabel.setData(0, "textLabel")
 
@@ -118,6 +119,7 @@ class Page(QGraphicsScene):
 
         textLabel.setPos(x, y)
         textLabel.setFlags(QGraphicsTextItem.ItemIsMovable | QGraphicsTextItem.ItemIsSelectable)
+        textLabel.setData(0, labelType)
 
         textLabel.setSelected(True)
         self.addItem(textLabel)
@@ -217,8 +219,6 @@ class Page(QGraphicsScene):
             stampObj['stampBox_boxHeight'] = height
             stampObj['pixmapItem_image'] = dlg.photo.pixmap()
             stamp.updateStamp(stampItem, stampObj)
-
-
 
     def printPagePDF(self,fileName2):
 
@@ -366,7 +366,7 @@ class Page(QGraphicsScene):
     # create a new copyright and add it at the bottom right of the page
     def newCopyRight(self):
         text = "CopyRight © Boris du Reau 2003-2023"
-        #todo, do it from config
+        #get it from config
         configParser = configparser.RawConfigParser()
         configFilePath = r'stamp_album.cfg'
         configParser.read(configFilePath)
@@ -377,7 +377,20 @@ class Page(QGraphicsScene):
 
         font = QFont()
         font.setPointSize(6)
-        self.addTextLabel(text, 80, 1045, font, Qt.AlignLeft)
+        self.addTextLabel(text, 80, 1045, font, Qt.AlignLeft, "labelCopyRight")
+
+    def newPageNbr(self, pageName):
+        print("new page number")
+        font = QFont()
+        font.setPointSize(8)
+        self.addTextLabel(pageName, 80, 1045, font, Qt.AlignLeft, "labelPageNbr")
+
+    def addYear(self, year):
+        print("add year")
+        font = QFont()
+        font.setPointSize(8)
+        font.setBold(True)
+        self.addTextLabel(year, 80, 1045, font, Qt.AlignLeft, "labelYear")
 
     def alignTop(self):
         print("")
@@ -565,7 +578,6 @@ class Page(QGraphicsScene):
 
         else:
             return
-
 
     def mouseDoubleClickEvent(self, event):
         print("mouse move double clicked on page")

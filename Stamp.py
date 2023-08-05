@@ -82,8 +82,8 @@ class Stamp:
     # Create stamp
     def createStampPix(self, scene, nbr, value, desc, boxWidth, boxHeight, x, y, pixmap):
         print("createStampPix")
-        print(boxWidth)
-        print(boxHeight)
+        #print(boxWidth)
+        #print(boxHeight)
         stampDesc = QGraphicsTextItem(desc)
 
         stampDesc.setTextWidth(stampDesc.boundingRect().size().width())

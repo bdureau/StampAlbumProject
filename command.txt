@@ -1,0 +1,4 @@
+pyinstaller main.py --onefile --windowed --icon=stamp_book1170.ico
+python C:\Users\bdure\AppData\Local\Programs\Python\Python39\Tools\i18n\pygettext.py -d main main.py
+
+python C:\Users\bdure\AppData\Local\Programs\Python\Python39\Tools\i18n\msgfmt.py  locale/fr/LC_MESSAGES/MainWindow.po
