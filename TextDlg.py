@@ -90,6 +90,7 @@ class TextDlg(QDialog):
 
         myFont = self.eTXT.font()
         self.fontSize.setCurrentText(str(myFont.pointSize()))
+
         self.fontSize.currentTextChanged.connect(self.fontSizeClicked)
 
         if txtObj is None:
@@ -97,6 +98,9 @@ class TextDlg(QDialog):
         else:
             self.eTXT.setPlainText(txtObj.toPlainText())
             self.eTXT.setFont(txtObj.font())
+            print(txtObj.font().pointSize())
+            self.fontSize.setCurrentText(str(txtObj.font().pointSize()))
+            #txtObj.font()
             #self.eTXT.setAlignment(txtObj.alignment())
             #self.eTXT.setAlignment()
             cursor = txtObj.textCursor()

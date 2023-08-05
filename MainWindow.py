@@ -145,6 +145,10 @@ class Window(QMainWindow):
             self.tabs.removeTab(self.tabs.currentIndex())
         self.pageCount = 0
 
+    def deleteAlbum(self):
+        print("delete current album")
+    def newBorder(self):
+        print("change border")
     def _createMenuBar(self):
         menuBar = self.menuBar()
         # Creating menus using a QMenu object
@@ -183,6 +187,7 @@ class Window(QMainWindow):
         pageMenu.addAction(self.newPageAction)
         pageMenu.addAction(self.deletePageAction)
         pageMenu.addAction(self.drawGridAction)
+        pageMenu.addAction(self.deleteAlbumAction)
 
         # object menu
         objectMenu = menuBar.addMenu(_("Objects"))
@@ -194,6 +199,7 @@ class Window(QMainWindow):
         # Config menu
         configMenu = menuBar.addMenu(_("&Config"))
         configMenu.addAction(self.setupAppAction)
+
         # help menu
         helpMenu = menuBar.addMenu(_("&Help"))
         helpMenu.addAction(self.helpContentAction)
@@ -270,6 +276,10 @@ class Window(QMainWindow):
         # stamp actions
         self.newStampAction = QAction(_("New Stamp ..."), self)
         self.editStampAction = QAction(_("Edit Current Stamp ..."), self)
+        stampIcon = QIcon()
+        stampIcon.addPixmap(QPixmap("images/stamp.png"), QIcon.Normal, QIcon.Off)
+        self.newStampAction.setIcon(stampIcon)
+        # todo add icon
 
         # pages action
         self.newPageAction = QAction(_("New Page ..."), self)
@@ -286,6 +296,12 @@ class Window(QMainWindow):
         iconDrawGrid  = QIcon()
         iconDrawGrid.addPixmap(QPixmap("images/grid.png"), QIcon.Normal, QIcon.Off)
         self.drawGridAction.setIcon(iconDrawGrid)
+
+        self.deleteAlbumAction = QAction(_("Delete Album ..."), self)
+        iconDelete = QIcon()
+        iconDelete.addPixmap(QPixmap("images/trash.png"), QIcon.Normal, QIcon.Off)
+        self.deleteAlbumAction.setIcon(iconDelete)
+
 
         # object action
         self.newTextAction = QAction(_("New text ..."), self)
@@ -367,7 +383,7 @@ class Window(QMainWindow):
         self.aboutAction.setIcon(iconAbout)
 
     def _createToolBars(self):
-        # Using a title
+        # File toolbar
         fileToolBar = self.addToolBar("File")
         fileToolBar.addAction(self.newAction)
         fileToolBar.addAction(self.openAction)
@@ -375,19 +391,22 @@ class Window(QMainWindow):
         fileToolBar.addAction(self.printPDFAction)
         fileToolBar.addAction(self.printPreviewAction)
 
-        # Using a QToolBar object
+        # Edit toolbar
         editToolBar = QToolBar("Edit", self)
         editToolBar.addAction(self.copyAction)
         editToolBar.addAction(self.pasteAction)
         editToolBar.addAction(self.cutAction)
         self.addToolBar(editToolBar)
 
+        # page toolbar
         pageToolBar = QToolBar("Page", self)
         pageToolBar.addAction(self.newPageAction)
         pageToolBar.addAction(self.deletePageAction)
         pageToolBar.addAction(self.drawGridAction)
+        pageToolBar.addAction(self.deleteAlbumAction)
         self.addToolBar(pageToolBar)
 
+        # align toolbar
         alignToolBar = QToolBar("Align", self)
         alignToolBar.addAction(self.alignLeftAction)
         alignToolBar.addAction(self.alignRightAction)
@@ -398,14 +417,26 @@ class Window(QMainWindow):
         alignToolBar.addAction(self.centerHorizontallyAction)
         alignToolBar.addAction(self.centerVerticallyAction)
         self.addToolBar(alignToolBar)
+        self.addToolBarBreak()
 
-        # Using a QToolBar object and a toolbar area
+        # stamp toolbar
+        stampToolBar = QToolBar("Stamp", self)
+        stampToolBar.addAction(self.newStampAction)
+        self.addToolBar(stampToolBar)
+
+        # objects toolbar
+        objectToolBar = QToolBar("Objects", self)
+        objectToolBar.addAction(self.newTextAction)
+        self.addToolBar(objectToolBar)
+
+        # Help QToolBar
         helpToolBar = QToolBar("Help", self)
         helpToolBar.addAction(self.helpContentAction)
         helpToolBar.addAction(self.aboutAction)
         helpToolBar.addAction(self.setupAppAction)
         self.addToolBar(helpToolBar)
 
+        # status bar
         statusBar = QStatusBar(self)
         statusBar.setObjectName("statusBar")
         self.setStatusBar(statusBar)
@@ -449,19 +480,19 @@ class Window(QMainWindow):
         self.newPageAction.triggered.connect(self.newPage)
         self.deletePageAction.triggered.connect(self.deleteCurrentPage)
         self.drawGridAction.triggered.connect(self.gridOnOff)
-
+        self.deleteAlbumAction.triggered.connect(self.deleteAlbum)
 
         # objects actions
         self.newTextAction.triggered.connect(self.createText)
         self.newCopyRightAction.triggered.connect(self.newCopyRight)
         self.newImageAction.triggered.connect(self.newImage)
+        self.newBorderAction.triggered.connect(self.newBorder)
 
         # help actions
         self.aboutAction.triggered.connect(self.about)
         self.helpContentAction.triggered.connect(self.help)
 
     # file menu functions
-
     # delete all pages and create a new file
     def newFile(self):
         # Logic for creating a new file goes here...
@@ -638,15 +669,17 @@ class Window(QMainWindow):
                                                   "Album Files (*.sta)", options=options)
         if fileName:
             print(fileName)
-            fileNameArray = fileName.split(".")
-            print(fileNameArray[1])
-            print(len(fileNameArray))
+            if fileName.find(".") != -1:
+                fileNameArray = fileName.split(".")
+                print(fileNameArray[1])
+                print(len(fileNameArray))
+                if (fileNameArray[len(fileNameArray) - 1] == "sta"):
+                    print(fileName.rsplit('.', maxsplit=1)[0])
+                    fileName = fileName.rsplit('.', maxsplit=1)[0]
         else:
             return
 
-        if (fileNameArray[len(fileNameArray) - 1] == "sta"):
-            print(fileName.rsplit('.', maxsplit=1)[0])
-            fileName = fileName.rsplit('.', maxsplit=1)[0]
+
 
         root = ET.Element("album")
 
@@ -730,6 +763,9 @@ class Window(QMainWindow):
         f = gzip.open(fileName + '.sta', 'wb')
         ET.ElementTree(root).write(f)
         f.close()
+        # delete uncompressed file
+        if os.path.isfile(fileName):
+            os.remove(fileName)
 
     # print all pages
     def printAllPagesPDF(self):
