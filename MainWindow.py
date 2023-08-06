@@ -45,8 +45,10 @@ class Window(QMainWindow):
         super().__init__(parent)
         self.setWindowTitle("Stamp album")
         self.setWindowIcon(QtGui.QIcon('stamp_book1170.png'))
-        self.setMaximumWidth(222 / (25.4 / 96))
+        #self.setMaximumWidth(222 / (25.4 / 96))
+        #self.setMaximumWidth(422 / (25.4 / 96))
         self.resize(222 / (25.4 / 96), 800)
+        #self.resize(422 / (25.4 / 96), 800)
         self.pageCount = 0
         self.lastStampObj = {}
         self.lastStampObj['country'] = None
@@ -70,6 +72,17 @@ class Window(QMainWindow):
         self._createToolBars()
         self._connectActions()
 
+    def closeEvent(self, event):
+        print("User has clicked the red x on the main window")
+        qm = QMessageBox()
+        ret = qm.question(self, 'Exit', "Are you sure you want to exit the application?", qm.Yes | qm.No)
+
+        if ret == qm.Yes:
+            event.accept()
+        else:
+            event.ignore()
+
+
     # Create a new page in a tab
     def newPage(self, _pageType=None, border=None):
         if _pageType is not None and (_pageType == 'portrait' or _pageType == 'landscape'):
@@ -89,39 +102,44 @@ class Window(QMainWindow):
                     self.pageType = "landscape"
                     border = True
 
-        page = Page(self.pageType, border)
+                page = Page(self.pageType, border)
 
-        view = GraphicsView(page)
+                view = GraphicsView(page)
 
-        view.resize(210 / (25.4 / 96), 297 / (25.4 / 96))
-        view.setRenderHint(QPainter.Antialiasing)
-        view.setMaximumHeight(297 / (25.4 / 96))
-        view.setMaximumWidth(210 / (25.4 / 96))
-        #scroll to top
-        view.scrollContentsBy(0,0)
-        tab1 = QWidget()
-        tab1.layout = QVBoxLayout(self)
-        tab1.layout.addWidget(view)
-        tab1.setLayout(tab1.layout)
-        tab1.setAutoFillBackground(True)
+                view.resize(210 / (25.4 / 96), 297 / (25.4 / 96))
+                view.setRenderHint(QPainter.Antialiasing)
 
-        palette = tab1.palette()
-        palette.setColor(tab1.backgroundRole(), Qt.lightGray)
-        tab1.setPalette(palette)
-        self.pageCount = self.pageCount + 1
-        #currentPage = self.tabs.addTab(tab1, "Page " + str(self.pageCount))
-        currentPage = self.tabs.insertTab(self.tabs.currentIndex()+1, tab1, "Page " + str(self.tabs.count().real))
+                if self.pageType == "portrait":
+                    view.setMaximumWidth(210 / (25.4 / 96))
+                    view.setMaximumHeight(297 / (25.4 / 96))
+                else:
+                    view.setMaximumWidth(297 / (25.4 / 96))
+                    view.setMaximumHeight(210 / (25.4 / 96))
+                #scroll to top
+                view.scrollContentsBy(0, 0)
+                tab1 = QWidget()
+                tab1.layout = QVBoxLayout(self)
+                tab1.layout.addWidget(view)
+                tab1.setLayout(tab1.layout)
+                tab1.setAutoFillBackground(True)
 
-        # rename all pages after insert
-        #for tab in self.tabs:
-        #    self.tabs.currentWidget().setWindowTitle("toto")
+                palette = tab1.palette()
+                palette.setColor(tab1.backgroundRole(), Qt.lightGray)
+                tab1.setPalette(palette)
+                self.pageCount = self.pageCount + 1
+                #currentPage = self.tabs.addTab(tab1, "Page " + str(self.pageCount))
+                currentPage = self.tabs.insertTab(self.tabs.currentIndex()+1, tab1, "Page " + str(self.tabs.count().real))
 
-        for x in range(0, self.tabs.count().real):
-            self.tabs.setCurrentIndex(x)
-            self.tabs.setTabText(self.tabs.currentIndex(), "Page " + str(x+1))
+                # rename all pages after insert
+                #for tab in self.tabs:
+                #    self.tabs.currentWidget().setWindowTitle("toto")
 
-        self.tabs.setCurrentIndex(currentPage)
-        return page
+                for x in range(0, self.tabs.count().real):
+                    self.tabs.setCurrentIndex(x)
+                    self.tabs.setTabText(self.tabs.currentIndex(), "Page " + str(x+1))
+
+                self.tabs.setCurrentIndex(currentPage)
+                return page
 
     # delete current page
     def deleteCurrentPage(self):
@@ -148,7 +166,7 @@ class Window(QMainWindow):
     def deleteAlbum(self):
         print("delete current album")
         qm = QMessageBox()
-        ret = qm.question(self, '', "Are you sure you want to delete the entire album?", qm.Yes | qm.No)
+        ret = qm.question(self, 'Delete album', "Are you sure you want to delete the entire album?", qm.Yes | qm.No)
 
         if ret == qm.No:
             return
@@ -156,6 +174,34 @@ class Window(QMainWindow):
 
     def newBorder(self):
         print("change border")
+        print(self.getCurrentPageScene().pageType)
+        if self.getCurrentPageScene().pageType == "portrait":
+            #self.setSceneRect(0, 0, 210 / (25.4 / 96), 297 / (25.4 / 96))
+            self.getCurrentPageScene().addBorder(177 / (25.4 / 96.0),
+                           272 / (25.4 / 96.0),
+                           19 / (25.4 / 96.0),
+                           0,
+                           #10 / (25.4 / 96.0),
+                           0,
+                           0)
+        else:
+            #self.setSceneRect(0, 0, 297 / (25.4 / 96), 210 / (25.4 / 96))
+            self.getCurrentPageScene().addBorder(272 / (25.4 / 96.0),
+                           177 / (25.4 / 96.0),
+                           ((297-272) / 2) / (25.4 / 96.0),
+                           0,
+                           19 / (25.4 / 96.0),
+                           0)
+
+    def exitApp(self):
+        print("exit app")
+        qm = QMessageBox()
+        ret = qm.question(self, 'Exit', "Are you sure you want to exit the application?", qm.Yes | qm.No)
+
+        if ret == qm.No:
+            return
+
+        self.close()
 
     def _createMenuBar(self):
         menuBar = self.menuBar()
@@ -203,6 +249,9 @@ class Window(QMainWindow):
         objectMenu.addAction(self.newImageAction)
         objectMenu.addAction(self.newBorderAction)
         objectMenu.addAction(self.newCopyRightAction)
+        objectMenu.addAction(self.newCopyRightAllPagesAction)
+        objectMenu.addAction(self.newPageNbrAction)
+        objectMenu.addAction(self.newPageNbrAllPagesAction)
 
         # Config menu
         configMenu = menuBar.addMenu(_("&Config"))
@@ -327,10 +376,25 @@ class Window(QMainWindow):
         iconCopyright.addPixmap(QPixmap("images/copyright.png"), QIcon.Normal, QIcon.Off)
         self.newCopyRightAction.setIcon(iconCopyright)
 
+        self.newCopyRightAllPagesAction = QAction(_("New copyright all pages"), self)
+        iconCopyrightAllPages = QIcon()
+        iconCopyrightAllPages.addPixmap(QPixmap("images/page_copyright.png"), QIcon.Normal, QIcon.Off)
+        self.newCopyRightAllPagesAction.setIcon(iconCopyrightAllPages)
+
         self.newBorderAction = QAction(_("New Page border"), self)
         iconNewBorder = QIcon()
         iconNewBorder.addPixmap(QPixmap("images/border.png"), QIcon.Normal, QIcon.Off)
         self.newBorderAction.setIcon(iconNewBorder)
+
+        self.newPageNbrAction = QAction(_("New page nbr"), self)
+        iconPageNbr = QIcon()
+        iconPageNbr.addPixmap(QPixmap("images/number.png"), QIcon.Normal, QIcon.Off)
+        self.newPageNbrAction.setIcon(iconPageNbr)
+
+        self.newPageNbrAllPagesAction = QAction(_("New page nbr all pages"), self)
+        iconPageNbrAllPages = QIcon()
+        iconPageNbrAllPages.addPixmap(QPixmap("images/number.png"), QIcon.Normal, QIcon.Off)
+        self.newPageNbrAllPagesAction.setIcon(iconPageNbrAllPages)
 
         # align actions
         self.alignLeftAction = QAction(_("Align Left"), self)
@@ -462,7 +526,7 @@ class Window(QMainWindow):
         self.printPreviewAction.triggered.connect(self.printPreviewAllPages)
         self.printAction.triggered.connect(self.printPage)
 
-        self.exitAction.triggered.connect(self.close)
+        self.exitAction.triggered.connect(self.exitApp)
 
         # edit actions
         self.copyAction.triggered.connect(self.copy)
@@ -494,8 +558,11 @@ class Window(QMainWindow):
         # objects actions
         self.newTextAction.triggered.connect(self.createText)
         self.newCopyRightAction.triggered.connect(self.newCopyRight)
+        self.newCopyRightAllPagesAction.triggered.connect(self.newCopyRightAllPages)
         self.newImageAction.triggered.connect(self.newImage)
         self.newBorderAction.triggered.connect(self.newBorder)
+        self.newPageNbrAction.triggered.connect(self.newPageNbr)
+        self.newPageNbrAllPagesAction.triggered.connect(self.newPageNbrAllPages)
 
         # help actions
         self.aboutAction.triggered.connect(self.about)
@@ -516,6 +583,29 @@ class Window(QMainWindow):
         self.deleteAllPages()
         # Create one empty page
         self.newPage(None, True)
+
+    def newPageNbr(self):
+        print("")
+        self.getCurrentPageScene().newPageNbr()
+
+    def newPageNbrAllPages(self):
+        print("Create new  nbr")
+        dlg = TextDlg()
+        res = dlg.exec_()
+
+        if res == QDialog.Accepted:
+            print("Clicked ok")
+            text = dlg.eTXT.toPlainText()
+            font = dlg.eTXT.font()
+            align = dlg.eTXT.alignment()
+
+            for x in range(0, self.tabs.count().real):
+                #self.tabs.removeTab(self.tabs.currentIndex())
+                self.tabs.setCurrentIndex(x)
+                self.getCurrentPageScene().addPageNbr(text + " " + str(self.tabs.currentIndex() + 1))
+
+        if res == QDialog.Rejected:
+            print("Clicked cancel")
 
     # open an album from a file
     def openAlbumFile(self):
@@ -945,6 +1035,7 @@ class Window(QMainWindow):
             currentScene.render(p, target, source)
 
         p.end()
+
     # print current page and save it to PDF
     def printPagePDF(self):
         print("print to PDF")
@@ -1055,7 +1146,7 @@ class Window(QMainWindow):
     def about(self):
         aboutMsg = QMessageBox()
         aboutMsg.setWindowTitle(_("About Stamp Album"))
-        aboutMsg.setText(_("Stamp Album ver5.0 \n Copyright Boris du Reau 2003-2023"))
+        aboutMsg.setText(_("Stamp Album ver5.0.1 \n Copyright Boris du Reau 2003-2023"))
         aboutMsg.setIcon(QMessageBox.Information)
         aboutMsg.exec_()
 
@@ -1224,6 +1315,13 @@ class Window(QMainWindow):
     # add a copyright to the page
     def newCopyRight(self):
         self.getCurrentPageScene().newCopyRight()
+
+    def newCopyRightAllPages(self):
+        print("newCopyRightAllPages")
+        for x in range(0, self.tabs.count().real):
+            print(x)
+            self.tabs.setCurrentIndex(x)
+            self.getCurrentPageScene().newCopyRight()
 
     def newImage(self):
         options = QFileDialog.Options()

@@ -28,7 +28,7 @@ class Page(QGraphicsScene):
     def __init__(self, pageType = "portrait", border=None, parent=None):
         super(Page, self).__init__(parent)
         self.pageType = pageType
-        if pageType == "portrait":
+        if self.pageType == "portrait":
             self.setSceneRect(0, 0, 210 / (25.4 / 96), 297 / (25.4 / 96))
             if border is not None and border:
                 self.addBorder(177 / (25.4 / 96.0),
@@ -377,13 +377,41 @@ class Page(QGraphicsScene):
 
         font = QFont()
         font.setPointSize(6)
-        self.addTextLabel(text, 80, 1045, font, Qt.AlignLeft, "labelCopyRight")
+        if self.pageType == "portrait":
+            self.addTextLabel(text, 80, 1045, font, Qt.AlignLeft, "labelCopyRight")
+        else:
+            self.addTextLabel(text, 60, 710, font, Qt.AlignLeft, "labelCopyRight")
 
-    def newPageNbr(self, pageName):
+
+    def newPageNbr(self):
+        print("Create new  nbr")
+        dlg = TextDlg()
+        res = dlg.exec_()
+
+        if res == QDialog.Accepted:
+            print("Clicked ok")
+            text = dlg.eTXT.toPlainText()
+            font = dlg.eTXT.font()
+            align = dlg.eTXT.alignment()
+
+            self.addPageNbr(text)
+
+        if res == QDialog.Rejected:
+            print("Clicked cancel")
+
+
+
+    def addPageNbr(self, pageName):
         print("new page number")
         font = QFont()
         font.setPointSize(8)
-        self.addTextLabel(pageName, 80, 1045, font, Qt.AlignLeft, "labelPageNbr")
+        textLabel = QGraphicsTextItem(pageName)
+        textLabel.setFont(font)
+        textWidth = textLabel.boundingRect().size().width()
+        if self.pageType == "portrait":
+            self.addTextLabel(pageName, (210 / (25.4 / 96)) - 60 - textWidth, 1045, font, Qt.AlignLeft, "labelPageNbr")
+        else:
+            self.addTextLabel(pageName, (297 / (25.4 / 96)) - 60 - textWidth, 710, font, Qt.AlignLeft, "labelPageNbr")
 
     def addYear(self, year):
         print("add year")
