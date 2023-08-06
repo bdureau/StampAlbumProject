@@ -589,6 +589,56 @@ class Window(QMainWindow):
 
                 currentPage.addTextLabel(label, float(x), float(y), myFont)
 
+            copyrightLabelsItems = it.findall('labelCopyRight')
+            for copyrightLabel in copyrightLabelsItems:
+                # print("labels!!")
+                label = copyrightLabel.find('label').text
+
+                font = copyrightLabel.find('font')
+                bold = font.find('bold').text
+                underline = font.find('underline').text
+                italic = font.find('italic').text
+                strikeOut = font.find('strikeOut').text
+                pointSize = font.find('pointSize').text
+
+                myFont = QFont()
+                myFont.setBold(self.str_to_bool(bold))
+                myFont.setUnderline(self.str_to_bool(underline))
+                myFont.setItalic(self.str_to_bool(italic))
+                myFont.setStrikeOut(self.str_to_bool(strikeOut))
+                myFont.setPointSize(int(pointSize))
+
+                pos = copyrightLabel.find('labelPos')
+                x = pos.find('x').text
+                y = pos.find('y').text
+
+                currentPage.addTextLabel(label, float(x), float(y), myFont, Qt.AlignLeft, "labelCopyRight")
+
+            yearLabelsItems = it.findall('labelYear')
+            for yearLabel in yearLabelsItems:
+                # print("year labels!!")
+                label = yearLabel.find('label').text
+
+                font = yearLabel.find('font')
+                bold = font.find('bold').text
+                underline = font.find('underline').text
+                italic = font.find('italic').text
+                strikeOut = font.find('strikeOut').text
+                pointSize = font.find('pointSize').text
+
+                myFont = QFont()
+                myFont.setBold(self.str_to_bool(bold))
+                myFont.setUnderline(self.str_to_bool(underline))
+                myFont.setItalic(self.str_to_bool(italic))
+                myFont.setStrikeOut(self.str_to_bool(strikeOut))
+                myFont.setPointSize(int(pointSize))
+
+                pos = yearLabel.find('labelPos')
+                x = pos.find('x').text
+                y = pos.find('y').text
+
+                currentPage.addTextLabel(label, float(x), float(y), myFont, Qt.AlignCenter, "labelYear")
+
             # open the page border
             pageBorderItem = it.findall('borderGroup')
             for border in pageBorderItem:
