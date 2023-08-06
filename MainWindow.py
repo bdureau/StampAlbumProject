@@ -101,45 +101,47 @@ class Window(QMainWindow):
                     print("landscape")
                     self.pageType = "landscape"
                     border = True
+            if res == QDialog.Rejected:
+                return
 
-                page = Page(self.pageType, border)
+        page = Page(self.pageType, border)
 
-                view = GraphicsView(page)
+        view = GraphicsView(page)
 
-                view.resize(210 / (25.4 / 96), 297 / (25.4 / 96))
-                view.setRenderHint(QPainter.Antialiasing)
+        view.resize(210 / (25.4 / 96), 297 / (25.4 / 96))
+        view.setRenderHint(QPainter.Antialiasing)
 
-                if self.pageType == "portrait":
-                    view.setMaximumWidth(210 / (25.4 / 96))
-                    view.setMaximumHeight(297 / (25.4 / 96))
-                else:
-                    view.setMaximumWidth(297 / (25.4 / 96))
-                    view.setMaximumHeight(210 / (25.4 / 96))
-                #scroll to top
-                view.scrollContentsBy(0, 0)
-                tab1 = QWidget()
-                tab1.layout = QVBoxLayout(self)
-                tab1.layout.addWidget(view)
-                tab1.setLayout(tab1.layout)
-                tab1.setAutoFillBackground(True)
+        if self.pageType == "portrait":
+            view.setMaximumWidth(210 / (25.4 / 96))
+            view.setMaximumHeight(297 / (25.4 / 96))
+        else:
+            view.setMaximumWidth(297 / (25.4 / 96))
+            view.setMaximumHeight(210 / (25.4 / 96))
+        #scroll to top
+        view.scrollContentsBy(0, 0)
+        tab1 = QWidget()
+        tab1.layout = QVBoxLayout(self)
+        tab1.layout.addWidget(view)
+        tab1.setLayout(tab1.layout)
+        tab1.setAutoFillBackground(True)
 
-                palette = tab1.palette()
-                palette.setColor(tab1.backgroundRole(), Qt.lightGray)
-                tab1.setPalette(palette)
-                self.pageCount = self.pageCount + 1
-                #currentPage = self.tabs.addTab(tab1, "Page " + str(self.pageCount))
-                currentPage = self.tabs.insertTab(self.tabs.currentIndex()+1, tab1, "Page " + str(self.tabs.count().real))
+        palette = tab1.palette()
+        palette.setColor(tab1.backgroundRole(), Qt.lightGray)
+        tab1.setPalette(palette)
+        self.pageCount = self.pageCount + 1
+        #currentPage = self.tabs.addTab(tab1, "Page " + str(self.pageCount))
+        currentPage = self.tabs.insertTab(self.tabs.currentIndex()+1, tab1, "Page " + str(self.tabs.count().real))
 
-                # rename all pages after insert
-                #for tab in self.tabs:
-                #    self.tabs.currentWidget().setWindowTitle("toto")
+        # rename all pages after insert
+        #for tab in self.tabs:
+        #    self.tabs.currentWidget().setWindowTitle("toto")
 
-                for x in range(0, self.tabs.count().real):
-                    self.tabs.setCurrentIndex(x)
-                    self.tabs.setTabText(self.tabs.currentIndex(), "Page " + str(x+1))
+        for x in range(0, self.tabs.count().real):
+            self.tabs.setCurrentIndex(x)
+            self.tabs.setTabText(self.tabs.currentIndex(), "Page " + str(x+1))
 
-                self.tabs.setCurrentIndex(currentPage)
-                return page
+        self.tabs.setCurrentIndex(currentPage)
+        return page
 
     # delete current page
     def deleteCurrentPage(self):
@@ -652,10 +654,11 @@ class Window(QMainWindow):
             print("after page created")
             # get the current page
             currentPage = self.getCurrentPageScene()
+            print("after currentPage")
             # Open the text label
             textLabelsItems = it.findall('textLabel')
             for textLabel in textLabelsItems:
-                #print("labels!!")
+                print("labels!!")
                 label = textLabel.find('label').text
 
                 font = textLabel.find('font')
@@ -1258,9 +1261,12 @@ class Window(QMainWindow):
     # get the current page content
     def getCurrentPageScene(self):
         # get the current view and associated scene
+        print("getCurrentPageScene")
         for child in self.tabs.currentWidget().children():
+            print("child")
             if child.__class__.__name__ == "GraphicsView":
                 # return the current scene
+                print("I have a scene")
                 return child.scene()
 
     def getCurrentPage(self):
