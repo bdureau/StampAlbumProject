@@ -1,14 +1,15 @@
 
-from PyQt5.QtCore import QPointF, Qt, QRectF
-from PyQt5 import QtCore, QtGui, QtPrintSupport
-from PyQt5.QtWidgets import (
+from PyQt6.QtCore import QPointF, Qt, QRectF, QMarginsF
+from PyQt6 import QtCore, QtGui, QtPrintSupport
+from PyQt6.QtWidgets import (
     QGraphicsRectItem, QGraphicsScene, QGraphicsView, QApplication,
-    QLabel, QMainWindow, QMenuBar, QMenu, QToolBar, QAction,
+    QLabel, QMainWindow, QMenuBar, QMenu, QToolBar,
     QGraphicsTextItem, QGraphicsItemGroup,
     QGraphicsPixmapItem, QDialog, QLineEdit, QPushButton, QFormLayout, QFileDialog
     )
-from PyQt5.QtGui import QBrush, QPainter, QPen, QPixmap, QPolygonF, QFont, QTextCursor, QTextBlockFormat
-from PyQt5.QtPrintSupport import QPrintPreviewDialog, QPrinter, QPrintDialog
+from PyQt6.QtGui import QBrush, QPainter, QPen, QPixmap, QPolygonF, QFont, QTextCursor, QAction, QTextBlockFormat, \
+    QPageLayout, QPageSize
+from PyQt6.QtPrintSupport import QPrintPreviewDialog, QPrinter, QPrintDialog
 from StampDlg import StampDlg
 from TextDlg import TextDlg
 from Stamp import Stamp
@@ -54,7 +55,7 @@ class Page(QGraphicsScene):
     def addBorder(self, boxWidth, boxHeight, margin_left, margin_right, margin_top, margin_bottom):
         borderBox = QGraphicsRectItem(0, 0, boxWidth, boxHeight)
         boxPen = QPen()
-        boxPen.setColor(Qt.black)
+        boxPen.setColor(Qt.GlobalColor.black)
         boxPen.setWidth(1)
         borderBox.setPen(boxPen)
         borderBox.setData(1, boxWidth)
@@ -63,7 +64,7 @@ class Page(QGraphicsScene):
 
         borderBox2 = QGraphicsRectItem(0, 0, boxWidth - 4 - 6, (boxHeight-4-6))
         boxPen2 = QPen()
-        boxPen2.setColor(Qt.black)
+        boxPen2.setColor(Qt.GlobalColor.black)
         boxPen2.setWidth(4)
         borderBox2.setPen(boxPen2)
         borderBox2.setData(1, boxWidth - 4 - 6)
@@ -72,7 +73,7 @@ class Page(QGraphicsScene):
 
         borderBox3 = QGraphicsRectItem(0, 0, boxWidth - 4 - 6 - 9, (boxHeight - 4 - 6 - 9))
         boxPen3 = QPen()
-        boxPen3.setColor(Qt.black)
+        boxPen3.setColor(Qt.GlobalColor.black)
         boxPen3.setWidth(1)
         borderBox3.setPen(boxPen3)
         borderBox3.setData(1, boxWidth - 4 - 6 - 9)
@@ -100,7 +101,8 @@ class Page(QGraphicsScene):
         group.setData(3, margin_left)
         self.addItem(group)
 
-    def addTextLabel(self, text, x=20, y=20, font=None, align=Qt.AlignCenter, labelType ="textLabel"):
+    def addTextLabel(self, text, x=20, y=20, font=None, align=Qt.AlignmentFlag.AlignCenter, labelType ="textLabel"):
+
         textLabel = QGraphicsTextItem(text)
         textLabel.setData(0, "textLabel")
 
@@ -109,7 +111,7 @@ class Page(QGraphicsScene):
         textLabel.setTextWidth(textLabel.boundingRect().size().width())
 
         cursor = textLabel.textCursor()
-        cursor.select(QTextCursor.Document)
+        cursor.select(QTextCursor.SelectionType.Document)
         format = QTextBlockFormat()
         format.setAlignment(align)
         cursor.mergeBlockFormat(format)
@@ -118,7 +120,7 @@ class Page(QGraphicsScene):
 
 
         textLabel.setPos(x, y)
-        textLabel.setFlags(QGraphicsTextItem.ItemIsMovable | QGraphicsTextItem.ItemIsSelectable)
+        textLabel.setFlags(QGraphicsTextItem.GraphicsItemFlag.ItemIsMovable | QGraphicsTextItem.GraphicsItemFlag.ItemIsSelectable)
         textLabel.setData(0, labelType)
 
         textLabel.setSelected(True)
@@ -160,12 +162,43 @@ class Page(QGraphicsScene):
                 # This is a text label
                 self.editLabel(item)
 
+    def printObjectDebugInfo(self):
+        items = self.selectedItems()
+        nbrOfItems = 0
+        for item in items:
+            nbrOfItems = nbrOfItems + 1
+
+        if nbrOfItems > 1:
+            print("more than one item selected")
+            return
+
+        if nbrOfItems == 0:
+            print("no items selected")
+            return
+
+        itemType = 0
+        for item in items:
+
+            itemType = item.type().real
+
+            if itemType == 10:
+                # This is a stamp
+                #self.editStamp(item)
+                print("stamp")
+                print(item.pos().x())
+                print(item.pos().y())
+            elif itemType == 8:
+                # This is a text label
+                #self.editLabel(item)
+                print("text label")
+
     def editLabel(self, item):
 
         dlg = TextDlg(item)
-        res = dlg.exec_()
+        res = dlg.exec()
         print("edit label")
-        if res == QDialog.Accepted:
+        #accepted
+        if res == 1:
             text = dlg.eTXT.toPlainText()
 
             font = dlg.eTXT.font()
@@ -178,15 +211,15 @@ class Page(QGraphicsScene):
             item.setTextWidth(textLabel.boundingRect().size().width())
             print("edit format")
             cursor = item.textCursor()
-            cursor.select(QTextCursor.Document)
+            cursor.select(QTextCursor.SelectionType.Document)
             format = QTextBlockFormat()
 
             align = dlg.eTXT.alignment()
-            if align == Qt.AlignLeft:
+            if align == Qt.AlignmentFlag.AlignLeft:
                 print("Qt.AlignLeft")
-            if align == Qt.AlignRight:
+            if align == Qt.AlignmentFlag.AlignRight:
                 print("Qt.AlignRight")
-            if align == Qt.AlignCenter:
+            if align == Qt.AlignmentFlag.AlignCenter:
                 print("Qt.AlignCenter")
             print(align)
             format.setAlignment(align)
@@ -194,20 +227,24 @@ class Page(QGraphicsScene):
             cursor.clearSelection()
             item.setTextCursor(cursor)
 
-            item.setFlags(QGraphicsTextItem.ItemIsMovable | QGraphicsTextItem.ItemIsSelectable)
+            item.setFlags(QGraphicsTextItem.GraphicsItemFlag.ItemIsMovable | QGraphicsTextItem.GraphicsItemFlag.ItemIsSelectable)
 
             #self.removeItem(item)
             #self.addItem(item)
 
-        if res == QDialog.Rejected:
+        #rejected
+        if res == 0:
             print("Clicked cancel")
 
     def editStamp(self, stampItem):
         stamp = Stamp()
+        print("before read stamp")
         stampObj = stamp.readStamp(stampItem)
+        print("after read stamp")
         dlg = EditStampDlg(stampObj)
-        res = dlg.exec_()
-        if res == QDialog.Accepted:
+        res = dlg.exec()
+        # accepted
+        if res == 1:
             stampObj['stampDesc_text'] = dlg.eTitle.toPlainText()
             stampObj['stampNbr_text'] = dlg.eNbr.text()
             stampObj['stampValue_text'] = dlg.eValue.toPlainText()
@@ -218,55 +255,72 @@ class Page(QGraphicsScene):
             height = ret[1]
             stampObj['stampBox_boxHeight'] = height
             stampObj['pixmapItem_image'] = dlg.photo.pixmap()
-            stamp.updateStamp(stampItem, stampObj)
+            print("update stamp")
+            stamp.updateStamp2(stampItem, stampObj, self)
+
 
     def printPagePDF(self,fileName2):
-
-
+        print("printPagePDF")
         # first unselect all objects
         for item in self.items():
             item.setSelected(False)
 
-        printer = QPrinter(QPrinter.HighResolution)
+        printer = QPrinter(QPrinter.PrinterMode.HighResolution)
+        print("printPagePDF2")
+        #printer.setPageSize(QtGui.QPagedPaintDevice.A4)
+        #printer.setPageSize(QPageSize.PageSizeId.A4, )
+        #QtGui.QPageLayout.pageSize(QPageLayout.pageSize().PageSizeId.A4)
 
-        printer.setPageSize(QtGui.QPagedPaintDevice.A4)
+        #QtGui.QPagedPaintDevice.PaintDeviceMetric.
 
 
         if self.pageType == "portrait":
-            printer.setPageOrientation(0)
+            #printer.setPageOrientation(0)
+            printer.setPageOrientation(QPageLayout.Orientation.Portrait)
         else:
-            printer.setPageOrientation(1)
+            #printer.setPageOrientation(1)
+            printer.setPageOrientation(QPageLayout.Orientation.Landscape)
 
-        printer.setOutputFormat(QPrinter.PdfFormat)
-
+        print("printPagePDF3")
+        printer.setOutputFormat(QPrinter.OutputFormat.PdfFormat)
+        print("printPagePDF4")
         printer.setOutputFileName(fileName2)
         scale = printer.resolution() / 96.0
+        print("printPagePDF5")
+        #printer.setPageMargins(0, 0, 0, 0, QPrinter.Unit.Millimeter)
+        #margin = QMarginsF(0,0,0,0)
+        print("printPagePDF5-1")
+        #printer.setPageMargins(margin, QPrinter.Unit.Millimeter)
 
-        printer.setPageMargins(0, 0, 0, 0, QPrinter.Unit.Millimeter)
+        printer.setPageMargins(QtCore.QMarginsF(0.0, 0.0, 0.0, 0.0), QtGui.QPageLayout.Unit.Millimeter)
 
+
+        print("printPagePDF6")
         p = QPainter(printer)
-
+        print("printPagePDF7")
         source = QtCore.QRectF(0, 0, self.width(), self.height())
         target = QRectF(0, 0, source.size().width() * scale, source.size().height() * scale)
-
+        print("printPagePDF8")
         self.render(p, target, source)
         p.end()
+        print("printPagePDF9")
 
     # does the print preview
     def printPreview(self):
         print("Print preview")
         previewDialog = QPrintPreviewDialog()
 
-        previewDialog.printer().setResolution(QPrinter.HighResolution)
-        previewDialog.printer().setOutputFormat(QPrinter.PdfFormat)
-        previewDialog.printer().setPageSize(QtGui.QPagedPaintDevice.A4)
+        previewDialog.printer().setResolution(QPrinter.PrinterMode.HighResolution.value)
+
+        previewDialog.printer().setOutputFormat(QPrinter.OutputFormat.PdfFormat)
+        #previewDialog.printer().setPageSize(QtGui.QPagedPaintDevice.A4)
         if self.pageType == "portrait":
-            previewDialog.printer().setPageOrientation(0)
+            previewDialog.printer().setPageOrientation(QPageLayout.Orientation.Portrait)
         else:
-            previewDialog.printer().setPageOrientation(1)
+            previewDialog.printer().setPageOrientation(QPageLayout.Orientation.Landscape)
 
         previewDialog.paintRequested.connect(self.createPreview)
-        previewDialog.exec_()
+        previewDialog.exec()
 
     # called by the print preview
     def createPreview(self, printer):
@@ -296,9 +350,9 @@ class Page(QGraphicsScene):
         pixmap = QPixmap(10, 10)
         painter = QPainter()
 
-        pixmap.fill(Qt.transparent)
+        pixmap.fill(Qt.GlobalColor.transparent)
         painter.begin(pixmap)
-        painter.setPen(Qt.gray)
+        painter.setPen(Qt.GlobalColor.gray)
         painter.drawLine(0, 0, 10, 0)
         painter.drawLine(0, 0, 0, 10)
         return pixmap
@@ -309,14 +363,17 @@ class Page(QGraphicsScene):
             items.setSelected(True)
 
         group = self.createItemGroup(sceneItems)
-        group.setFlags(QGraphicsItemGroup.ItemIsMovable | QGraphicsItemGroup.ItemIsSelectable)
+        group.setFlags(QGraphicsItemGroup.GraphicsItemFlag.ItemIsMovable | QGraphicsItemGroup.GraphicsItemFlag.ItemIsSelectable)
 
     # create a new stamp
-    def newStamp(self,lastStampObj):
+    def newStamp(self, lastStampObj):
         print("New Stamp")
         dlg = StampDlg(lastStampObj, self)
-        res = dlg.exec_()
-        if res == QDialog.Accepted:
+        #res = dlg.exec_()
+        res = dlg.exec()
+        print("after New Stamp")
+        #acceted
+        if res == 1:
             print("Clicked Done")
             # print(dlg.eYear.text())
             # stampDesc = dlg.eStampDescription.toPlainText()
@@ -350,9 +407,11 @@ class Page(QGraphicsScene):
     def newLabel(self):
         print("Create new label")
         dlg = TextDlg()
-        res = dlg.exec_()
+        res = dlg.exec()
 
-        if res == QDialog.Accepted:
+        print(res)
+        #accepted
+        if res == 1:
             print("Clicked ok")
             text = dlg.eTXT.toPlainText()
             font = dlg.eTXT.font()
@@ -360,7 +419,8 @@ class Page(QGraphicsScene):
 
             self.addTextLabel(text, 50, 50, font, align)
 
-        if res == QDialog.Rejected:
+        #rejected
+        if res == 0:
             print("Clicked cancel")
 
     # create a new copyright and add it at the bottom right of the page
@@ -378,28 +438,26 @@ class Page(QGraphicsScene):
         font = QFont()
         font.setPointSize(6)
         if self.pageType == "portrait":
-            self.addTextLabel(text, 80, 1045, font, Qt.AlignLeft, "labelCopyRight")
+            self.addTextLabel(text, 80, 1045, font, Qt.AlignmentFlag.AlignLeft, "labelCopyRight")
         else:
-            self.addTextLabel(text, 60, 710, font, Qt.AlignLeft, "labelCopyRight")
-
+            self.addTextLabel(text, 60, 710, font, Qt.AlignmentFlag.AlignLeft, "labelCopyRight")
 
     def newPageNbr(self):
         print("Create new  nbr")
         dlg = TextDlg()
-        res = dlg.exec_()
+        res = dlg.exec()
 
-        if res == QDialog.Accepted:
+        # accepeted
+        if res == 1:
             print("Clicked ok")
             text = dlg.eTXT.toPlainText()
             font = dlg.eTXT.font()
             align = dlg.eTXT.alignment()
 
             self.addPageNbr(text)
-
-        if res == QDialog.Rejected:
+        # rejected
+        if res == 0:
             print("Clicked cancel")
-
-
 
     def addPageNbr(self, pageName):
         print("new page number")
@@ -409,16 +467,16 @@ class Page(QGraphicsScene):
         textLabel.setFont(font)
         textWidth = textLabel.boundingRect().size().width()
         if self.pageType == "portrait":
-            self.addTextLabel(pageName, (210 / (25.4 / 96)) - 60 - textWidth, 1045, font, Qt.AlignLeft, "labelPageNbr")
+            self.addTextLabel(pageName, (210 / (25.4 / 96)) - 60 - textWidth, 1045, font, Qt.AlignmentFlag.AlignLeft, "labelPageNbr")
         else:
-            self.addTextLabel(pageName, (297 / (25.4 / 96)) - 60 - textWidth, 710, font, Qt.AlignLeft, "labelPageNbr")
+            self.addTextLabel(pageName, (297 / (25.4 / 96)) - 60 - textWidth, 710, font, Qt.AlignmentFlag.AlignLeft, "labelPageNbr")
 
     def addYear(self, year):
         print("add year")
         font = QFont()
         font.setPointSize(8)
         font.setBold(True)
-        self.addTextLabel(year, 80, 1045, font, Qt.AlignLeft, "labelYear")
+        self.addTextLabel(year, 80, 1045, font, Qt.AlignmentFlag.AlignLeft, "labelYear")
 
     def alignTop(self):
         print("")
@@ -600,7 +658,7 @@ class Page(QGraphicsScene):
             print(fileName)
             pixmap = QPixmap(fileName)
             pixmapitem = QGraphicsPixmapItem(pixmap)
-            pixmapitem.setFlags(QGraphicsTextItem.ItemIsMovable | QGraphicsTextItem.ItemIsSelectable
+            pixmapitem.setFlags(QGraphicsTextItem.GraphicsItemFlag.ItemIsMovable | QGraphicsTextItem.GraphicsItemFlag.ItemIsSelectable
                                 )
             self.addItem(pixmapitem)
 
@@ -609,3 +667,6 @@ class Page(QGraphicsScene):
 
     def mouseDoubleClickEvent(self, event):
         print("mouse move double clicked on page")
+
+    #def mousePressEvent(self, event):
+    #    print("mouse clicked on page")

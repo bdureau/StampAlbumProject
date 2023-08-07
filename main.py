@@ -5,7 +5,7 @@
 # The ability to import and convert old pages generated using Excel will be implemented
 # author: Boris du Reau 2022
 #
-from PyQt5.QtWidgets import (
+from PyQt6.QtWidgets import (
     QApplication
 )
 
@@ -24,4 +24,5 @@ if __name__ == '__main__':
     win = Window()
     win.show()
 
-    app.exec_()
+    #app.exec_()
+    app.exec()

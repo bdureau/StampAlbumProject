@@ -1,35 +1,42 @@
-from PyQt5.QtCore import QPointF, Qt, QPoint, QByteArray, QRectF
-from PyQt5 import QtCore, QtWidgets, QtGui
-from PyQt5.QtWidgets import (
+from PyQt6.QtCore import QPointF, Qt, QPoint, QByteArray, QRectF
+from PyQt6 import QtCore, QtWidgets, QtGui
+from PyQt6.QtWidgets import (
     QMessageBox, QGraphicsPixmapItem,
     QGraphicsRectItem,
     QGraphicsScene, QFileDialog, QGraphicsView, QApplication, QLabel, QMainWindow, QMenuBar, QMenu,
-    QToolBar, QAction, QGraphicsTextItem, QGraphicsItemGroup, QDialog, QPushButton,
+    QToolBar,  QGraphicsTextItem, QGraphicsItemGroup, QDialog, QPushButton,
     QLineEdit, QFormLayout, QStatusBar, QTabWidget, QWidget, QVBoxLayout, QDialogButtonBox, QPlainTextEdit
 )
-from PyQt5.QtGui import QBrush, QPainter, QPen, QPixmap, QPolygonF, QImage, QIcon, QColor, QFont, QTextCursor, \
-    QTextBlockFormat
+from PyQt6.QtGui import QBrush, QPainter, QPen, QPixmap, QPolygonF, QImage, QIcon, QColor, QFont, QTextCursor, \
+    QAction, QTextBlockFormat, QShortcut
 
-from PyQt5.QtPrintSupport import QPrintPreviewDialog, QPrinter, QPrintDialog
+from PyQt6.QtPrintSupport import QPrintPreviewDialog, QPrinter, QPrintDialog
 import importlib
 custom_mimeType = "application/x-qgraphicsitems"
 
 
 # serialise the item
 def item_to_ds(it, ds):
+    print("item_to_ds")
     if not isinstance(it, QtWidgets.QGraphicsItem):
         return
+    print("item_to_ds 1")
     ds.writeQString(it.__class__.__module__)
     ds.writeQString(it.__class__.__name__)
+    print("item_to_ds 2")
     # save the flag
-    ds.writeInt(it.flags())
+    print(it.flags())
+    ds.writeInt(it.flags().value)
+    #ds.writeQString(it.flags())
+    print("item_to_ds 3")
     # save the position of the object
     ds << it.pos()
     # save the comment about the object
     ds.writeQString(it.data(0))
-
+    print(it.data(0))
     # we have a simple text object
     if it.__class__.__name__ == "QGraphicsTextItem":
+        print("QGraphicsTextItem")
         ds.writeQString(it.toPlainText())
         # get the font
         ds.writeBool(it.font().bold())
@@ -52,15 +59,16 @@ def item_to_ds(it, ds):
                 ds.writeInt(child.data(1)) #box width
                 ds.writeInt(child.data(2)) # box height
 
+
             if child.__class__.__name__ == "QGraphicsTextItem":
                 ds.writeQString(child.__class__.__name__)
                 ds.writeQString(child.toPlainText())
                 ds << child.pos()
-                ds.writeBool(child.font().bold())
-                ds.writeBool(child.font().italic())
-                ds.writeBool(child.font().strikeOut())
-                ds.writeBool(child.font().underline())
-                ds.writeInt(child.font().pointSize())
+                ds.writeBool(child.scene().font().bold())
+                ds.writeBool(child.scene().font().italic())
+                ds.writeBool(child.scene().font().strikeOut())
+                ds.writeBool(child.scene().font().underline())
+                ds.writeInt(child.scene().font().pointSize())
 
             if child.__class__.__name__ == "QGraphicsPixmapItem":
                 print("QGraphicsPixmapItem")
@@ -175,13 +183,14 @@ def ds_to_item(ds):
         stampDesc.setPos(pos2.x(), pos2.y())
         stampDesc.setFont(font2)
         #print(stampDesc.boundingRect().size().width())
-        stampDesc.setFlags(QGraphicsTextItem.ItemIsMovable | QGraphicsTextItem.ItemIsSelectable)
+        stampDesc.setFlags(QGraphicsTextItem.GraphicsItemFlag.ItemIsMovable |
+                           QGraphicsTextItem.GraphicsItemFlag.ItemIsSelectable)
         print("created desc")
         stampDesc.setTextWidth(stampDesc.boundingRect().size().width())
         cursor = stampDesc.textCursor()
-        cursor.select(QTextCursor.Document)
+        cursor.select(QTextCursor.SelectionType.Document)
         format = QTextBlockFormat()
-        format.setAlignment(Qt.AlignCenter)
+        format.setAlignment(Qt.AlignmentFlag.AlignCenter)
         cursor.mergeBlockFormat(format)
         cursor.clearSelection()
         stampDesc.setTextCursor(cursor)
@@ -198,7 +207,8 @@ def ds_to_item(ds):
         ##boxPen.setWidth(1)
         stampBox.setPen(pen)
 
-        stampBox.setFlags(QGraphicsRectItem.ItemIsMovable | QGraphicsRectItem.ItemIsSelectable)
+        stampBox.setFlags(QGraphicsRectItem.GraphicsItemFlag.ItemIsMovable |
+                          QGraphicsRectItem.GraphicsItemFlag.ItemIsSelectable)
         stampBox.setData(0, "stampBox")
         stampBox.setData(1, boxW)
         stampBox.setData(2, boxH)
@@ -229,22 +239,23 @@ def ds_to_item(ds):
                           pos2.y() + stampDesc.boundingRect().size().height() + 20 + (boxHeight / 2 - (image_scale * pixmapitem.boundingRect().size().height()) / 2))
         #boxHeight / 2 - (image_scale * childItem.boundingRect().size().height()) / 2
                           #pos5.y())
-        pixmapitem.setData(0, "pixmapitem")
+        pixmapitem.setData(0, "pixmapItem")
 
         print("created pixmap")
         stampNbr = QGraphicsTextItem(nbr)
         stampNbr.setData(0, "stampNbr")
 
-        stampNbr.setFlags(QGraphicsTextItem.ItemIsMovable | QGraphicsTextItem.ItemIsSelectable)
+        stampNbr.setFlags(QGraphicsTextItem.GraphicsItemFlag.ItemIsMovable |
+                          QGraphicsTextItem.GraphicsItemFlag.ItemIsSelectable)
         #stampNbr.setPos(0 + stampBox.boundingRect().size().width() / 2 - stampNbr.boundingRect().size().width() / 2, 0 + stampBox.boundingRect().size().height())
 
         #print("created nbr")
 
         stampNbr.setTextWidth(stampNbr.boundingRect().size().width())
         cursor = stampNbr.textCursor()
-        cursor.select(QTextCursor.Document)
+        cursor.select(QTextCursor.SelectionType.Document)
         format = QTextBlockFormat()
-        format.setAlignment(Qt.AlignCenter)
+        format.setAlignment(Qt.AlignmentFlag.AlignCenter)
         cursor.mergeBlockFormat(format)
         cursor.clearSelection()
         stampNbr.setTextCursor(cursor)
@@ -255,14 +266,15 @@ def ds_to_item(ds):
 
         stampValue = QGraphicsTextItem(value)
         stampValue.setData(0, "stampValue")
-        stampValue.setFlags(QGraphicsTextItem.ItemIsMovable | QGraphicsTextItem.ItemIsSelectable)
+        stampValue.setFlags(QGraphicsTextItem.GraphicsItemFlag.ItemIsMovable |
+                            QGraphicsTextItem.GraphicsItemFlag.ItemIsSelectable)
 
         print("created value")
         stampValue.setTextWidth(stampValue.boundingRect().size().width())
         cursor = stampValue.textCursor()
-        cursor.select(QTextCursor.Document)
+        cursor.select(QTextCursor.SelectionType.Document)
         format = QTextBlockFormat()
-        format.setAlignment(Qt.AlignCenter)
+        format.setAlignment(Qt.AlignmentFlag.AlignCenter)
         cursor.mergeBlockFormat(format)
         cursor.clearSelection()
         stampValue.setTextCursor(cursor)
@@ -282,7 +294,8 @@ def ds_to_item(ds):
         it.addToGroup(stampNbr)
         it.addToGroup(stampValue)
         it.addToGroup(pixmapitem)
-        it.setFlags(QGraphicsItemGroup.ItemIsMovable | QGraphicsItemGroup.ItemIsSelectable)
+        it.setFlags(QGraphicsItemGroup.GraphicsItemFlag.ItemIsMovable |
+                    QGraphicsItemGroup.GraphicsItemFlag.ItemIsSelectable)
         #it.setData(0, "stampGroup")
         #group.setPos(pos)
 
@@ -312,19 +325,20 @@ def ds_to_item(ds):
 class GraphicsView(QtWidgets.QGraphicsView):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setDragMode(QtWidgets.QGraphicsView.RubberBandDrag)
+        #self.setDragMode(QtWidgets.QGraphicsView.RubberBandDrag)
 
         self.setScene(parent)
 
         print(self.scene().getPageName())
 
-        QtWidgets.QShortcut(
-            QtGui.QKeySequence(QtGui.QKeySequence.Copy), self, activated=self.copy_items
-        )
-        QtWidgets.QShortcut(
-            QtGui.QKeySequence(QtGui.QKeySequence.Paste),
-            self,
-            activated=self.paste_items,
+
+        QShortcut(
+             QtGui.QKeySequence(QtGui.QKeySequence.StandardKey.Copy), self, activated=self.copy_items
+         )
+        QShortcut(
+             QtGui.QKeySequence(QtGui.QKeySequence.StandardKey.Paste),
+             self,
+             activated=self.paste_items,
         )
 
     @QtCore.pyqtSlot()
@@ -332,10 +346,12 @@ class GraphicsView(QtWidgets.QGraphicsView):
         print("Copy")
         mimedata = QtCore.QMimeData()
         ba = QtCore.QByteArray()
-        ds = QtCore.QDataStream(ba, QtCore.QIODevice.WriteOnly)
-
+        ds = QtCore.QDataStream(ba, QtCore.QIODevice.OpenModeFlag.WriteOnly)
+        print("Copy1")
         for it in self.scene().selectedItems():
+            print("Copy1-1")
             item_to_ds(it, ds)
+        print("Copy2")
         mimedata.setData(custom_mimeType, ba)
         clipboard = QtGui.QGuiApplication.clipboard()
         clipboard.setMimeData(mimedata)

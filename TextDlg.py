@@ -1,16 +1,17 @@
 from os import walk
-from PyQt5.QtCore import QPointF, Qt, QPoint, QByteArray, QRectF
-from PyQt5 import QtCore, QtGui
-from PyQt5.QtWidgets import (
+from PyQt6.QtCore import QPointF, Qt, QPoint, QByteArray, QRectF
+from PyQt6 import QtCore, QtGui
+from PyQt6.QtWidgets import (
     QMessageBox,
     QGraphicsRectItem,
     QGraphicsScene, QComboBox, QRadioButton, QButtonGroup, QGroupBox, QListWidgetItem,
     QGraphicsView, QApplication, QLabel, QMainWindow, QMenuBar, QMenu, QHBoxLayout, QListView,
-    QToolBar, QAction, QGraphicsTextItem, QGraphicsItemGroup, QDialog, QPushButton, QListWidget,QTextEdit,
+    QToolBar,  QGraphicsTextItem, QGraphicsItemGroup, QDialog, QPushButton, QListWidget, QTextEdit,
     QLineEdit, QFormLayout, QStatusBar, QTabWidget, QWidget, QVBoxLayout, QDialogButtonBox, QPlainTextEdit
 )
-from PyQt5.QtGui import QFont, QBrush, QPainter, QPen, QPixmap, QPolygonF, QImage, QIcon, QStandardItem, QColor,QTextBlockFormat, QTextCursor
-from PyQt5.QtPrintSupport import QPrintPreviewDialog, QPrinter, QPrintDialog
+from PyQt6.QtGui import QFont, QBrush, QPainter, QPen, QPixmap, QPolygonF, QImage, QIcon, QStandardItem, QColor, \
+    QTextBlockFormat, QAction, QTextCursor
+from PyQt6.QtPrintSupport import QPrintPreviewDialog, QPrinter, QPrintDialog
 
 import gettext
 gettext.find("TextDlg")
@@ -25,9 +26,8 @@ class TextDlg(QDialog):
         self.createDlg(txtObj)
 
     def createDlg(self, txtObj=None):
-        self.setWindowModality(Qt.ApplicationModal)
-
-        self.setWindowFlags(Qt.Dialog)
+        #self.setWindowModality(Qt.ApplicationModal)
+        #self.setWindowFlags(Qt.Dialog)
 
         hLayout1 = QHBoxLayout()
 
@@ -104,7 +104,8 @@ class TextDlg(QDialog):
             #self.eTXT.setAlignment(txtObj.alignment())
             #self.eTXT.setAlignment()
             cursor = txtObj.textCursor()
-            cursor.select(QTextCursor.Document)
+            cursor.select(QTextCursor.SelectionType.Document)
+
             format = QTextBlockFormat()
             cursor.mergeBlockFormat(format)
             #cursor.select(format)
@@ -125,7 +126,7 @@ class TextDlg(QDialog):
 
         self.setLayout(flo)
 
-        bb = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        bb = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         bb.accepted.connect(self.accept)
         bb.rejected.connect(self.reject)
         flo.addWidget(bb)
@@ -180,13 +181,13 @@ class TextDlg(QDialog):
     def justifyLeftPushed(self):
         print("")
         # set text alignment to AlignLeft
-        self.eTXT.setAlignment(Qt.AlignLeft)
+        self.eTXT.setAlignment(Qt.AlignmentFlag.AlignLeft)
 
 
     def centerPushed(self):
         print("")
-        self.eTXT.setAlignment(Qt.AlignCenter)
+        self.eTXT.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
     def justifyRightPushed(self):
         print("")
-        self.eTXT.setAlignment(Qt.AlignRight)
+        self.eTXT.setAlignment(Qt.AlignmentFlag.AlignRight)

@@ -1,16 +1,16 @@
 from os import walk
-from PyQt5.QtCore import QPointF, Qt, QPoint, QByteArray, QRectF
-from PyQt5 import QtCore, QtGui
-from PyQt5.QtWidgets import (
+from PyQt6.QtCore import QPointF, Qt, QPoint, QByteArray, QRectF
+from PyQt6 import QtCore, QtGui
+from PyQt6.QtWidgets import (
     QMessageBox,
     QGraphicsRectItem, QFileDialog,
     QGraphicsScene, QComboBox, QRadioButton, QButtonGroup, QGroupBox, QListWidgetItem,
     QGraphicsView, QApplication, QLabel, QMainWindow, QMenuBar, QMenu, QHBoxLayout, QListView,
-    QToolBar, QAction, QGraphicsTextItem, QGraphicsItemGroup, QDialog, QPushButton, QListWidget,
+    QToolBar,  QGraphicsTextItem, QGraphicsItemGroup, QDialog, QPushButton, QListWidget,
     QLineEdit, QFormLayout, QStatusBar, QTabWidget, QWidget, QVBoxLayout, QDialogButtonBox, QPlainTextEdit
 )
-from PyQt5.QtGui import QBrush, QPainter, QPen, QPixmap, QPolygonF, QImage, QIcon, QStandardItem, QColor
-from PyQt5.QtPrintSupport import QPrintPreviewDialog, QPrinter, QPrintDialog
+from PyQt6.QtGui import QBrush, QPainter, QPen, QPixmap, QPolygonF, QImage, QIcon, QStandardItem, QAction,QColor
+from PyQt6.QtPrintSupport import QPrintPreviewDialog, QPrinter, QPrintDialog
 from Databases import DB
 
 import gettext
@@ -24,13 +24,13 @@ class EditStampDlg(QDialog):
     def __init__(self, stampObj, parent=None):
         super(EditStampDlg, self).__init__(parent)
         self.setWindowTitle(_("Edit stamp"))
-        self.setWindowModality(Qt.ApplicationModal)
+        #self.setWindowModality(Qt.ApplicationModal)
         self.createDlg(stampObj)
 
     def createDlg(self, stampObj):
-        self.setWindowModality(Qt.ApplicationModal)
-        self.setWindowFlags(Qt.Dialog)
-
+        #self.setWindowModality(Qt.ApplicationModal)
+        #self.setWindowFlags(Qt.Dialog)
+        print("createDlg")
         self.eTitle = QPlainTextEdit()
         self.eTitle.setPlainText(stampObj['stampDesc_text'])
         self.eTitle.setFixedHeight(50)
@@ -43,23 +43,39 @@ class EditStampDlg(QDialog):
         self.eValue.setFixedHeight(30)
 
         # image
+        print("image")
         self.photo = QLabel()
         self.photo.setFixedHeight(200)
         self.photo.setFixedWidth(200)
-        pix = QPixmap(stampObj['pixmapItem_image'])
+        print("before pix")
+        try:
+            pix = QPixmap(stampObj['pixmapItem_image'])
+            print(pix)
+        except:
+            print("error")
+        print("after pix")
         if pix.width() > pix.height():
+            print("set pixmap1")
             self.photo.setPixmap(QPixmap(stampObj['pixmapItem_image']).scaledToWidth(200))
         else:
+            print("set pixmap1")
             self.photo.setPixmap(QPixmap(stampObj['pixmapItem_image']).scaledToHeight(200))
 
         # change image button
+        print("image button")
         imageButton = QPushButton(self.tr(_("&Change image ...")))
-        buttonBox = QDialogButtonBox(Qt.Horizontal)
-        buttonBox.addButton(imageButton, QDialogButtonBox.ActionRole)
+        print("image button 1")
+        buttonBox = QDialogButtonBox(Qt.Orientation.Horizontal)
+
+        print("image button 2")
+        buttonBox.addButton(imageButton, QDialogButtonBox.ButtonRole.ActionRole)
+        print("image button 3")
         imageButton.clicked.connect(self.loadImage)
 
 
+
         # pochettes type
+        print("Pochette type")
         vLayout1 = QVBoxLayout()
         pochettesType = QLabel(_("Pochette type"))
         self.pochetteList = QListWidget()
@@ -69,7 +85,7 @@ class EditStampDlg(QDialog):
 
 
         # ok /cancel button
-        bb = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        bb = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         bb.accepted.connect(self.accept)
         bb.rejected.connect(self.reject)
 
@@ -97,7 +113,7 @@ class EditStampDlg(QDialog):
         self.populateData(stampObj)
 
     def populateData(self, stampObj):
-        print("")
+        print("populateData")
         self.db = None
         filenames = next(walk("databases"), (None, None, []))[2]  # [] if no file
 
@@ -121,7 +137,7 @@ class EditStampDlg(QDialog):
         retPochette ="Pochette " + str(stampObj['stampBox_boxWidth']) + "x" + str(stampObj['stampBox_boxHeight'])
         if len(retPochette) > 0:
             # print(retPochette[0])
-            pochetteItem = self.pochetteList.findItems(retPochette, Qt.MatchExactly)
+            pochetteItem = self.pochetteList.findItems(retPochette, Qt.MatchFlag.MatchExactly)
 
             if len(pochetteItem) > 0:
                 self.pochetteList.setCurrentItem(pochetteItem[0])
@@ -135,8 +151,9 @@ class EditStampDlg(QDialog):
         return ret
 
     def loadImage(self):
-        options = QFileDialog.Options()
-        options |= QFileDialog.DontUseNativeDialog
+        #options = QFileDialog.options().Options()
+        #options |= QFileDialog.options().DontUseNativeDialog
+        options = QFileDialog.Option.DontUseNativeDialog
         fileName, _ = QFileDialog.getOpenFileName(self, "Select picture", "",
                                                   ("all pictures (*.jpg *.jpeg *.png);;PNG (*.png)"),
                                                   options=options)
