@@ -36,7 +36,6 @@ class Page(QGraphicsScene):
                            272 / (25.4 / 96.0),
                            19 / (25.4 / 96.0),
                            0,
-                           #10 / (25.4 / 96.0),
                            0,
                            0)
         else:
@@ -120,7 +119,8 @@ class Page(QGraphicsScene):
 
 
         textLabel.setPos(x, y)
-        textLabel.setFlags(QGraphicsTextItem.GraphicsItemFlag.ItemIsMovable | QGraphicsTextItem.GraphicsItemFlag.ItemIsSelectable)
+        textLabel.setFlags(QGraphicsTextItem.GraphicsItemFlag.ItemIsMovable |
+                           QGraphicsTextItem.GraphicsItemFlag.ItemIsSelectable)
         textLabel.setData(0, labelType)
 
         textLabel.setSelected(True)
@@ -178,15 +178,13 @@ class Page(QGraphicsScene):
 
         itemType = 0
         for item in items:
-
             itemType = item.type().real
 
             if itemType == 10:
                 # This is a stamp
                 #self.editStamp(item)
                 print("stamp")
-                print(item.pos().x())
-                print(item.pos().y())
+
             elif itemType == 8:
                 # This is a text label
                 #self.editLabel(item)
@@ -227,10 +225,9 @@ class Page(QGraphicsScene):
             cursor.clearSelection()
             item.setTextCursor(cursor)
 
-            item.setFlags(QGraphicsTextItem.GraphicsItemFlag.ItemIsMovable | QGraphicsTextItem.GraphicsItemFlag.ItemIsSelectable)
+            item.setFlags(QGraphicsTextItem.GraphicsItemFlag.ItemIsMovable |
+                          QGraphicsTextItem.GraphicsItemFlag.ItemIsSelectable)
 
-            #self.removeItem(item)
-            #self.addItem(item)
 
         #rejected
         if res == 0:
@@ -238,9 +235,7 @@ class Page(QGraphicsScene):
 
     def editStamp(self, stampItem):
         stamp = Stamp()
-        print("before read stamp")
         stampObj = stamp.readStamp(stampItem)
-        print("after read stamp")
         dlg = EditStampDlg(stampObj)
         res = dlg.exec()
         # accepted
@@ -256,7 +251,7 @@ class Page(QGraphicsScene):
             stampObj['stampBox_boxHeight'] = height
             stampObj['pixmapItem_image'] = dlg.photo.pixmap()
             print("update stamp")
-            stamp.updateStamp2(stampItem, stampObj, self)
+            stamp.updateStamp(stampItem, stampObj, self)
 
 
     def printPagePDF(self,fileName2):
@@ -266,44 +261,28 @@ class Page(QGraphicsScene):
             item.setSelected(False)
 
         printer = QPrinter(QPrinter.PrinterMode.HighResolution)
-        print("printPagePDF2")
+
         #printer.setPageSize(QtGui.QPagedPaintDevice.A4)
-        #printer.setPageSize(QPageSize.PageSizeId.A4, )
-        #QtGui.QPageLayout.pageSize(QPageLayout.pageSize().PageSizeId.A4)
-
-        #QtGui.QPagedPaintDevice.PaintDeviceMetric.
-
 
         if self.pageType == "portrait":
-            #printer.setPageOrientation(0)
             printer.setPageOrientation(QPageLayout.Orientation.Portrait)
         else:
-            #printer.setPageOrientation(1)
             printer.setPageOrientation(QPageLayout.Orientation.Landscape)
 
-        print("printPagePDF3")
         printer.setOutputFormat(QPrinter.OutputFormat.PdfFormat)
-        print("printPagePDF4")
         printer.setOutputFileName(fileName2)
         scale = printer.resolution() / 96.0
-        print("printPagePDF5")
-        #printer.setPageMargins(0, 0, 0, 0, QPrinter.Unit.Millimeter)
-        #margin = QMarginsF(0,0,0,0)
-        print("printPagePDF5-1")
-        #printer.setPageMargins(margin, QPrinter.Unit.Millimeter)
 
         printer.setPageMargins(QtCore.QMarginsF(0.0, 0.0, 0.0, 0.0), QtGui.QPageLayout.Unit.Millimeter)
 
-
-        print("printPagePDF6")
         p = QPainter(printer)
-        print("printPagePDF7")
+
         source = QtCore.QRectF(0, 0, self.width(), self.height())
         target = QRectF(0, 0, source.size().width() * scale, source.size().height() * scale)
-        print("printPagePDF8")
+
         self.render(p, target, source)
         p.end()
-        print("printPagePDF9")
+
 
     # does the print preview
     def printPreview(self):

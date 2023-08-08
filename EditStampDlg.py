@@ -47,32 +47,25 @@ class EditStampDlg(QDialog):
         self.photo = QLabel()
         self.photo.setFixedHeight(200)
         self.photo.setFixedWidth(200)
-        print("before pix")
+
         try:
             pix = QPixmap(stampObj['pixmapItem_image'])
             print(pix)
         except:
             print("error")
-        print("after pix")
+            return
+
         if pix.width() > pix.height():
-            print("set pixmap1")
             self.photo.setPixmap(QPixmap(stampObj['pixmapItem_image']).scaledToWidth(200))
         else:
-            print("set pixmap1")
             self.photo.setPixmap(QPixmap(stampObj['pixmapItem_image']).scaledToHeight(200))
 
         # change image button
-        print("image button")
         imageButton = QPushButton(self.tr(_("&Change image ...")))
-        print("image button 1")
         buttonBox = QDialogButtonBox(Qt.Orientation.Horizontal)
 
-        print("image button 2")
         buttonBox.addButton(imageButton, QDialogButtonBox.ButtonRole.ActionRole)
-        print("image button 3")
         imageButton.clicked.connect(self.loadImage)
-
-
 
         # pochettes type
         print("Pochette type")
@@ -82,7 +75,6 @@ class EditStampDlg(QDialog):
         self.pochetteList.setMaximumWidth(150)
         vLayout1.addWidget(pochettesType)
         vLayout1.addWidget(self.pochetteList)
-
 
         # ok /cancel button
         bb = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
@@ -151,13 +143,10 @@ class EditStampDlg(QDialog):
         return ret
 
     def loadImage(self):
-        #options = QFileDialog.options().Options()
-        #options |= QFileDialog.options().DontUseNativeDialog
         options = QFileDialog.Option.DontUseNativeDialog
         fileName, _ = QFileDialog.getOpenFileName(self, "Select picture", "",
                                                   ("all pictures (*.jpg *.jpeg *.png);;PNG (*.png)"),
                                                   options=options)
-        #return fileName
         if self.photo is not None:
             pix = QPixmap(fileName)
             print(pix)

@@ -100,20 +100,17 @@ class TextDlg(QDialog):
             self.eTXT.setFont(txtObj.font())
             print(txtObj.font().pointSize())
             self.fontSize.setCurrentText(str(txtObj.font().pointSize()))
-            #txtObj.font()
-            #self.eTXT.setAlignment(txtObj.alignment())
-            #self.eTXT.setAlignment()
+
             cursor = txtObj.textCursor()
             cursor.select(QTextCursor.SelectionType.Document)
 
             format = QTextBlockFormat()
             cursor.mergeBlockFormat(format)
-            #cursor.select(format)
             cursor.clearSelection()
 
             # unfortunately does not get the alignment...
             align = format.alignment()
-            #align = Qt.AlignCenter
+
             print(align)
             self.eTXT.selectAll()
             self.eTXT.setAlignment(align)

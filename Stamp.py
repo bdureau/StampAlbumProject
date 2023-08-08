@@ -21,69 +21,11 @@ class Stamp:
             print("Pixmap is none")
         self.createStampPix(scene, nbr, value, desc, boxWidth, boxHeight, x, y, pixmap)
 
-    #obsolete
-    def createStampPixOld(self, scene, nbr, value, desc, boxWidth, boxHeight, x, y, pixmap):
-        stampBox = QGraphicsRectItem(0, 0,  boxWidth / (25.4 / 96.0), boxHeight / (25.4 / 96.0))
-        boxPen = QPen()
-        boxPen.setColor(Qt.black)
-        boxPen.setWidth(2)
-        stampBox.setPen(boxPen)
 
-        stampBox.setFlags(QGraphicsRectItem.ItemIsMovable | QGraphicsRectItem.ItemIsSelectable)
-        stampBox.setData(0, "stampBox")
-        print("created box")
-
-        pixmapitem = QGraphicsPixmapItem(pixmap)
-
-        #calculate scale
-        scale1 = stampBox.boundingRect().size().width() / pixmapitem.boundingRect().size().width()
-        scale2 = stampBox.boundingRect().size().height() / pixmapitem.boundingRect().size().height()
-
-        if scale1 < scale2:
-            image_scale = scale1
-        else:
-            image_scale = scale2
-        pixmapitem.setScale(image_scale)
-
-        pixmapitem.setPos(0+stampBox.boundingRect().size().width()/2-(image_scale*pixmapitem.boundingRect().size().width())/2, 0)
-        pixmapitem.setData(0, "pixmapItem")
-
-        stampDesc = QGraphicsTextItem(desc)
-        stampDesc.setData(0, "stampDesc")
-        stampDesc.setPos(0+stampBox.boundingRect().size().width()/2-stampDesc.boundingRect().size().width()/2, 0-40)
-        print(stampDesc.font().pixelSize())
-        print(stampDesc.font().pointSize())
-        stampDesc.setFlags(QGraphicsTextItem.ItemIsMovable | QGraphicsTextItem.ItemIsSelectable)
-        print("created desc")
-        stampNbr = QGraphicsTextItem(nbr)
-        stampNbr.setData(0, "stampNbr")
-
-        stampNbr.setFlags(QGraphicsTextItem.ItemIsMovable | QGraphicsTextItem.ItemIsSelectable)
-        stampNbr.setPos(0 + stampBox.boundingRect().size().width() / 2 - stampNbr.boundingRect().size().width() / 2, 0 + stampBox.boundingRect().size().height())
-        print("created nbr")
-        stampValue = QGraphicsTextItem(value)
-        stampValue.setData(0, "stampValue")
-        stampValue.setFlags(QGraphicsTextItem.ItemIsMovable | QGraphicsTextItem.ItemIsSelectable)
-        stampValue.setPos(0 + stampBox.boundingRect().size().width() / 2 - stampValue.boundingRect().size().width() / 2, 0 + stampBox.boundingRect().size().height()+ 50)
-        print("created value")
-        group = QGraphicsItemGroup()
-        group.addToGroup(stampBox)
-        group.addToGroup(stampDesc)
-        group.addToGroup(stampNbr)
-        group.addToGroup(stampValue)
-        group.addToGroup(pixmapitem)
-        #group.addToGroup(stampDesc)
-        group.setFlags(QGraphicsItemGroup.ItemIsMovable | QGraphicsItemGroup.ItemIsSelectable)
-        group.setData(0, "stampGroup")
-        group.setPos(x, y)
-
-        scene.addItem(group)
 
     # Create stamp
     def createStampPix(self, scene, nbr, value, desc, boxWidth, boxHeight, x, y, pixmap):
         print("createStampPix")
-        #print(boxWidth)
-        #print(boxHeight)
         stampDesc = QGraphicsTextItem(desc)
 
         stampDesc.setTextWidth(stampDesc.boundingRect().size().width())
@@ -199,7 +141,7 @@ class Stamp:
         return stampObj
 
 
-    def updateStamp2(self, stampItem, stampObj, scene):
+    def updateStamp(self, stampItem, stampObj, scene):
         posX = stampItem.pos().x()
         posY = stampItem.pos().y()
         boxWidth = stampObj['stampBox_boxWidth']
@@ -211,7 +153,72 @@ class Stamp:
         scene.removeItem(stampItem)
         self.createStampPix(scene, nbr, value, desc, boxWidth, boxHeight, posX, posY, pixmap)
 
-    def updateStamp(self, stampItem, stampObj, scene):
+
+
+    def deleteStamp(self):
+        print("delete stamp")
+
+
+    #############################################obsolete code to remove #############################
+    #obsolete
+    def createStampPixOld(self, scene, nbr, value, desc, boxWidth, boxHeight, x, y, pixmap):
+        stampBox = QGraphicsRectItem(0, 0,  boxWidth / (25.4 / 96.0), boxHeight / (25.4 / 96.0))
+        boxPen = QPen()
+        boxPen.setColor(Qt.black)
+        boxPen.setWidth(2)
+        stampBox.setPen(boxPen)
+
+        stampBox.setFlags(QGraphicsRectItem.ItemIsMovable | QGraphicsRectItem.ItemIsSelectable)
+        stampBox.setData(0, "stampBox")
+        print("created box")
+
+        pixmapitem = QGraphicsPixmapItem(pixmap)
+
+        #calculate scale
+        scale1 = stampBox.boundingRect().size().width() / pixmapitem.boundingRect().size().width()
+        scale2 = stampBox.boundingRect().size().height() / pixmapitem.boundingRect().size().height()
+
+        if scale1 < scale2:
+            image_scale = scale1
+        else:
+            image_scale = scale2
+        pixmapitem.setScale(image_scale)
+
+        pixmapitem.setPos(0+stampBox.boundingRect().size().width()/2-(image_scale*pixmapitem.boundingRect().size().width())/2, 0)
+        pixmapitem.setData(0, "pixmapItem")
+
+        stampDesc = QGraphicsTextItem(desc)
+        stampDesc.setData(0, "stampDesc")
+        stampDesc.setPos(0+stampBox.boundingRect().size().width()/2-stampDesc.boundingRect().size().width()/2, 0-40)
+        print(stampDesc.font().pixelSize())
+        print(stampDesc.font().pointSize())
+        stampDesc.setFlags(QGraphicsTextItem.ItemIsMovable | QGraphicsTextItem.ItemIsSelectable)
+        print("created desc")
+        stampNbr = QGraphicsTextItem(nbr)
+        stampNbr.setData(0, "stampNbr")
+
+        stampNbr.setFlags(QGraphicsTextItem.ItemIsMovable | QGraphicsTextItem.ItemIsSelectable)
+        stampNbr.setPos(0 + stampBox.boundingRect().size().width() / 2 - stampNbr.boundingRect().size().width() / 2, 0 + stampBox.boundingRect().size().height())
+        print("created nbr")
+        stampValue = QGraphicsTextItem(value)
+        stampValue.setData(0, "stampValue")
+        stampValue.setFlags(QGraphicsTextItem.ItemIsMovable | QGraphicsTextItem.ItemIsSelectable)
+        stampValue.setPos(0 + stampBox.boundingRect().size().width() / 2 - stampValue.boundingRect().size().width() / 2, 0 + stampBox.boundingRect().size().height()+ 50)
+        print("created value")
+        group = QGraphicsItemGroup()
+        group.addToGroup(stampBox)
+        group.addToGroup(stampDesc)
+        group.addToGroup(stampNbr)
+        group.addToGroup(stampValue)
+        group.addToGroup(pixmapitem)
+        #group.addToGroup(stampDesc)
+        group.setFlags(QGraphicsItemGroup.ItemIsMovable | QGraphicsItemGroup.ItemIsSelectable)
+        group.setData(0, "stampGroup")
+        group.setPos(x, y)
+
+        scene.addItem(group)
+    #obsolete
+    def updateStamp_old(self, stampItem, stampObj, scene):
         childrenItems = stampItem.childItems()
         boxWidth = stampObj['stampBox_boxWidth'] / (25.4 / 96.0)
         boxHeight = stampObj['stampBox_boxHeight'] / (25.4 / 96.0)
@@ -378,6 +385,3 @@ class Stamp:
         print(group.pos().x())
         print(group.pos().y())
         return stampObj
-
-    def deleteStamp(self):
-        print("delete stamp")

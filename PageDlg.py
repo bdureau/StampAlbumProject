@@ -27,7 +27,6 @@ class PageDlg(QDialog):
     def createDlg(self):
         self.pageType = "portrait"
         ###########self.setWindowModality(Qt.ApplicationModal)
-
         #############self.setWindowFlags(Qt.Dialog)
 
         # page photo
@@ -62,9 +61,9 @@ class PageDlg(QDialog):
         vLayout1.addWidget(rbGroup)
 
         # ok /cancel button
-        bb = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
-        #bb = QDialogButtonBox()
-        #QDialogButtonBox.button()
+        bb = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok |
+                              QDialogButtonBox.StandardButton.Cancel)
+
         bb.accepted.connect(self.accept)
         bb.rejected.connect(self.reject)
         vLayout1.addWidget(bb)

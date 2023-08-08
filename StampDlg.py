@@ -37,16 +37,12 @@ class StampDlg(QDialog):
     def keyPressEvent(self, e):
         print(e.key())
 
-
         if e.key() == Qt.Key.Key_Down:
             #print("down")
             self.stampClicked(self.stampNbrList.currentIndex())
         if e.key() == Qt.Key.Key_Up:
             #print("up")
             self.stampClicked(self.stampNbrList.currentIndex())
-
-        #QListView.keyPressEvent(self, e)
-
 
 
     def createDlg(self, lastStampObj):
@@ -91,13 +87,6 @@ class StampDlg(QDialog):
         # where to go if the stamp is clicked
         # self.stampNbrList.itemClicked.connect(self.stampClicked)
         self.stampNbrList.clicked.connect(self.stampClicked)
-        #self.stampNbrList.selectionChanged.connect(self.stampClicked)
-        #self.stampNbrList.currentChanged.connect(self.stampClicked)
-        #self.stampNbrList.currentIndex.connect(self.stampClicked)
-        #self.stampNbrList.doubleClicked.connect(self.stampClicked)
-        #self.stampNbrList.activated.connect(self.stampClicked)
-        #self.stampNbrList.entered.connect(self.stampClicked)
-        #self.stampNbrList.selectionModel().currentIndex().
 
         # hlayout to group them
         hLayout2 = QHBoxLayout()
@@ -171,26 +160,18 @@ class StampDlg(QDialog):
         fLayout.addRow("", rbGroup)
 
         # ok /cancel button
-
         createButton = QPushButton(self.tr(_("&Create")))
         createButton.setDefault(True)
 
 
         okButton = QPushButton(self.tr(_("&Done")))
-        #okButton.setDefault(True)
-
-        # cancelButton = QPushButton(self.tr("&Cancel"))
-        # cancelButton.setDefault(True)
 
         buttonBox = QDialogButtonBox(Qt.Orientation.Horizontal)
 
         buttonBox.addButton(createButton, QDialogButtonBox.ButtonRole.ActionRole)
 
-        #buttonBox.addButton(okButton, QDialogButtonBox.AcceptRole)
         buttonBox.addButton(okButton, QDialogButtonBox.ButtonRole.ActionRole)
 
-        #buttonBox.addButton(cancelButton, QDialogButtonBox.ActionRole)
-        #buttonBox.accepted.connect(self.accept)
         okButton.clicked.connect(self.accept)
         createButton.clicked.connect(self.createStamp)
 
@@ -450,7 +431,7 @@ class StampDlg(QDialog):
     def countryClicked(self, country):
         # stampCountry
         #print("Country has changed")
-        #print("New country is: %s" % country)
+
         if country != "":
             if self.db is not None:
                 self.db.OpenCountryDB(country)

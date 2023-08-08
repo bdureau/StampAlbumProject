@@ -76,7 +76,8 @@ class Window(QMainWindow):
     def closeEvent(self, event):
         print("User has clicked the red x on the main window")
         qm = QMessageBox()
-        ret = qm.question(self, 'Exit', "Are you sure you want to exit the application?", qm.StandardButton.Yes | qm.StandardButton.No)
+        ret = qm.question(self, 'Exit', "Are you sure you want to exit the application?",
+                          qm.StandardButton.Yes | qm.StandardButton.No)
 
         if ret == qm.StandardButton.Yes:
             event.accept()
@@ -92,11 +93,9 @@ class Window(QMainWindow):
             self.pageType = "portrait"
             pDlg = PageDlg()
 
-            ##res = pDlg.exec_()
             res = pDlg.exec()
             #accepted
             if res == 1:
-
                 if pDlg.pageType == "portrait":
                     print("portrait")
                     self.pageType = "portrait"
@@ -152,7 +151,8 @@ class Window(QMainWindow):
     # delete current page
     def deleteCurrentPage(self):
         qm = QMessageBox()
-        ret = qm.question(self, 'Delete page', "Are you sure you want to delete the current page?", qm.StandardButton.Yes | qm.StandardButton.No)
+        ret = qm.question(self, 'Delete current page', "Are you sure you want to delete the current page?",
+                          qm.StandardButton.Yes | qm.StandardButton.No)
 
         if ret == qm.StandardButton.No:
             return
@@ -182,18 +182,14 @@ class Window(QMainWindow):
 
     def newBorder(self):
         print("change border")
-        print(self.getCurrentPageScene().pageType)
         if self.getCurrentPageScene().pageType == "portrait":
-            #self.setSceneRect(0, 0, 210 / (25.4 / 96), 297 / (25.4 / 96))
             self.getCurrentPageScene().addBorder(177 / (25.4 / 96.0),
                            272 / (25.4 / 96.0),
                            19 / (25.4 / 96.0),
                            0,
-                           #10 / (25.4 / 96.0),
                            0,
                            0)
         else:
-            #self.setSceneRect(0, 0, 297 / (25.4 / 96), 210 / (25.4 / 96))
             self.getCurrentPageScene().addBorder(272 / (25.4 / 96.0),
                            177 / (25.4 / 96.0),
                            ((297-272) / 2) / (25.4 / 96.0),
@@ -203,13 +199,6 @@ class Window(QMainWindow):
 
     def exitApp(self):
         print("exit app")
-        # qm = QMessageBox()
-        # ret = qm.question(self, 'Exit', "Are you sure you want to exit the application?",
-        #                   qm.StandardButton.Yes | qm.StandardButton.No)
-        #
-        # if ret == qm.StandardButton.No:
-        #     return
-
         self.close()
 
     def _createMenuBar(self):
@@ -526,9 +515,7 @@ class Window(QMainWindow):
     def _connectActions(self):
         # Connect File actions
         self.newAction.triggered.connect(self.newFile)
-        # self.openAction.triggered.connect(self.openFile)
         self.openAction.triggered.connect(self.openAlbumFile)
-        # self.saveAction.triggered.connect(self.saveFile)
         self.saveAction.triggered.connect(self.saveAlbumToFile)
         self.printAction.triggered.connect(self.printAllPagesPDF)
         self.printPDFAction.triggered.connect(self.printPagePDF)
@@ -595,7 +582,7 @@ class Window(QMainWindow):
         self.newPage(None, True)
 
     def newPageNbr(self):
-        print("")
+        print("newPageNbr")
         self.getCurrentPageScene().newPageNbr()
 
     def newPageNbrAllPages(self):
@@ -610,7 +597,6 @@ class Window(QMainWindow):
             align = dlg.eTXT.alignment()
 
             for x in range(0, self.tabs.count().real):
-                #self.tabs.removeTab(self.tabs.currentIndex())
                 self.tabs.setCurrentIndex(x)
                 self.getCurrentPageScene().addPageNbr(text + " " + str(self.tabs.currentIndex() + 1))
 
@@ -631,12 +617,9 @@ class Window(QMainWindow):
         # first delete all pages
         self.deleteAllPages()
 
-        #options = QFileDialog.options()
-        #options |= QFileDialog.options().DontUseNativeDialog
         options = QFileDialog.Option.DontUseNativeDialog
-        #fileName, _ = QFileDialog.getOpenFileName(self, "QFileDialog.getOpenFileName()", "",
-        #                                          "Album Files (*.sta);Xml Files (*.xml)", options=options)
-        fileName, _ = QFileDialog.getOpenFileName(self, "QFileDialog.getOpenFileName()", "",
+
+        fileName, _ = QFileDialog.getOpenFileName(self, "Open Album file", "",
                                                   "Album Files (*.sta)", options=options)
         if fileName:
             print(fileName)
@@ -646,32 +629,27 @@ class Window(QMainWindow):
         else:
             return
 
-        #if (fileNameArray[1]=="sta"):
         if (fileNameArray[len(fileNameArray)-1] == "sta"):
             f = gzip.open(fileName, 'r')
         else:
             f = open(fileName, 'r')
-        #mytree = ET.parse(fileName)
+
         mytree = ET.parse(f)
         f.close()
         myroot = mytree.getroot()
-        #print(myroot)
+
         for it in myroot.findall('page'):
-            #print("before")
-            #print(it.attrib.get("type"))
-            #print("after")
             # create new page
             self.newPage(str(it.attrib.get("type")), False)
-            print("after page created")
+
             # get the current page
             currentPage = self.getCurrentPageScene()
-            print("after currentPage")
+
             # Open the text label
             textLabelsItems = it.findall('textLabel')
             for textLabel in textLabelsItems:
                 print("labels!!")
                 label = textLabel.find('label').text
-
                 font = textLabel.find('font')
                 bold = font.find('bold').text
                 underline = font.find('underline').text
@@ -685,7 +663,6 @@ class Window(QMainWindow):
                 myFont.setItalic(self.str_to_bool(italic))
                 myFont.setStrikeOut(self.str_to_bool(strikeOut))
                 myFont.setPointSize(int(pointSize))
-
 
                 pos = textLabel.find('labelPos')
                 x = pos.find('x').text
@@ -789,8 +766,6 @@ class Window(QMainWindow):
             stampItems = it.findall('stampGroup')
             for stamp in stampItems:
                 print("stamps!!")
-                print(stamp)
-                #print(stamp.stampPos)
                 pos = stamp.find('stampPos')
                 x = pos.find('x').text
                 print(x)
@@ -823,20 +798,12 @@ class Window(QMainWindow):
                 print(stampValue)
                 print("after Value")
                 try:
-                    pixmapitem = stamp.find('pixmapItem').text
+                    pixmapItem = stamp.find('pixmapItem').text
                 except:
                     print("An exception occurred")
-                print("before stamp")
                 stamp = Stamp()
-                print("before pix")
 
-                #print(pixmapitem)
-                pixmap = self.bytesToPixmap(pixmapitem)
-                #pixmap = self.bytesToPixmap2(pixmapitem)
-                #print("after pix")
-                #stamp.createStampPix(currentPage, str(stampNbr), str(stampValue), str(stampDesc),
-                #                     float(width) * (25.4 / 96.0), float(height) * (25.4 / 96.0),
-                #                     float(x), float(y), pixmap)
+                pixmap = self.bytesToPixmap(pixmapItem)
 
                 if use_new == 1:
                     stamp.createStampPix(currentPage, str(stampNbr), str(stampValue), str(stampDesc),
@@ -846,7 +813,7 @@ class Window(QMainWindow):
                     stamp.createStampPix(currentPage, str(stampNbr), str(stampValue), str(stampDesc),
                                         float(width) * (25.4 / 96.0), float(height) * (25.4 / 96.0),
                                         float(x), float(y), pixmap)
-                print("after stamp")
+
     # save an album to a file
     def saveAlbumToFile(self):
         print("Save album to file")
@@ -961,18 +928,14 @@ class Window(QMainWindow):
     def printAllPagesPDF(self):
         print("print all pages")
         printer = QPrinter(QPrinter.PrinterMode.HighResolution)
-
         #printer.setPageSize(QtGui.QPagedPaintDevice.A4)
-        #printer.setPageSize(QtGui.QPageSize.PageSizeId.A4)
-        print("print all pages2")
-        #printer.setPageSize(QtGui.QPagedPaintDevice.)
+
         printer.setOutputFormat(QPrinter.OutputFormat.PdfFormat)
 
         # TODO select the file to print
         printer.setOutputFileName("album4.pdf")
         scale = printer.resolution() / 96.0
 
-        #printer.setPageMargins(0, 0, 0, 0, QPrinter.Unit.Millimeter)
         printer.setPageMargins(QtCore.QMarginsF(0.0, 0.0, 0.0, 0.0), QtGui.QPageLayout.Unit.Millimeter)
         p = QPainter(printer)
         for x in range(self.tabs.count()):
@@ -997,67 +960,22 @@ class Window(QMainWindow):
 
             currentScene.render(p, target, source)
 
-
         p.end()
 
-    # print all pages
-    def printPreviewAllPagesOld(self):
-        print("print all pages_old")
-        previewDialog = QPrintPreviewDialog()
-
-        previewDialog.printer().setResolution(QPrinter.PrinterMode().HighResolution)
-        previewDialog.printer().setOutputFormat(QPrinter.OutputFormat.PdfFormat)
-        previewDialog.printer().setPageSize(QtGui.QPagedPaintDevice.A4)
-        previewDialog.exec()
-
-        # TODO select the file to print
-        #printer.setOutputFileName("album4.pdf")
-        scale = previewDialog.printer().resolution() / 96.0
-
-        previewDialog.printer().setPageMargins(0, 0, 0, 0, QPrinter.Unit.Millimeter)
-        p = QPainter(previewDialog.printer())
-        for x in range(self.tabs.count()):
-            self.tabs.setCurrentIndex(x)
-            currentScene = self.getCurrentPageScene()
-
-            # first unselect all objects
-            for item in currentScene.items():
-                item.setSelected(False)
-
-            if currentScene.pageType == "portrait":
-                previewDialog.printer().setPageOrientation(0)
-                print("Portrait")
-            else:
-                previewDialog.printer().setPageOrientation(1)
-                print("Landscape")
-            if x > 0:
-                previewDialog.printer().newPage()
-
-            source = QtCore.QRectF(0, 0, currentScene.width(), currentScene.height())
-            target = QRectF(0, 0, source.size().width() * scale, source.size().height() * scale)
-
-            currentScene.render(p, target, source)
-
-        p.end()
 
     # print all pages
     def printPreviewAllPages(self):
         print("pprintPreviewAllPages")
         previewDialog = QPrintPreviewDialog()
 
-        #previewDialog.printer().setResolution(QPrinter.PrinterMode.HighResolution)
         previewDialog.printer().setResolution(QPrinter.PrinterMode.HighResolution.value)
         previewDialog.printer().setOutputFormat(QPrinter.OutputFormat.PdfFormat)
-        print("pprintPreviewAllPages2")
         #previewDialog.printer().setPageSize(QtGui.QPagedPaintDevice.A4)
-
         previewDialog.paintRequested.connect(self.createPreview)
-
         previewDialog.exec()
 
     def createPreview(self, printer):
         scale = printer.resolution() / 96.0
-        #printer.setPageMargins(0, 0, 0, 0, QPrinter.Unit.Millimeter)
         printer.setPageMargins(QtCore.QMarginsF(0.0, 0.0, 0.0, 0.0), QtGui.QPageLayout.Unit.Millimeter)
 
         p = QPainter(printer)
@@ -1088,8 +1006,6 @@ class Window(QMainWindow):
     # print current page and save it to PDF
     def printPagePDF(self):
         print("print to PDF")
-        #options = QFileDialog.options().Options()
-        #options |= QFileDialog.options().DontUseNativeDialog
         options = QFileDialog.Option.DontUseNativeDialog
         fileName2, _ = QFileDialog.getSaveFileName(self, "QFileDialog.getSaveFileName()", "album.pdf",
                                                    "(*.pdf)", options=options)
@@ -1104,60 +1020,6 @@ class Window(QMainWindow):
     def printPreview(self):
         print("Print preview page")
         self.getCurrentPageScene().printPreview()
-
-    # review !!!!
-    def printPage(self):
-        print("Print page")
-
-
-        # printer.setPageSize(QtGui.QPagedPaintDevice.A4)
-        # printer.setResolution(100)
-        #
-        # painter = QtGui.QPainter(printer)
-        # delta = 20
-        # f = painter.font()
-        # f.setPixelSize(delta)
-        # painter.setFont(f)
-        #
-        # target = QtCore.QRectF(0, 0, printer.width(), 0)
-        #
-        # print(printer.width())
-        # print(printer.height())
-
-        # for item in self.page.scene.items():
-        #     #source = item.mapToScene(item.boundingRect()).boundingRect()
-        #     source = item.boundingRect()
-        #     print("item size")
-        #     print(source.height())
-        #     print(source.width())
-        #
-        #     target.setHeight(source.height())
-        #     if target.bottom() > printer.height():
-        #         printer.newPage()
-        #         target.moveTop(0)
-        #     self.page.scene.render(painter, target, source)
-        # if item.type().real == 8:
-        #     print("type 8")
-        #     par = item.parentItem()
-        #     # exclude all item where parent is a group
-        #     if par is None:
-        #         self.page.scene.render(painter, target, source)
-        # elif item.type().real == 10:
-        #     print("type 10")
-        #     self.page.scene.render(painter, target, source)
-
-        # stampItems = item.childItems()
-        # for stampItem in stampItems:
-
-        # f = painter.font()
-        # f.setPixelSize(delta)
-        # painter.drawText(
-        #     QtCore.QRectF(
-        #         target.bottomLeft(), QtCore.QSizeF(printer.width(), delta + 5)
-        #     ),
-        #     "test",
-        # )
-        # painter.end()
 
     # need to be written !!!
     def importFileFromExcel(self):
@@ -1196,21 +1058,14 @@ class Window(QMainWindow):
     def about(self):
         aboutMsg = QMessageBox()
         aboutMsg.setWindowTitle(_("About Stamp Album"))
-        aboutMsg.setText(_("Stamp Album ver5.0.1 \n Copyright Boris du Reau 2003-2023"))
-        aboutMsg.setIcon(QMessageBox.Information)
+        aboutMsg.setText(_("Stamp Album ver5.0.2 \n Copyright Boris du Reau 2003-2023"))
+        aboutMsg.setIcon(QMessageBox.Icon.Information)
         aboutMsg.exec()
 
     # application on line help
     def help(self):
-        #os.system('xdg-open ' + "Help/StampAlbum Manuel utilisateur 01-08-2023.pdf")
-        #os.startfile("Help/StampAlbum Manuel utilisateur 01-08-2023.pdf")
         if sys.platform.startswith('win32'):
             os.startfile("Help\\StampAlbum Manuel utilisateur 01-08-2023.pdf")
-        # dlg = HelpDlg()
-        # res = dlg.exec_()
-        #
-        # if res == QDialog.Accepted:
-        #     print("Clicked ok")
 
     # align menu functions
     def alignBottom(self):
@@ -1310,10 +1165,8 @@ class Window(QMainWindow):
         # get the current view and associated scene
         print("getCurrentPageScene")
         for child in self.tabs.currentWidget().children():
-            print("child")
             if child.__class__.__name__ == "GraphicsView":
                 # return the current scene
-                print("I have a scene")
                 return child.scene()
 
     def getCurrentPage(self):
@@ -1350,7 +1203,6 @@ class Window(QMainWindow):
         print("mouse move double clicked")
         self.getCurrentPageScene().editObject()
 
-
     # Delete selected objects
     # or edit object
     def keyPressEvent(self, event):
@@ -1379,13 +1231,11 @@ class Window(QMainWindow):
     def newCopyRightAllPages(self):
         print("newCopyRightAllPages")
         for x in range(0, self.tabs.count().real):
-            print(x)
             self.tabs.setCurrentIndex(x)
             self.getCurrentPageScene().newCopyRight()
 
     def newImage(self):
-        options = QFileDialog.options().Options()
-        options |= QFileDialog.options().DontUseNativeDialog
+        options = QFileDialog.Option.DontUseNativeDialog
         fileName, _ = QFileDialog.getOpenFileName(self, "Select picture", "", ("all pictures (*.jpg *.jpeg *.png);;PNG (*.png)" ),
                                                   options=options)
         self.getCurrentPageScene().addImage(fileName)
@@ -1407,6 +1257,7 @@ class Window(QMainWindow):
         if res == 1:
             print("Clicked ok")
 
+    ##########################################" obsolete code to be removed ############################################
     # obsolete
     def showdialog(self):
         print("not used")
@@ -1470,3 +1321,97 @@ class Window(QMainWindow):
         print("in stuff")
         dlg.close()
 
+    # obsolete
+    # review !!!!
+    def printPage(self):
+        print("Print page")
+
+
+        # printer.setPageSize(QtGui.QPagedPaintDevice.A4)
+        # printer.setResolution(100)
+        #
+        # painter = QtGui.QPainter(printer)
+        # delta = 20
+        # f = painter.font()
+        # f.setPixelSize(delta)
+        # painter.setFont(f)
+        #
+        # target = QtCore.QRectF(0, 0, printer.width(), 0)
+        #
+        # print(printer.width())
+        # print(printer.height())
+
+        # for item in self.page.scene.items():
+        #     #source = item.mapToScene(item.boundingRect()).boundingRect()
+        #     source = item.boundingRect()
+        #     print("item size")
+        #     print(source.height())
+        #     print(source.width())
+        #
+        #     target.setHeight(source.height())
+        #     if target.bottom() > printer.height():
+        #         printer.newPage()
+        #         target.moveTop(0)
+        #     self.page.scene.render(painter, target, source)
+        # if item.type().real == 8:
+        #     print("type 8")
+        #     par = item.parentItem()
+        #     # exclude all item where parent is a group
+        #     if par is None:
+        #         self.page.scene.render(painter, target, source)
+        # elif item.type().real == 10:
+        #     print("type 10")
+        #     self.page.scene.render(painter, target, source)
+
+        # stampItems = item.childItems()
+        # for stampItem in stampItems:
+
+        # f = painter.font()
+        # f.setPixelSize(delta)
+        # painter.drawText(
+        #     QtCore.QRectF(
+        #         target.bottomLeft(), QtCore.QSizeF(printer.width(), delta + 5)
+        #     ),
+        #     "test",
+        # )
+        # painter.end()
+
+        # print all pages
+        def printPreviewAllPagesOld(self):
+            print("print all pages_old")
+            previewDialog = QPrintPreviewDialog()
+
+            previewDialog.printer().setResolution(QPrinter.PrinterMode().HighResolution)
+            previewDialog.printer().setOutputFormat(QPrinter.OutputFormat.PdfFormat)
+            previewDialog.printer().setPageSize(QtGui.QPagedPaintDevice.A4)
+            previewDialog.exec()
+
+            # TODO select the file to print
+            # printer.setOutputFileName("album4.pdf")
+            scale = previewDialog.printer().resolution() / 96.0
+
+            previewDialog.printer().setPageMargins(0, 0, 0, 0, QPrinter.Unit.Millimeter)
+            p = QPainter(previewDialog.printer())
+            for x in range(self.tabs.count()):
+                self.tabs.setCurrentIndex(x)
+                currentScene = self.getCurrentPageScene()
+
+                # first unselect all objects
+                for item in currentScene.items():
+                    item.setSelected(False)
+
+                if currentScene.pageType == "portrait":
+                    previewDialog.printer().setPageOrientation(0)
+                    print("Portrait")
+                else:
+                    previewDialog.printer().setPageOrientation(1)
+                    print("Landscape")
+                if x > 0:
+                    previewDialog.printer().newPage()
+
+                source = QtCore.QRectF(0, 0, currentScene.width(), currentScene.height())
+                target = QRectF(0, 0, source.size().width() * scale, source.size().height() * scale)
+
+                currentScene.render(p, target, source)
+
+            p.end()

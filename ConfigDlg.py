@@ -8,7 +8,7 @@ from PyQt6.QtWidgets import (
     QToolBar,  QGraphicsTextItem, QGraphicsItemGroup, QDialog, QPushButton, QListWidget,
     QLineEdit, QFormLayout, QStatusBar, QTabWidget, QWidget, QVBoxLayout, QDialogButtonBox, QPlainTextEdit
 )
-from PyQt6.QtGui import QFont, QBrush, QPainter, QPen, QPixmap, QPolygonF, QImage, QIcon, QAction,QStandardItem, QColor
+from PyQt6.QtGui import QFont, QBrush, QPainter, QPen, QPixmap, QPolygonF, QImage, QIcon, QAction, QStandardItem, QColor
 from PyQt6.QtPrintSupport import QPrintPreviewDialog, QPrinter, QPrintDialog
 
 import configparser
@@ -29,8 +29,8 @@ class ConfigDlg(QDialog):
         self.createDlg()
 
     def createDlg(self):
-        self.setWindowModality(Qt.ApplicationModal)
-        self.setWindowFlags(Qt.Dialog)
+        # self.setWindowModality(Qt.ApplicationModal)
+        # self.setWindowFlags(Qt.Dialog)
 
         # default Copyright
         self.eCopyRight = QLineEdit()
@@ -51,7 +51,7 @@ class ConfigDlg(QDialog):
         # default stamp nbr font
 
         # ok /cancel button
-        bb = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        bb = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         bb.accepted.connect(self.accept)
         bb.rejected.connect(self.reject)
 
