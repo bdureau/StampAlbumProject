@@ -61,16 +61,20 @@ msgid "&Save"
 msgstr "&Sauvegarder"
 
 #: MainWindow.py:208
-msgid "&Print..."
-msgstr "&Imprimer…"
+msgid "&Print all pages..."
+msgstr "&Imprimer toutes les pages…"
 
 #: MainWindow.py:215
-msgid "&Print preview..."
-msgstr "Apperçu impression"
+msgid "&Print preview all pages..."
+msgstr "Apperçu impression toutes les pages..."
+
+#: MainWindow.py:182
+msgid "&Print preview current page..."
+msgstr "Apperçu impression page courante..."
 
 #: MainWindow.py:222
-msgid "&Print PDF..."
-msgstr "Convertir en PDF ..."
+msgid "&Print current to PDF..."
+msgstr "Convertir page courrante en PDF ..."
 
 #: MainWindow.py:229
 msgid "&Exit"
@@ -102,7 +106,10 @@ msgstr "Nouvelle page"
 
 #: MainWindow.py:261
 msgid "Delete Page ..."
-msgstr "Effacer page .."
+msgstr "Effacer page ..."
+#: MainWindow.py:239
+msgid "Delete Page Objects..."
+msgstr "Effacer objets page... "
 
 #: MainWindow.py:266
 msgid "Grid on/off"
@@ -120,9 +127,29 @@ msgstr "Nouvelle image ..."
 msgid "New copyright"
 msgstr "Nouveau copyright"
 
+#: MainWindow.py:268
+msgid "New copyright all pages"
+msgstr "Nouveau copyright sur toutes les pages"
+
 #: MainWindow.py:287
 msgid "New Page border"
 msgstr "Encadrement page"
+
+#: MainWindow.py:278
+msgid "New page nbr"
+msgstr "Numero de page"
+
+#: MainWindow.py:283
+msgid "New page nbr all pages"
+msgstr "Numero sur toutes les pages"
+
+#: MainWindow.py:288
+msgid "Add year to page"
+msgstr "Ajouter l'année"
+
+#: MainWindow.py:290
+msgid "Add year to all pages"
+msgstr "Ajouter l'année sur toutes les pages"
 
 #: MainWindow.py:293
 msgid "Align Left"
@@ -168,9 +195,57 @@ msgstr "Manuel"
 msgid "&About"
 msgstr "A propos"
 
+#: MainWindow.py:472
+msgid "Are you sure you want to exit the application?"
+msgstr "Etes vous certains de vouloir quitter l'application?"
+
+#: MainWindow.py:472
+msgid "Exit"
+msgstr "Quitter"
+
+#: MainWindow.py:550
+msgid "Are you sure you want clear the current page?"
+msgstr "Etes vous certain de vouloir effacer la page courrante?"
+
+#: MainWindow.py:550
+msgid "Delete all objects"
+msgstr "Effacer tous les objets"
+
+#: MainWindow.py:560
+msgid "Are you sure you want to delete the current page?"
+msgstr "Etes vous certain de vouloir supprimer la page courrante?"
+
+#: MainWindow.py:560
+msgid "Delete current page"
+msgstr "Supprimer page courrante"
+
+#: MainWindow.py:586
+msgid "Are you sure you want to delete the entire album?"
+msgstr "Etes vous certain de vouloir effacer l'album?"
+
+#: MainWindow.py:586
+msgid "Delete album"
+msgstr "Affacer album"
+
 #: MainWindow.py:452
 msgid "Are you sure you want to delete all the pages?"
 msgstr "Etes vous certain d effacer toutes les pages?"
+
+#: MainWindow.py:618 MainWindow.py:677
+msgid "Delete all pages"
+msgstr "Effacer toutes les pages"
+
+#: MainWindow.py:688
+msgid "Open Album file"
+msgstr "Ouvrir fichier album"
+
+#: MainWindow.py:888
+msgid "Save Album"
+msgstr "Sauvegarder album"
+
+#: MainWindow.py:1070
+msgid "Save current page"
+msgstr "Sauvegarder page courrante"
 
 #: MainWindow.py:890
 msgid "About Stamp Album"
@@ -187,3 +262,11 @@ msgstr ""
 #: MainWindow.py:1036
 msgid "Are you sure you want to delete those objects?"
 msgstr "Etes vous certains de vouloir effacer tous les objets?"
+
+#: MainWindow.py:1273
+msgid "Delete Object"
+msgstr "Effacer objets"
+
+#: MainWindow.py:1295
+msgid "Select picture"
+msgstr "Choisir image"

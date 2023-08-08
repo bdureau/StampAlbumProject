@@ -20,15 +20,14 @@ def item_to_ds(it, ds):
     print("item_to_ds")
     if not isinstance(it, QtWidgets.QGraphicsItem):
         return
-    print("item_to_ds 1")
+
     ds.writeQString(it.__class__.__module__)
     ds.writeQString(it.__class__.__name__)
-    print("item_to_ds 2")
+
     # save the flag
     print(it.flags())
     ds.writeInt(it.flags().value)
-    #ds.writeQString(it.flags())
-    print("item_to_ds 3")
+
     # save the position of the object
     ds << it.pos()
     # save the comment about the object
@@ -347,11 +346,9 @@ class GraphicsView(QtWidgets.QGraphicsView):
         mimedata = QtCore.QMimeData()
         ba = QtCore.QByteArray()
         ds = QtCore.QDataStream(ba, QtCore.QIODevice.OpenModeFlag.WriteOnly)
-        print("Copy1")
         for it in self.scene().selectedItems():
-            print("Copy1-1")
             item_to_ds(it, ds)
-        print("Copy2")
+
         mimedata.setData(custom_mimeType, ba)
         clipboard = QtGui.QGuiApplication.clipboard()
         clipboard.setMimeData(mimedata)

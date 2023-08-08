@@ -253,7 +253,6 @@ class Page(QGraphicsScene):
             print("update stamp")
             stamp.updateStamp(stampItem, stampObj, self)
 
-
     def printPagePDF(self,fileName2):
         print("printPagePDF")
         # first unselect all objects
@@ -283,7 +282,6 @@ class Page(QGraphicsScene):
         self.render(p, target, source)
         p.end()
 
-
     # does the print preview
     def printPreview(self):
         print("Print preview")
@@ -308,7 +306,8 @@ class Page(QGraphicsScene):
             item.setSelected(False)
 
         scale = printer.resolution() / 96.0
-        printer.setPageMargins(0, 0, 0, 0, QPrinter.Unit.Millimeter)
+
+        printer.setPageMargins(QtCore.QMarginsF(0.0, 0.0, 0.0, 0.0), QtGui.QPageLayout.Unit.Millimeter)
 
         p = QPainter(printer)
 
@@ -348,10 +347,9 @@ class Page(QGraphicsScene):
     def newStamp(self, lastStampObj):
         print("New Stamp")
         dlg = StampDlg(lastStampObj, self)
-        #res = dlg.exec_()
         res = dlg.exec()
-        print("after New Stamp")
-        #acceted
+
+        #accepted
         if res == 1:
             print("Clicked Done")
             # print(dlg.eYear.text())
@@ -426,7 +424,7 @@ class Page(QGraphicsScene):
         dlg = TextDlg()
         res = dlg.exec()
 
-        # accepeted
+        # accepted
         if res == 1:
             print("Clicked ok")
             text = dlg.eTXT.toPlainText()
@@ -450,15 +448,38 @@ class Page(QGraphicsScene):
         else:
             self.addTextLabel(pageName, (297 / (25.4 / 96)) - 60 - textWidth, 710, font, Qt.AlignmentFlag.AlignLeft, "labelPageNbr")
 
+    def addPageYear(self):
+        dlg = TextDlg()
+        res = dlg.exec()
+
+        # accepted
+        if res == 1:
+            print("Clicked ok")
+            text = dlg.eTXT.toPlainText()
+            font = dlg.eTXT.font()
+            align = dlg.eTXT.alignment()
+
+            self.addYear(text)
+        # rejected
+        if res == 0:
+            print("Clicked cancel")
+
     def addYear(self, year):
         print("add year")
         font = QFont()
         font.setPointSize(8)
         font.setBold(True)
-        self.addTextLabel(year, 80, 1045, font, Qt.AlignmentFlag.AlignLeft, "labelYear")
+        textLabel = QGraphicsTextItem(year)
+        textLabel.setFont(font)
+        textWidth = textLabel.boundingRect().size().width()
+        if self.pageType == "portrait":
+            self.addTextLabel(year, ((210 / (25.4 / 96) - textWidth))/2, 80, font, Qt.AlignmentFlag.AlignLeft, "labelYear")
+        else:
+            self.addTextLabel(year, ((297 / (25.4 / 96) - textWidth)) / 2, 80, font, Qt.AlignmentFlag.AlignLeft,
+                              "labelYear")
 
     def alignTop(self):
-        print("")
+        print("alignTop")
         topY = 0.0
         if self.countSelectedItems() > 1:
             for it in self.items():
@@ -479,27 +500,23 @@ class Page(QGraphicsScene):
         topH = 0.0
         if self.countSelectedItems() > 1:
             for it in self.items():
-                #print("it.y()%f" % it.y())
-                if it.y() > topY and it.isSelected() and it.parentItem() is None:
-                    topY = it.y()
-                    #print(topY)
-                if it.boundingRect().height() > topH and it.isSelected() and it.parentItem() is None:
-                    topH = it.boundingRect().height()
-                    print("topH:")
-                    print(topH)
+                if (it.y() + it.boundingRect().size().height()) > topY and it.isSelected() and it.parentItem() is None:
+                    topY = it.y() + it.boundingRect().size().height()
+
+                #if it.boundingRect().height() > topH and it.isSelected() and it.parentItem() is None:
+                #    topH = it.boundingRect().height()
+
             for it2 in self.items():
                 if it2.isSelected() and it2.parentItem() is None:
-                    it2.setPos(it2.x(), topY +(topH - it2.boundingRect().height()))
-                    #print(it2.Type)
-                    #print(it2.boundingRect().height())
-                    #print(it2.boundingRect().width())
+                    #it2.setPos(it2.x(), topY + (topH - it2.boundingRect().height()))
+                    it2.setPos(it2.x(), topY - it2.boundingRect().height())
 
         else:
             print("More than 1 item need to be selected fo aligning object")
 
     def alignLeft(self):
-        print("")
-        topX = 0.0
+        print("alignLeft")
+        topX = self.sceneRect().width()
         if self.countSelectedItems() > 1:
             for it in self.items():
                 print("it.x()%f" % it.x())
@@ -515,20 +532,20 @@ class Page(QGraphicsScene):
             print("More than 1 item need to be selected fo aligning object")
 
     def alignRight(self):
-        print("")
+        print("alignRight")
         topX = 0.0
         if self.countSelectedItems() > 1:
             for it in self.items():
-                if it.x() > topX and it.isSelected() and it.parentItem() is None:
-                    topX = it.x()
+                if (it.x() + it.boundingRect().size().width()) > topX and it.isSelected() and it.parentItem() is None:
+                    topX = (it.x() + it.boundingRect().size().width())
             for it2 in self.items():
                 if it2.isSelected() and it2.parentItem() is None:
-                    it2.setPos(topX, it2.y())
+                    it2.setPos(topX - it2.boundingRect().size().width(), it2.y())
         else:
             print("More than 1 item need to be selected fo aligning object")
 
     def distributeHorizontally(self):
-        print("")
+        print("distributeHorizontally")
         itemLength = 0
         minX = 0
         maxX = 0
@@ -565,7 +582,7 @@ class Page(QGraphicsScene):
 
     # distribute all objects verticlly
     def distributeVertically(self):
-        print("")
+        print("distributeVertically")
         itemLength = 0
         minY = 0
         maxY = 0
@@ -601,7 +618,7 @@ class Page(QGraphicsScene):
 
     # center all objects horizontally
     def centerHorizontally(self):
-        print("")
+        print("centerHorizontally")
         if self.countSelectedItems() > 0:
             for it in self.items():
                 if it.isSelected() and it.parentItem() is None:
@@ -612,7 +629,7 @@ class Page(QGraphicsScene):
 
     # center all objects vertically
     def centerVertically(self):
-        print("")
+        print("centerVertically")
         if self.countSelectedItems() > 0:
             for it in self.items():
                 if it.isSelected() and it.parentItem() is None:
@@ -626,26 +643,19 @@ class Page(QGraphicsScene):
         for it in self.items():
             if it.isSelected():
                 selected = selected+1
-
         return selected
 
     def addImage(self, fileName):
         print("add image")
-
-
         if fileName:
             print(fileName)
             pixmap = QPixmap(fileName)
             pixmapitem = QGraphicsPixmapItem(pixmap)
-            pixmapitem.setFlags(QGraphicsTextItem.GraphicsItemFlag.ItemIsMovable | QGraphicsTextItem.GraphicsItemFlag.ItemIsSelectable
-                                )
+            pixmapitem.setFlags(QGraphicsTextItem.GraphicsItemFlag.ItemIsMovable |
+                                QGraphicsTextItem.GraphicsItemFlag.ItemIsSelectable)
             self.addItem(pixmapitem)
-
         else:
             return
 
     def mouseDoubleClickEvent(self, event):
         print("mouse move double clicked on page")
-
-    #def mousePressEvent(self, event):
-    #    print("mouse clicked on page")

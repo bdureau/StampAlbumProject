@@ -124,7 +124,6 @@ class ConfigDlg(QDialog):
             "type encadrement": self.selectedBorderCombo.currentText(),
             "database type": self.selectedDatabaseCombo.currentText()
         }
-        #self.eCopyRight.setText("CopyRight © Boris du Reau 2022")
         # Write the above sections to stamp_album.cfg file
         with open(self.configFilePath, 'w') as config:
             self.configParser.write(config)

@@ -588,9 +588,8 @@ class StampDlg(QDialog):
         ret = self.getBoxInfo(self.pochetteList.currentItem().text())
         width = ret[0]
         height = ret[1]
-        #print(self.stampNbrList.currentIndex())
-        stampNbr = self.currentStampNbr #self.stampNbrList.model().item(0, 0).text()
-        #print("stampNbr:%s", stampNbr)
+
+        stampNbr = self.currentStampNbr
 
         stamp = Stamp()
         stamp.createStamp(self.scene, str(stampNbr), str(stampValue), str(stampDesc),

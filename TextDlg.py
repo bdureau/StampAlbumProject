@@ -115,8 +115,6 @@ class TextDlg(QDialog):
             self.eTXT.selectAll()
             self.eTXT.setAlignment(align)
 
-
-
         flo = QFormLayout()
         flo.addRow(hLayout1)
         flo.addRow("", self.eTXT)

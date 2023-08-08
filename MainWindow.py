@@ -46,9 +46,9 @@ class Window(QMainWindow):
         self.setWindowTitle("Stamp album")
         self.setWindowIcon(QtGui.QIcon('stamp_book1170.png'))
         #self.setMaximumWidth(222 / (25.4 / 96))
-        #self.setMaximumWidth(422 / (25.4 / 96))
+
         self.resize(222 / (25.4 / 96), 800)
-        #self.resize(422 / (25.4 / 96), 800)
+
         self.pageCount = 0
         self.lastStampObj = {}
         self.lastStampObj['country'] = None
@@ -68,156 +68,35 @@ class Window(QMainWindow):
         self.newPage(None, True)
         self.setCentralWidget(self.tabs)
 
+        self.currentAlbumName = ""
+
         self._createActions()
         self._createMenuBar()
         self._createToolBars()
         self._connectActions()
 
-    def closeEvent(self, event):
-        print("User has clicked the red x on the main window")
-        qm = QMessageBox()
-        ret = qm.question(self, 'Exit', "Are you sure you want to exit the application?",
-                          qm.StandardButton.Yes | qm.StandardButton.No)
-
-        if ret == qm.StandardButton.Yes:
-            event.accept()
-        else:
-            event.ignore()
-
-
-    # Create a new page in a tab
-    def newPage(self, _pageType=None, border=None):
-        if _pageType is not None and (_pageType == 'portrait' or _pageType == 'landscape'):
-            self.pageType = _pageType
-        else:
-            self.pageType = "portrait"
-            pDlg = PageDlg()
-
-            res = pDlg.exec()
-            #accepted
-            if res == 1:
-                if pDlg.pageType == "portrait":
-                    print("portrait")
-                    self.pageType = "portrait"
-                    border = True
-                else:
-                    print("landscape")
-                    self.pageType = "landscape"
-                    border = True
-            #rejected
-            if res == 0:
-                return
-
-        page = Page(self.pageType, border)
-
-        view = GraphicsView(page)
-
-        view.resize(210 / (25.4 / 96), 297 / (25.4 / 96))
-        ###view.setRenderHint(QPainter.Antialiasing)
-
-
-        if self.pageType == "portrait":
-            view.setMaximumWidth(210 / (25.4 / 96))
-            view.setMaximumHeight(297 / (25.4 / 96))
-        else:
-            view.setMaximumWidth(297 / (25.4 / 96))
-            view.setMaximumHeight(210 / (25.4 / 96))
-        #scroll to top
-        view.scrollContentsBy(0, 0)
-        tab1 = QWidget()
-        tab1.layout = QVBoxLayout(self)
-        tab1.layout.addWidget(view)
-        tab1.setLayout(tab1.layout)
-        tab1.setAutoFillBackground(True)
-
-        palette = tab1.palette()
-        palette.setColor(tab1.backgroundRole(), Qt.GlobalColor.lightGray)
-        tab1.setPalette(palette)
-        self.pageCount = self.pageCount + 1
-        #currentPage = self.tabs.addTab(tab1, "Page " + str(self.pageCount))
-        currentPage = self.tabs.insertTab(self.tabs.currentIndex()+1, tab1, "Page " + str(self.tabs.count().real))
-
-        # rename all pages after insert
-        #for tab in self.tabs:
-        #    self.tabs.currentWidget().setWindowTitle("toto")
-
-        for x in range(0, self.tabs.count().real):
-            self.tabs.setCurrentIndex(x)
-            self.tabs.setTabText(self.tabs.currentIndex(), "Page " + str(x+1))
-
-        self.tabs.setCurrentIndex(currentPage)
-        return page
-
-    # delete current page
-    def deleteCurrentPage(self):
-        qm = QMessageBox()
-        ret = qm.question(self, 'Delete current page', "Are you sure you want to delete the current page?",
-                          qm.StandardButton.Yes | qm.StandardButton.No)
-
-        if ret == qm.StandardButton.No:
-            return
-        # only allow delete if number of page is greater than one
-        if self.tabs.count().real > 0:
-            self.tabs.removeTab(self.tabs.currentIndex())
-
-            for x in range(0, self.tabs.count().real):
-                self.tabs.setCurrentIndex(x)
-                self.tabs.setTabText(self.tabs.currentIndex(), "Page " + str(x + 1))
-
-    # remove all pages
-    def deleteAllPages(self):
-        print("Delete all pages")
-        for x in range(self.tabs.count()):
-            self.tabs.removeTab(self.tabs.currentIndex())
-        self.pageCount = 0
-
-    def deleteAlbum(self):
-        print("delete current album")
-        qm = QMessageBox()
-        ret = qm.question(self, 'Delete album', "Are you sure you want to delete the entire album?", qm.StandardButton.Yes | qm.StandardButton.No)
-
-        if ret == qm.StandardButton.No:
-            return
-        self.deleteAllPages()
-
-    def newBorder(self):
-        print("change border")
-        if self.getCurrentPageScene().pageType == "portrait":
-            self.getCurrentPageScene().addBorder(177 / (25.4 / 96.0),
-                           272 / (25.4 / 96.0),
-                           19 / (25.4 / 96.0),
-                           0,
-                           0,
-                           0)
-        else:
-            self.getCurrentPageScene().addBorder(272 / (25.4 / 96.0),
-                           177 / (25.4 / 96.0),
-                           ((297-272) / 2) / (25.4 / 96.0),
-                           0,
-                           19 / (25.4 / 96.0),
-                           0)
-
-    def exitApp(self):
-        print("exit app")
-        self.close()
-
     def _createMenuBar(self):
         menuBar = self.menuBar()
-        # Creating menus using a QMenu object
+        # File Menu
         fileMenu = QMenu(_("&File"), self)
         menuBar.addMenu(fileMenu)
         fileMenu.addAction(self.newAction)
         fileMenu.addAction(self.openAction)
         fileMenu.addAction(self.saveAction)
+        # print
         fileMenu.addAction(self.printAction)
-        fileMenu.addAction(self.printPreviewAction)
+        fileMenu.addAction(self.printPreviewCurrentPageAction)
+        fileMenu.addAction(self.printPreviewAllPagesAction)
         fileMenu.addAction(self.printPDFAction)
+        # exit
         fileMenu.addAction(self.exitAction)
-        # Creating menus using a title
+
+        # Edit menus
         editMenu = menuBar.addMenu(_("&Edit"))
         editMenu.addAction(self.copyAction)
         editMenu.addAction(self.pasteAction)
         editMenu.addAction(self.cutAction)
+
         # stamp menu
         stampMenu = menuBar.addMenu(_("&Stamp"))
         stampMenu.addAction(self.newStampAction)
@@ -238,6 +117,7 @@ class Window(QMainWindow):
         pageMenu = menuBar.addMenu(_("Page"))
         pageMenu.addAction(self.newPageAction)
         pageMenu.addAction(self.deletePageAction)
+        pageMenu.addAction(self.deletePageObjectsAction)
         pageMenu.addAction(self.drawGridAction)
         pageMenu.addAction(self.deleteAlbumAction)
 
@@ -250,6 +130,8 @@ class Window(QMainWindow):
         objectMenu.addAction(self.newCopyRightAllPagesAction)
         objectMenu.addAction(self.newPageNbrAction)
         objectMenu.addAction(self.newPageNbrAllPagesAction)
+        objectMenu.addAction(self.newYearToPageAction)
+        objectMenu.addAction(self.newYearToAllPagesAction)
 
         # Config menu
         configMenu = menuBar.addMenu(_("&Config"))
@@ -284,21 +166,27 @@ class Window(QMainWindow):
         self.saveAction.setObjectName("actionSave")
 
         # print actions
-        self.printAction = QAction(_("&Print..."), self)
+        self.printAction = QAction(_("&Print all pages..."), self)
         iconPrint = QIcon()
         iconPrint.addPixmap(QPixmap("images/print.png"), QIcon.Mode.Normal, QIcon.State.Off)
         self.printAction.setIcon(iconPrint)
         self.printAction.setObjectName("printAction")
 
         # print preview
-        self.printPreviewAction = QAction(_("&Print preview..."), self)
-        iconPrintPreview = QIcon()
-        iconPrintPreview.addPixmap(QPixmap("images/printprev.png"), QIcon.Mode.Normal, QIcon.State.Off)
-        self.printPreviewAction.setIcon(iconPrintPreview)
-        self.printPreviewAction.setObjectName("printPreviewAction")
+        self.printPreviewAllPagesAction = QAction(_("&Print preview all pages..."), self)
+        iconPrintPreviewAllPages = QIcon()
+        iconPrintPreviewAllPages.addPixmap(QPixmap("images/printprev.png"), QIcon.Mode.Normal, QIcon.State.Off)
+        self.printPreviewAllPagesAction.setIcon(iconPrintPreviewAllPages)
+        self.printPreviewAllPagesAction.setObjectName("printPreviewAllPagesAction")
+
+        self.printPreviewCurrentPageAction = QAction(_("&Print preview current page..."), self)
+        iconPrintPreviewCurrentPage = QIcon()
+        iconPrintPreviewCurrentPage.addPixmap(QPixmap("images/printprev.png"), QIcon.Mode.Normal, QIcon.State.Off)
+        self.printPreviewCurrentPageAction.setIcon(iconPrintPreviewCurrentPage)
+        self.printPreviewCurrentPageAction.setObjectName("printPreviewCurrentPageAction")
 
         # print PDF
-        self.printPDFAction = QAction(_("&Print PDF..."), self)
+        self.printPDFAction = QAction(_("&Print current to PDF..."), self)
         iconPrintPDF = QIcon()
         iconPrintPDF.addPixmap(QPixmap("images/pdf.png"), QIcon.Mode.Normal, QIcon.State.Off)
         self.printPDFAction.setIcon(iconPrintPDF)
@@ -334,9 +222,9 @@ class Window(QMainWindow):
         stampIcon = QIcon()
         stampIcon.addPixmap(QPixmap("images/stamp.png"), QIcon.Mode.Normal, QIcon.State.Off)
         self.newStampAction.setIcon(stampIcon)
-        # todo add icon
 
-        # pages action
+
+        # pages actions
         self.newPageAction = QAction(_("New Page ..."), self)
         iconNewPage = QIcon()
         iconNewPage.addPixmap(QPixmap("images/page.png"), QIcon.Mode.Normal, QIcon.State.Off)
@@ -346,6 +234,9 @@ class Window(QMainWindow):
         iconDeletePage = QIcon()
         iconDeletePage.addPixmap(QPixmap("images/delete_page.png"), QIcon.Mode.Normal, QIcon.State.Off)
         self.deletePageAction.setIcon(iconDeletePage)
+
+        # todo add icon
+        self.deletePageObjectsAction = QAction(_("Delete Page Objects..."), self)
 
         self.drawGridAction = QAction(_("Grid on/off"), self)
         iconDrawGrid = QIcon()
@@ -358,7 +249,7 @@ class Window(QMainWindow):
         self.deleteAlbumAction.setIcon(iconDelete)
 
 
-        # object action
+        # object actions
         self.newTextAction = QAction(_("New text ..."), self)
         iconNewText = QIcon()
         iconNewText.addPixmap(QPixmap("images/text.png"), QIcon.Mode.Normal, QIcon.State.Off)
@@ -393,6 +284,10 @@ class Window(QMainWindow):
         iconPageNbrAllPages = QIcon()
         iconPageNbrAllPages.addPixmap(QPixmap("images/number.png"), QIcon.Mode.Normal, QIcon.State.Off)
         self.newPageNbrAllPagesAction.setIcon(iconPageNbrAllPages)
+
+        self.newYearToPageAction = QAction(_("Add year to page"), self)
+
+        self.newYearToAllPagesAction = QAction(_("Add year to all pages"), self)
 
         # align actions
         self.alignLeftAction = QAction(_("Align Left"), self)
@@ -459,7 +354,8 @@ class Window(QMainWindow):
         fileToolBar.addAction(self.openAction)
         fileToolBar.addAction(self.saveAction)
         fileToolBar.addAction(self.printPDFAction)
-        fileToolBar.addAction(self.printPreviewAction)
+        fileToolBar.addAction(self.printPreviewAllPagesAction)
+        fileToolBar.addAction(self.printPreviewCurrentPageAction)
         fileToolBar.addAction(self.exitAction)
 
         # Edit toolbar
@@ -473,6 +369,7 @@ class Window(QMainWindow):
         pageToolBar = QToolBar("Page", self)
         pageToolBar.addAction(self.newPageAction)
         pageToolBar.addAction(self.deletePageAction)
+        pageToolBar.addAction(self.deletePageObjectsAction)
         pageToolBar.addAction(self.drawGridAction)
         pageToolBar.addAction(self.deleteAlbumAction)
         self.addToolBar(pageToolBar)
@@ -519,8 +416,9 @@ class Window(QMainWindow):
         self.saveAction.triggered.connect(self.saveAlbumToFile)
         self.printAction.triggered.connect(self.printAllPagesPDF)
         self.printPDFAction.triggered.connect(self.printPagePDF)
-        self.printPreviewAction.triggered.connect(self.printPreviewAllPages)
-        self.printAction.triggered.connect(self.printPage)
+        self.printPreviewAllPagesAction.triggered.connect(self.printPreviewAllPages)
+        self.printPreviewCurrentPageAction.triggered.connect(self.printPreviewCurrentPage)
+        #self.printAction.triggered.connect(self.printPage)
 
         self.exitAction.triggered.connect(self.exitApp)
 
@@ -548,6 +446,7 @@ class Window(QMainWindow):
         # page actions
         self.newPageAction.triggered.connect(self.newPage)
         self.deletePageAction.triggered.connect(self.deleteCurrentPage)
+        self.deletePageObjectsAction.triggered.connect(self.clearPageObjects)
         self.drawGridAction.triggered.connect(self.gridOnOff)
         self.deleteAlbumAction.triggered.connect(self.deleteAlbum)
 
@@ -559,10 +458,155 @@ class Window(QMainWindow):
         self.newBorderAction.triggered.connect(self.newBorder)
         self.newPageNbrAction.triggered.connect(self.newPageNbr)
         self.newPageNbrAllPagesAction.triggered.connect(self.newPageNbrAllPages)
+        self.newYearToPageAction.triggered.connect(self.addYearToPage)
+        self.newYearToAllPagesAction.triggered.connect(self.addYearToAllPages)
 
         # help actions
         self.aboutAction.triggered.connect(self.about)
         self.helpContentAction.triggered.connect(self.help)
+
+    # exit the application
+    def closeEvent(self, event):
+        print("User has clicked the red x on the main window")
+        qm = QMessageBox()
+        ret = qm.question(self, _('Exit'), _("Are you sure you want to exit the application?"),
+                          qm.StandardButton.Yes | qm.StandardButton.No)
+
+        if ret == qm.StandardButton.Yes:
+            event.accept()
+        else:
+            event.ignore()
+    def exitApp(self):
+        print("exit app")
+        self.close()
+
+    # Create a new page in a tab
+    def newPage(self, _pageType=None, border=None):
+        if _pageType is not None and (_pageType == 'portrait' or _pageType == 'landscape'):
+            self.pageType = _pageType
+        else:
+            self.pageType = "portrait"
+            pDlg = PageDlg()
+
+            res = pDlg.exec()
+            #accepted
+            if res == 1:
+                if pDlg.pageType == "portrait":
+                    print("portrait")
+                    self.pageType = "portrait"
+                    border = True
+                else:
+                    print("landscape")
+                    self.pageType = "landscape"
+                    border = True
+            #rejected
+            if res == 0:
+                return
+
+        page = Page(self.pageType, border)
+
+        view = GraphicsView(page)
+
+        view.resize(210 / (25.4 / 96), 297 / (25.4 / 96))
+        ###view.setRenderHint(QPainter.Antialiasing)
+
+
+        if self.pageType == "portrait":
+            view.setMaximumWidth(210 / (25.4 / 96))
+            view.setMaximumHeight(297 / (25.4 / 96))
+        else:
+            view.setMaximumWidth(297 / (25.4 / 96))
+            view.setMaximumHeight(210 / (25.4 / 96))
+        #scroll to top
+        view.scrollContentsBy(0, 0)
+        tab1 = QWidget()
+        tab1.layout = QVBoxLayout(self)
+        tab1.layout.addWidget(view)
+        tab1.setLayout(tab1.layout)
+        tab1.setAutoFillBackground(True)
+
+        palette = tab1.palette()
+        palette.setColor(tab1.backgroundRole(), Qt.GlobalColor.lightGray)
+        tab1.setPalette(palette)
+        self.pageCount = self.pageCount + 1
+        #currentPage = self.tabs.addTab(tab1, "Page " + str(self.pageCount))
+        currentPage = self.tabs.insertTab(self.tabs.currentIndex()+1, tab1, "Page " + str(self.tabs.count().real))
+
+        # rename all pages after insert
+        #for tab in self.tabs:
+        #    self.tabs.currentWidget().setWindowTitle("toto")
+
+        for x in range(0, self.tabs.count().real):
+            self.tabs.setCurrentIndex(x)
+            self.tabs.setTabText(self.tabs.currentIndex(), "Page " + str(x+1))
+
+        self.tabs.setCurrentIndex(currentPage)
+        return page
+
+    # clear objects on current page
+    def clearPageObjects(self):
+        print("clear page")
+        qm = QMessageBox()
+        ret = qm.question(self, _('Delete all objects'), _("Are you sure you want clear the current page?"),
+                          qm.StandardButton.Yes | qm.StandardButton.No)
+
+        if ret == qm.StandardButton.No:
+            return
+        self.getCurrentPageScene().clearPage()
+
+    # delete current page
+    def deleteCurrentPage(self):
+        qm = QMessageBox()
+        ret = qm.question(self, _('Delete current page'), _("Are you sure you want to delete the current page?"),
+                          qm.StandardButton.Yes | qm.StandardButton.No)
+
+        if ret == qm.StandardButton.No:
+            return
+        # only allow delete if number of page is greater than one
+        if self.tabs.count().real > 0:
+            self.tabs.removeTab(self.tabs.currentIndex())
+
+            for x in range(0, self.tabs.count().real):
+                self.tabs.setCurrentIndex(x)
+                self.tabs.setTabText(self.tabs.currentIndex(), "Page " + str(x + 1))
+
+    # remove all pages
+    def deleteAllPages(self):
+        print("Delete all pages")
+        for x in range(self.tabs.count()):
+            self.tabs.removeTab(self.tabs.currentIndex())
+        self.pageCount = 0
+
+        self.currentAlbumName = ""
+
+    # delete entire album
+    def deleteAlbum(self):
+        print("delete current album")
+        qm = QMessageBox()
+        ret = qm.question(self, _('Delete album'), _("Are you sure you want to delete the entire album?"),
+                          qm.StandardButton.Yes | qm.StandardButton.No)
+
+        if ret == qm.StandardButton.No:
+            return
+        self.deleteAllPages()
+        self.currentAlbumName = ""
+
+    def newBorder(self):
+        print("change border")
+        if self.getCurrentPageScene().pageType == "portrait":
+            self.getCurrentPageScene().addBorder(177 / (25.4 / 96.0),
+                           272 / (25.4 / 96.0),
+                           19 / (25.4 / 96.0),
+                           0,
+                           0,
+                           0)
+        else:
+            self.getCurrentPageScene().addBorder(272 / (25.4 / 96.0),
+                           177 / (25.4 / 96.0),
+                           ((297-272) / 2) / (25.4 / 96.0),
+                           0,
+                           19 / (25.4 / 96.0),
+                           0)
 
     # file menu functions
     # delete all pages and create a new file
@@ -571,7 +615,7 @@ class Window(QMainWindow):
         print("creating new File")
         # Ask user about confirmation on deleting all pages
         qm = QMessageBox()
-        ret = qm.question(self, 'Delete all pages', _("Are you sure you want to delete all the pages?"),
+        ret = qm.question(self, _('Delete all pages'), _("Are you sure you want to delete all the pages?"),
                           qm.StandardButton.Yes | qm.StandardButton.No)
 
         if ret == qm.StandardButton.No:
@@ -581,17 +625,16 @@ class Window(QMainWindow):
         # Create one empty page
         self.newPage(None, True)
 
+    # add page number
     def newPageNbr(self):
         print("newPageNbr")
         self.getCurrentPageScene().newPageNbr()
-
     def newPageNbrAllPages(self):
         print("Create new  nbr")
         dlg = TextDlg()
         res = dlg.exec()
-        #accepeted
+        #accepted
         if res == 1:
-            print("Clicked ok")
             text = dlg.eTXT.toPlainText()
             font = dlg.eTXT.font()
             align = dlg.eTXT.alignment()
@@ -604,11 +647,35 @@ class Window(QMainWindow):
         if res == 0:
             print("Clicked cancel")
 
+    # add year to the page
+    def addYearToPage(self):
+        print("addYearToPage")
+        self.getCurrentPageScene().addPageYear()
+
+    def addYearToAllPages(self):
+        print("addYearToAllPages")
+        dlg = TextDlg()
+        res = dlg.exec()
+        #accepted
+        if res == 1:
+            text = dlg.eTXT.toPlainText()
+            font = dlg.eTXT.font()
+            align = dlg.eTXT.alignment()
+
+            for x in range(0, self.tabs.count().real):
+                self.tabs.setCurrentIndex(x)
+                self.getCurrentPageScene().addYear(text)
+
+        #rejected
+        if res == 0:
+            print("Clicked cancel")
+
     # open an album from a file
     def openAlbumFile(self):
         print("Open album")
         qm = QMessageBox()
-        ret = qm.question(self, 'Delete all pages', "Are you sure you want to delete all the pages?",
+
+        ret = qm.question(self, "Delete all pages", "Are you sure you want to delete all the pages?",
                           qm.StandardButton.Yes | qm.StandardButton.No)
 
         if ret == qm.StandardButton.No:
@@ -634,6 +701,7 @@ class Window(QMainWindow):
         else:
             f = open(fileName, 'r')
 
+        self.currentAlbumName = fileName
         mytree = ET.parse(f)
         f.close()
         myroot = mytree.getroot()
@@ -817,11 +885,8 @@ class Window(QMainWindow):
     # save an album to a file
     def saveAlbumToFile(self):
         print("Save album to file")
-
-        #options = QFileDialog.setOptions(QFileDialog.options)
-        #options |= QFileDialog.options().DontUseNativeDialog
         options = QFileDialog.Option.DontUseNativeDialog
-        fileName, _ = QFileDialog.getSaveFileName(self, "QFileDialog.getSaveFileName()", "",
+        fileName, _ = QFileDialog.getSaveFileName(self, "Save Album", "",
                                                   "Album Files (*.sta)", options=options)
         if fileName:
             print(fileName)
@@ -835,8 +900,7 @@ class Window(QMainWindow):
         else:
             return
 
-
-
+        self.currentAlbumName = fileName
         root = ET.Element("album")
 
         for x in range(self.tabs.count()):
@@ -932,8 +996,7 @@ class Window(QMainWindow):
 
         printer.setOutputFormat(QPrinter.OutputFormat.PdfFormat)
 
-        # TODO select the file to print
-        printer.setOutputFileName("album4.pdf")
+        printer.setOutputFileName(self.currentAlbumName + ".pdf")
         scale = printer.resolution() / 96.0
 
         printer.setPageMargins(QtCore.QMarginsF(0.0, 0.0, 0.0, 0.0), QtGui.QPageLayout.Unit.Millimeter)
@@ -962,12 +1025,10 @@ class Window(QMainWindow):
 
         p.end()
 
-
     # print all pages
     def printPreviewAllPages(self):
-        print("pprintPreviewAllPages")
+        print("printPreviewAllPages")
         previewDialog = QPrintPreviewDialog()
-
         previewDialog.printer().setResolution(QPrinter.PrinterMode.HighResolution.value)
         previewDialog.printer().setOutputFormat(QPrinter.OutputFormat.PdfFormat)
         #previewDialog.printer().setPageSize(QtGui.QPagedPaintDevice.A4)
@@ -1007,9 +1068,8 @@ class Window(QMainWindow):
     def printPagePDF(self):
         print("print to PDF")
         options = QFileDialog.Option.DontUseNativeDialog
-        fileName2, _ = QFileDialog.getSaveFileName(self, "QFileDialog.getSaveFileName()", "album.pdf",
+        fileName2, _ = QFileDialog.getSaveFileName(self, "Save current page", "album.pdf",
                                                    "(*.pdf)", options=options)
-        print("Save album to file3")
         if fileName2:
             print(fileName2)
         else:
@@ -1017,7 +1077,7 @@ class Window(QMainWindow):
         self.getCurrentPageScene().printPagePDF(fileName2)
 
     # print preview the current page
-    def printPreview(self):
+    def printPreviewCurrentPage(self):
         print("Print preview page")
         self.getCurrentPageScene().printPreview()
 
@@ -1187,9 +1247,6 @@ class Window(QMainWindow):
         for item in items:
             if item.type().real == 10:
                 stampItems = item.childItems()
-                print("pos")
-                print(item.x())
-                print(item.y())
 
     # need to review
     def mouseMoveEvent(self, event):
@@ -1214,7 +1271,7 @@ class Window(QMainWindow):
         # delete an object
         if event.key() == Qt.Key.Key_Delete:
             qm = QMessageBox()
-            ret = qm.question(self, 'Delete Object', _("Are you sure you want to delete those objects?"),
+            ret = qm.question(self, _('Delete Object'), _("Are you sure you want to delete those objects?"),
                               qm.StandardButton.Yes | qm.StandardButton.No)
 
             if ret == qm.StandardButton.No:
@@ -1276,26 +1333,19 @@ class Window(QMainWindow):
         v.setMinimumWidth(400)
         v.setMinimumHeight(350)
         l.addWidget(v)
-        print("dialog 2-1")
+
         bb = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         bb.accepted.connect(d.accept)
         bb.rejected.connect(d.reject)
         l.addWidget(bb)
-        print("dialog 2-2")
+
         bb.addButton('Copy to clipboard', bb.StandardButton.ActionRole)
-        print("dialog 3")
-        # bb.clicked.connect(lambda :
-        #         #QApplication.clipboard().setText(v.toPlainText())
-        #         #print("test")
-        #         d.close()
-        # )
 
         bb.clicked.connect(lambda:
                            self.saveStuff(d))
         res = d.exec()
         #accepted
         if res == 1:
-            print("Clicked ok")
             print(v.toPlainText())
         #rejected
         if res == 0:

@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2022-11-01 09:18+0100\n"
+"POT-Creation-Date: 2023-08-08 11:25+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -15,112 +15,144 @@ msgstr ""
 "Generated-By: pygettext.py 1.5\n"
 
 
-#: MainWindow.py:133
+#: MainWindow.py:81
 msgid "&File"
 msgstr ""
 
-#: MainWindow.py:143
+#: MainWindow.py:95
 msgid "&Edit"
 msgstr ""
 
-#: MainWindow.py:148
+#: MainWindow.py:101
 msgid "&Stamp"
 msgstr ""
 
-#: MainWindow.py:153
+#: MainWindow.py:106
 msgid "Align"
 msgstr ""
 
-#: MainWindow.py:164
+#: MainWindow.py:117
 msgid "Page"
 msgstr ""
 
-#: MainWindow.py:170
+#: MainWindow.py:125
 msgid "Objects"
 msgstr ""
 
-#: MainWindow.py:177
+#: MainWindow.py:137
 msgid "&Config"
 msgstr ""
 
-#: MainWindow.py:180
+#: MainWindow.py:141
 msgid "&Help"
 msgstr ""
 
-#: MainWindow.py:188
+#: MainWindow.py:149
 msgid "&New"
 msgstr ""
 
-#: MainWindow.py:194
+#: MainWindow.py:155
 msgid "&Open..."
 msgstr ""
 
-#: MainWindow.py:201
+#: MainWindow.py:162
 msgid "&Save"
 msgstr ""
 
-#: MainWindow.py:208
-msgid "&Print..."
+#: MainWindow.py:169
+msgid "&Print all pages..."
 msgstr ""
 
-#: MainWindow.py:215
-msgid "&Print preview..."
+#: MainWindow.py:176
+msgid "&Print preview all pages..."
 msgstr ""
 
-#: MainWindow.py:222
-msgid "&Print PDF..."
+#: MainWindow.py:182
+msgid "&Print preview current page..."
 msgstr ""
 
-#: MainWindow.py:229
+#: MainWindow.py:189
+msgid "&Print current to PDF..."
+msgstr ""
+
+#: MainWindow.py:196
 msgid "&Exit"
 msgstr ""
 
-#: MainWindow.py:236
+#: MainWindow.py:203
 msgid "&Copy"
 msgstr ""
 
-#: MainWindow.py:241
+#: MainWindow.py:208
 msgid "&Paste"
 msgstr ""
 
-#: MainWindow.py:246
+#: MainWindow.py:214
 msgid "C&ut"
 msgstr ""
 
-#: MainWindow.py:252
+#: MainWindow.py:220
 msgid "New Stamp ..."
 msgstr ""
 
-#: MainWindow.py:253
+#: MainWindow.py:221
 msgid "Edit Current Stamp ..."
 msgstr ""
 
-#: MainWindow.py:256
+#: MainWindow.py:228
 msgid "New Page ..."
 msgstr ""
 
-#: MainWindow.py:261
+#: MainWindow.py:233
 msgid "Delete Page ..."
 msgstr ""
 
-#: MainWindow.py:266
+#: MainWindow.py:239
+msgid "Delete Page Objects..."
+msgstr ""
+
+#: MainWindow.py:241
 msgid "Grid on/off"
 msgstr ""
 
-#: MainWindow.py:272
+#: MainWindow.py:246
+msgid "Delete Album ..."
+msgstr ""
+
+#: MainWindow.py:253
 msgid "New text ..."
 msgstr ""
 
-#: MainWindow.py:277
+#: MainWindow.py:258
 msgid "New Image ..."
 msgstr ""
 
-#: MainWindow.py:282
+#: MainWindow.py:263
 msgid "New copyright"
 msgstr ""
 
-#: MainWindow.py:287
+#: MainWindow.py:268
+msgid "New copyright all pages"
+msgstr ""
+
+#: MainWindow.py:273
 msgid "New Page border"
+msgstr ""
+
+#: MainWindow.py:278
+msgid "New page nbr"
+msgstr ""
+
+#: MainWindow.py:283
+msgid "New page nbr all pages"
+msgstr ""
+
+#: MainWindow.py:288
+msgid "Add year to page"
+msgstr ""
+
+#: MainWindow.py:290
+msgid "Add year to all pages"
 msgstr ""
 
 #: MainWindow.py:293
@@ -167,21 +199,77 @@ msgstr ""
 msgid "&About"
 msgstr ""
 
-#: MainWindow.py:452
+#: MainWindow.py:472
+msgid "Are you sure you want to exit the application?"
+msgstr ""
+
+#: MainWindow.py:472
+msgid "Exit"
+msgstr ""
+
+#: MainWindow.py:550
+msgid "Are you sure you want clear the current page?"
+msgstr ""
+
+#: MainWindow.py:550
+msgid "Delete all objects"
+msgstr ""
+
+#: MainWindow.py:560
+msgid "Are you sure you want to delete the current page?"
+msgstr ""
+
+#: MainWindow.py:560
+msgid "Delete current page"
+msgstr ""
+
+#: MainWindow.py:586
+msgid "Are you sure you want to delete the entire album?"
+msgstr ""
+
+#: MainWindow.py:586
+msgid "Delete album"
+msgstr ""
+
+#: MainWindow.py:618 MainWindow.py:677
 msgid "Are you sure you want to delete all the pages?"
 msgstr ""
 
-#: MainWindow.py:890
+#: MainWindow.py:618 MainWindow.py:677
+msgid "Delete all pages"
+msgstr ""
+
+#: MainWindow.py:688
+msgid "Open Album file"
+msgstr ""
+
+#: MainWindow.py:888
+msgid "Save Album"
+msgstr ""
+
+#: MainWindow.py:1070
+msgid "Save current page"
+msgstr ""
+
+#: MainWindow.py:1119
 msgid "About Stamp Album"
 msgstr ""
 
-#: MainWindow.py:891
+#: MainWindow.py:1120
 msgid ""
-"Stamp Album ver5.0 \n"
-" Copyright Boris du Reau 2022"
+"Stamp Album ver5.0.2 \n"
+" Copyright Boris du Reau 2003-2023"
 msgstr ""
 
-#: MainWindow.py:1036
+#: MainWindow.py:1273
 msgid "Are you sure you want to delete those objects?"
+msgstr ""
+
+#: MainWindow.py:1273
+msgid "Delete Object"
+msgstr ""
+
+#: MainWindow.py:1295
+msgid "Select picture"
 msgstr ""
 
