@@ -49,6 +49,7 @@ class Page(QGraphicsScene):
                            0)
 
     def getPageName(self):
+        #self.backgroundBrush().texture().detach()
         return ""
 
     def addBorder(self, boxWidth, boxHeight, margin_left, margin_right, margin_top, margin_bottom):
@@ -497,20 +498,14 @@ class Page(QGraphicsScene):
     def alignBottom(self):
         print("align bottom")
         topY = 0.0
-        topH = 0.0
         if self.countSelectedItems() > 1:
             for it in self.items():
                 if (it.y() + it.boundingRect().size().height()) > topY and it.isSelected() and it.parentItem() is None:
                     topY = it.y() + it.boundingRect().size().height()
 
-                #if it.boundingRect().height() > topH and it.isSelected() and it.parentItem() is None:
-                #    topH = it.boundingRect().height()
-
             for it2 in self.items():
                 if it2.isSelected() and it2.parentItem() is None:
-                    #it2.setPos(it2.x(), topY + (topH - it2.boundingRect().height()))
                     it2.setPos(it2.x(), topY - it2.boundingRect().height())
-
         else:
             print("More than 1 item need to be selected fo aligning object")
 

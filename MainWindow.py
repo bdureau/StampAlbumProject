@@ -1162,6 +1162,7 @@ class Window(QMainWindow):
         child = self.getCurrentPageScene()
         if self.gridOn:
             child.setBackgroundBrush(QBrush(self.deleteGrid()))
+
             self.gridOn = False
         else:
             child.setBackgroundBrush(QBrush(self.drawGrid()))
@@ -1190,7 +1191,8 @@ class Window(QMainWindow):
         self.pixmap.fill(Qt.GlobalColor.transparent)
 
         painter.begin(self.pixmap)
-        painter.setPen(Qt.GlobalColor.white)
+        #painter.setPen(Qt.GlobalColor.white)
+        painter.setPen(Qt.GlobalColor.transparent)
         painter.drawLine(0, 0, pixmapWidth, 0)
         painter.drawLine(0, 0, 0, pixmapWidth)
         return self.pixmap
@@ -1293,7 +1295,8 @@ class Window(QMainWindow):
 
     def newImage(self):
         options = QFileDialog.Option.DontUseNativeDialog
-        fileName, _ = QFileDialog.getOpenFileName(self, "Select picture", "", ("all pictures (*.jpg *.jpeg *.png);;PNG (*.png)" ),
+        fileName, _ = QFileDialog.getOpenFileName(self, "Select picture", "",
+                                                  ("all pictures (*.jpg *.jpeg *.png);;PNG (*.png)" ),
                                                   options=options)
         self.getCurrentPageScene().addImage(fileName)
 
@@ -1427,7 +1430,7 @@ class Window(QMainWindow):
         # painter.end()
 
         # print all pages
-        def printPreviewAllPagesOld(self):
+    def printPreviewAllPagesOld(self):
             print("print all pages_old")
             previewDialog = QPrintPreviewDialog()
 
