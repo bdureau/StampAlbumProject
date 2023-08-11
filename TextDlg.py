@@ -20,14 +20,17 @@ translate.install()
 _ = translate.gettext
 
 class TextDlg(QDialog):
-    def __init__(self, txtObj=None, parent=None):
+    def __init__(self,  txtObj=None, parent=None):
         super(TextDlg, self).__init__(parent)
         self.setWindowTitle(_("Add new text"))
         self.createDlg(txtObj)
+        #self.myfontSize = font_size
 
-    def createDlg(self, txtObj=None):
+
+    def createDlg(self,  txtObj=None):
         #self.setWindowModality(Qt.ApplicationModal)
         #self.setWindowFlags(Qt.Dialog)
+
 
         hLayout1 = QHBoxLayout()
 
@@ -73,6 +76,9 @@ class TextDlg(QDialog):
             self.fontSize.addItem(str(x))
 
         self.fontSize.setMaximumWidth(50)
+        #self.fontSize.setCurrentText(self.font_size)
+        #self.fontSize.
+
 
         hLayout1.addWidget(self.fontSize)
 
@@ -89,7 +95,9 @@ class TextDlg(QDialog):
         self.eTXT.setFixedHeight(80)
 
         myFont = self.eTXT.font()
+
         self.fontSize.setCurrentText(str(myFont.pointSize()))
+        #self.fontSize.setCurrentText(str(self.font_size))
 
         self.fontSize.currentTextChanged.connect(self.fontSizeClicked)
 

@@ -57,7 +57,7 @@ class Window(QMainWindow):
         self.lastStampObj['year'] = None
 
         # start with no grid
-        self.gridOn = False
+        #self.gridOn = False
 
         self.tabs = QTabWidget()
         palette = self.tabs.palette()
@@ -631,7 +631,12 @@ class Window(QMainWindow):
         self.getCurrentPageScene().newPageNbr()
     def newPageNbrAllPages(self):
         print("Create new  nbr")
-        dlg = TextDlg()
+        textLabel = QGraphicsTextItem("")
+        textLabelFont = textLabel.font()
+        textLabelFont.setPointSize(8)
+        textLabel.setFont(textLabelFont)
+
+        dlg = TextDlg(textLabel)
         res = dlg.exec()
         #accepted
         if res == 1:
@@ -641,7 +646,7 @@ class Window(QMainWindow):
 
             for x in range(0, self.tabs.count().real):
                 self.tabs.setCurrentIndex(x)
-                self.getCurrentPageScene().addPageNbr(text + " " + str(self.tabs.currentIndex() + 1))
+                self.getCurrentPageScene().addPageNbr(text + " " + str(self.tabs.currentIndex() + 1), font, align)
 
         #rejected
         if res == 0:
@@ -654,7 +659,13 @@ class Window(QMainWindow):
 
     def addYearToAllPages(self):
         print("addYearToAllPages")
-        dlg = TextDlg()
+        textLabel = QGraphicsTextItem("")
+        textLabelFont = textLabel.font()
+        textLabelFont.setPointSize(10)
+        textLabelFont.setBold(True)
+        textLabel.setFont(textLabelFont)
+
+        dlg = TextDlg(textLabel)
         res = dlg.exec()
         #accepted
         if res == 1:
@@ -664,7 +675,7 @@ class Window(QMainWindow):
 
             for x in range(0, self.tabs.count().real):
                 self.tabs.setCurrentIndex(x)
-                self.getCurrentPageScene().addYear(text)
+                self.getCurrentPageScene().addYear(text, font, align)
 
         #rejected
         if res == 0:
@@ -1160,13 +1171,13 @@ class Window(QMainWindow):
     # turn the grid on and off
     def gridOnOff(self):
         child = self.getCurrentPageScene()
-        if self.gridOn:
+        if child.gridOn:
             child.setBackgroundBrush(QBrush(self.deleteGrid()))
 
-            self.gridOn = False
+            child.gridOn = False
         else:
             child.setBackgroundBrush(QBrush(self.drawGrid()))
-            self.gridOn = True
+            child.gridOn = True
 
     # used to draw the grid
     def drawGrid(self):
