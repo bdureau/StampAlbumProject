@@ -235,8 +235,11 @@ class Window(QMainWindow):
         iconDeletePage.addPixmap(QPixmap("images/delete_page.png"), QIcon.Mode.Normal, QIcon.State.Off)
         self.deletePageAction.setIcon(iconDeletePage)
 
-        # todo add icon
         self.deletePageObjectsAction = QAction(_("Delete Page Objects..."), self)
+
+        iconDeletePageObjects = QIcon()
+        iconDeletePageObjects.addPixmap(QPixmap("images/clear_page.png"), QIcon.Mode.Normal, QIcon.State.Off)
+        self.deletePageObjectsAction.setIcon(iconDeletePageObjects)
 
         self.drawGridAction = QAction(_("Grid on/off"), self)
         iconDrawGrid = QIcon()
@@ -286,6 +289,9 @@ class Window(QMainWindow):
         self.newPageNbrAllPagesAction.setIcon(iconPageNbrAllPages)
 
         self.newYearToPageAction = QAction(_("Add year to page"), self)
+        iconAddYear = QIcon()
+        iconAddYear.addPixmap(QPixmap("images/add_year.png"), QIcon.Mode.Normal, QIcon.State.Off)
+        self.newYearToPageAction.setIcon(iconAddYear)
 
         self.newYearToAllPagesAction = QAction(_("Add year to all pages"), self)
 
