@@ -1179,7 +1179,6 @@ class Window(QMainWindow):
         child = self.getCurrentPageScene()
         if child.gridOn:
             child.setBackgroundBrush(QBrush(self.deleteGrid()))
-
             child.gridOn = False
         else:
             child.setBackgroundBrush(QBrush(self.drawGrid()))

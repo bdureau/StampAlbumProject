@@ -185,8 +185,14 @@ class Page(QGraphicsScene):
 
             if itemType == 10:
                 # This is a stamp
+                print(item.data(0))
                 #self.editStamp(item)
                 print("stamp")
+                print(item.pos().x())
+                print(item.pos().y())
+                print("X")
+                print(item.x())
+                print(item.y())
 
             elif itemType == 8:
                 # This is a text label
@@ -486,9 +492,7 @@ class Page(QGraphicsScene):
 
     def addYear(self, year, font, align):
         print("add year")
-        #font = QFont()
-        #font.setPointSize(10)
-        #font.setBold(True)
+
         textLabel = QGraphicsTextItem(year)
         textLabel.setFont(font)
         textWidth = textLabel.boundingRect().size().width()
@@ -636,10 +640,15 @@ class Page(QGraphicsScene):
         if self.countSelectedItems() > 0:
             for it in self.items():
                 if it.isSelected() and it.parentItem() is None:
-                    print("")
                     centerPage = self.sceneRect().width()/2
+                    print("centerPage:")
+                    print(centerPage)
                     centerItem = it.boundingRect().width()/2
-                    it.setPos(centerPage - centerItem, it.y())
+                    print("centerItem:")
+                    print(centerItem)
+                    it.setPos((centerPage - centerItem), it.y())
+                    print("center")
+                    print(centerPage - centerItem)
 
     # center all objects vertically
     def centerVertically(self):
