@@ -55,20 +55,22 @@ class DB:
     def loadBoxList(self):
         print("load list")
         res = self.DBExecute(self.dbCurMaster, "SELECT pochette FROM StampBox order by lx,ly asc")
-        print("after load list")
+
         ret = []
         for row in res.fetchall():
             ret.append(row[0])
+        print("after load list")
         return ret
 
     def getCurrentBox(self, SelectedBox):
+        print("getCurrentBox")
         res = self.DBExecute(self.dbCurMaster, "SELECT lx,ly  FROM StampBox where pochette ='" + SelectedBox + "'")
         ret = []
         for row in res.fetchall():
             print(row[0])
             ret.append(row[0])
             ret.append(row[1])
-
+        print("after getCurrentBox")
         return ret
 
     def loadStampType(self):
@@ -78,7 +80,8 @@ class DB:
         ret = []
         for row in res.fetchall():
             print("test row")
-            ret.append(row[0])
+            if row[0] is not None:
+                ret.append(row[0])
             print(row[0])
 
         print("after execute2")
@@ -88,38 +91,47 @@ class DB:
     def loadStampList(self, stampType, year):
         res = self.DBExecute(self.dbCurCountry, "SELECT key, nbr  FROM Stamp_list where type ='" + stampType +"' and year = '" + year + "' order by  sequence,ascii_seq, nbr, year asc")
         ret = []
+        print("loadStampList")
         for row in res.fetchall():
             #print(row[0])
-            ret.append([row[0], row[1]])
+            if row[0] is not None:
+                ret.append([row[0], row[1]])
+        print("after loadStampList")
         return ret
 
     def getMinYearForType(self, stampType):
+        print("getMinYearForType")
         res = self.DBExecute(self.dbCurCountry, "SELECT distinct year  FROM Stamp_List where type = '" + stampType + "'")
         ret = ""
         res.fetchall()
         if len(res) > 0:
             ret = res[0]
+        print("after getMinYearForType")
         return ret
 
     def loadYearList(self, stampType):
+        print("loadYearList")
         res = self.DBExecute(self.dbCurCountry, "SELECT distinct year  FROM Stamp_list where type ='" + stampType + "' and year is not null order by year asc")
         ret = []
         for row in res.fetchall():
             #print(row[0])
             ret.append(row[0])
+        print("after loadYearList")
         return ret
 
     def getStampSubNbr(self, Key):
+        print("getStampSubNbr")
         res = self.DBExecute(self.dbCurCountry, "SELECT sub_nbr FROM stamp_list where  Key =" + Key)
         ret = []
         for row in res.fetchall():
             #print(row[0])
             ret.append(row[0])
+        print("after getStampSubNbr")
         return ret
 
     #get the pochette from the list using the width and height of the stamp
     def getPochette(self, stampNbr, stampType, stampYear, stampKey):
-
+        print("getPochette")
         query1 = "SELECT width, height FROM stamp_list where type = '" + str(stampType) + "' and year = '" + \
                  str(stampYear) + "' and nbr = '" + str(stampNbr) + "' and key = " + str(stampKey) + ""
 
@@ -133,22 +145,26 @@ class DB:
             width = row[0]
             height = row[1]
 
-        if width == "":
+        if width == "" or width is None:
             width = "0"
-        if height == "":
+        if height == "" or height is None:
             height = "0"
 
-
+        print("middle getPochette")
+        print(width)
+        print(height)
         # attempt to get a valid pochette from the master db if cannot find one then select the first one
         query2 = "SELECT pochette FROM StampBox where lx = " + width + " and ly =" + height
+        print(query2)
         res2 = self.DBExecute(self.dbCurMaster, query2)
-
+        print("middle 2 getPochette")
         for row2 in res2.fetchall():
             #print(row2[0])
             ret.append(row2[0])
 
         if len(ret) == 0:
             ret.append('Pochette 30x41')
+        print("after getPochette")
         return ret
 
     def stampChanged(self, stampNbr, Key):
