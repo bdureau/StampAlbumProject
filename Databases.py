@@ -150,14 +150,14 @@ class DB:
         if height == "" or height is None:
             height = "0"
 
-        print("middle getPochette")
-        print(width)
-        print(height)
+        #print("middle getPochette")
+        #print(width)
+        #print(height)
         # attempt to get a valid pochette from the master db if cannot find one then select the first one
         query2 = "SELECT pochette FROM StampBox where lx = " + width + " and ly =" + height
-        print(query2)
+        #print(query2)
         res2 = self.DBExecute(self.dbCurMaster, query2)
-        print("middle 2 getPochette")
+        #print("middle 2 getPochette")
         for row2 in res2.fetchall():
             #print(row2[0])
             ret.append(row2[0])
