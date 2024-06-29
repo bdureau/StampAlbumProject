@@ -129,6 +129,7 @@ class Page(QGraphicsScene):
         textLabel.setSelected(True)
         self.addItem(textLabel)
 
+
     def clearPage(self):
         items = self.items()
         for item in items:
@@ -563,6 +564,7 @@ class Page(QGraphicsScene):
             print("More than 1 item need to be selected fo aligning object")
 
     def distributeHorizontally(self):
+        #review!!!!
         print("distributeHorizontally")
         itemLength = 0
         minX = 0
@@ -574,12 +576,31 @@ class Page(QGraphicsScene):
                 print("it.x()%f" % it.x())
                 if it.isSelected() and it.parentItem() is None:
                     nbrItems = nbrItems + 1
-                    if minX == 0:
-                        minX = it.x()
-                    if it.x() < minX:
-                        minX = it.x()
-                    if (it.x() + it.boundingRect().size().width()) > maxX:
-                        maxX = it.x() + it.boundingRect().size().width()
+                    if it.type().real == 8:
+                        if minX == 0:
+                            minX = it.x()
+                        if it.x() < minX:
+                            minX = it.x()
+                        if (it.x() + it.boundingRect().size().width()) > maxX:
+                            maxX = it.x() + it.boundingRect().size().width()
+                    elif it.type().real == 10 and it.data(0) == "stampGroup":
+                        stampIts = it.childItems()
+                        for stampIt in stampIts:
+                            if stampIt.type().real == 3:
+                                if stampIt.x() < 0:
+                                    if minX == 0:
+                                        minX = it.x() + stampIt.x()
+                                    if (it.x() - stampIt.x()) < minX:
+                                        minX = it.x() + stampIt.x()
+                                    if (it.x() + stampIt.x() + it.boundingRect().size().width()) > maxX:
+                                        maxX = it.x() + it.boundingRect().size().width()
+                                else:
+                                    if minX == 0:
+                                        minX = it.x()
+                                    if it.x() < minX:
+                                        minX = it.x()
+                                    if (it.x() + it.boundingRect().size().width()) > maxX:
+                                        maxX = it.x() + it.boundingRect().size().width()
 
                     posX.append(it.x())
                     # calculate the total length
@@ -593,7 +614,17 @@ class Page(QGraphicsScene):
                 for i in self.items():
                     if i.isSelected() and i.parentItem() is None and px == i.x():
                         i.setPos(nextX, i.y())
-                        nextX = nextX + i.boundingRect().size().width()+space
+                        if i.type().real == 8:
+                            nextX = nextX + i.boundingRect().size().width()+space
+                        elif i.type().real == 10 and i.data(0) == "stampGroup":
+                            stampItems = i.childItems()
+                            for stampItem in stampItems:
+                                if stampItem.type().real == 3:
+                                    if stampItem.x() < 0:
+                                        nextX = nextX + i.boundingRect().size().width() + space
+                                    else:
+                                        nextX = nextX + i.boundingRect().size().width() + space
+
 
         else:
             print("More than 1 item need to be selected fo aligning object")
@@ -640,15 +671,30 @@ class Page(QGraphicsScene):
         if self.countSelectedItems() > 0:
             for it in self.items():
                 if it.isSelected() and it.parentItem() is None:
+                    print(it.type().real)
                     centerPage = self.sceneRect().width()/2
                     print("centerPage:")
                     print(centerPage)
-                    centerItem = it.boundingRect().width()/2
-                    print("centerItem:")
-                    print(centerItem)
-                    it.setPos((centerPage - centerItem), it.y())
-                    print("center")
-                    print(centerPage - centerItem)
+                    if it.type().real == 8:
+                        centerItem = it.boundingRect().width()/2
+                        print("centerItem:")
+                        print(centerItem)
+                        it.setPos((centerPage - centerItem), it.y())
+                        print("center")
+                        print(centerPage - centerItem)
+                    elif it.type().real == 10 and it.data(0) == "stampGroup":
+                        print("stamp")
+                        stampItems = it.childItems()
+                        for stampItem in stampItems:
+                            if stampItem.type().real == 3:
+                                print("stampBox")
+                                if stampItem.x() < 0:
+                                    centerItem = (it.boundingRect().width() / 2) + stampItem.x()
+                                    it.setPos((centerPage - centerItem), it.y())
+                                else:
+                                    centerItem = it.boundingRect().width() / 2
+                                    it.setPos((centerPage - centerItem), it.y())
+
 
     # center all objects vertically
     def centerVertically(self):

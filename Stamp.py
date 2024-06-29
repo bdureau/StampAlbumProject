@@ -22,6 +22,7 @@ class Stamp:
         self.createStampPix(scene, nbr, value, desc, boxWidth, boxHeight, x, y, pixmap)
 
 
+
     # Create stamp
     def createStampPix(self, scene, nbr, value, desc, boxWidth, boxHeight, x, y, pixmap):
         print("createStampPix")
@@ -38,7 +39,8 @@ class Stamp:
         cursor.clearSelection()
         stampDesc.setTextCursor(cursor)
         stampDesc.setData(0, "stampDesc")
-        stampDesc.setPos(0,0)
+        stampDesc.setPos(0, 0)
+        #stampDesc.setPos(x, y)
 
         stampDesc.setFlags(QGraphicsTextItem.GraphicsItemFlag.ItemIsMovable | QGraphicsTextItem.GraphicsItemFlag.ItemIsSelectable)
         print("created desc")
@@ -67,6 +69,9 @@ class Stamp:
             image_scale = scale1
         else:
             image_scale = scale2
+
+        print("image_scale")
+        print(image_scale)
         pixmapitem.setScale(image_scale)
 
         pixmapitem.setPos(stampBox.x() + stampBox.boundingRect().size().width() / 2 - (
@@ -103,6 +108,8 @@ class Stamp:
         group.setData(0, "stampGroup")
         group.setPos(x, y)
         scene.addItem(group)
+        #group.mapToScene(0, 0)
+        #group.setPos(x, y)
 
 
     def readStamp(self, stampItem):
@@ -149,7 +156,6 @@ class Stamp:
         pixmap = stampObj['pixmapItem_image']
         scene.removeItem(stampItem)
         self.createStampPix(scene, nbr, value, desc, boxWidth, boxHeight, posX, posY, pixmap)
-
 
 
     def deleteStamp(self):

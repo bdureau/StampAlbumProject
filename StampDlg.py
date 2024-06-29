@@ -163,17 +163,22 @@ class StampDlg(QDialog):
         createButton = QPushButton(self.tr(_("&Create")))
         createButton.setDefault(True)
 
+        createButton2 = QPushButton(self.tr(_("&Create from size")))
+        createButton2.setDefault(True)
+
 
         okButton = QPushButton(self.tr(_("&Done")))
 
         buttonBox = QDialogButtonBox(Qt.Orientation.Horizontal)
 
         buttonBox.addButton(createButton, QDialogButtonBox.ButtonRole.ActionRole)
+        buttonBox.addButton(createButton2, QDialogButtonBox.ButtonRole.ActionRole)
 
         buttonBox.addButton(okButton, QDialogButtonBox.ButtonRole.ActionRole)
 
         okButton.clicked.connect(self.accept)
         createButton.clicked.connect(self.createStamp)
+        createButton2.clicked.connect(self.createStamp2)
 
         hLayoutAll = QHBoxLayout()
         hLayoutAll.addLayout(vLayout1)
@@ -588,6 +593,26 @@ class StampDlg(QDialog):
         ret = self.getBoxInfo(self.pochetteList.currentItem().text())
         width = ret[0]
         height = ret[1]
+
+        stampNbr = self.currentStampNbr
+
+        stamp = Stamp()
+        stamp.createStamp(self.scene, str(stampNbr), str(stampValue), str(stampDesc),
+                          float(width), float(height), float(0), float(0), pixmap)
+
+    def createStamp2(self):
+        stampDesc = self.eStampDescription.toPlainText()
+
+        stampValue = self.eValue.text()
+        pixmap = ""
+        if self.fullPhotoPath is not None:
+            pixmap = self.fullPhotoPath
+
+        #ret = self.getBoxInfo(self.pochetteList.currentItem().text())
+        #self.eWidth.setText("")
+        #self.eHeight.setText("")
+        width = self.eWidth.text()
+        height = self.eHeight.text()
 
         stampNbr = self.currentStampNbr
 

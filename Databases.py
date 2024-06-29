@@ -1,11 +1,21 @@
 import pyodbc
 import sqlite3
+import configparser
 
 class DB:
     def __init__(self, country):
         print(country)
         self.countryCursor = None
         self.dbtype = "sqlite"
+        # get it from config
+        configParser = configparser.RawConfigParser()
+        configFilePath = r'stamp_album.cfg'
+        configParser.read(configFilePath)
+        if configParser.has_section('CONF'):
+            conf = configParser['CONF']
+            if configParser.has_option('CONF', 'database type'):
+                self.dbtype = conf['database type']
+
         if self.dbtype == "sqlite":
             conMaster = sqlite3.connect("databases/master.db")
             self.dbCurMaster = conMaster.cursor()
