@@ -44,6 +44,8 @@ class DB:
                 r'Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=databases\\' + country + '.mdb' + ';')
 
     def OpenDB(self, database):
+        print(pyodbc.drivers())
+        print("connect to DB")
         conn = pyodbc.connect(database)
         cursor = conn.cursor()
         return cursor

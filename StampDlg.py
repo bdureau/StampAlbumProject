@@ -105,7 +105,7 @@ class StampDlg(QDialog):
 
         self.stampTypeCombo = QComboBox()
 
-        self.stampTypeCombo.setMaximumWidth(100)
+        self.stampTypeCombo.setMaximumWidth(250)
         self.stampTypeCombo.currentTextChanged.connect(self.stampTypeClicked)
 
 
@@ -573,7 +573,20 @@ class StampDlg(QDialog):
         elif type == "CI":
             nbr = "T01-250-" + stampNumber[2:len(stampNumber)] + subNbr + ".jpg"
         else:
-            nbr = "T01-000-" + stampNumber + subNbr + ".jpg"
+            #COURS INSTRUCTION
+            if stampType == "COURS INSTRUCTION":
+                nbr = "T01-252-" + stampNumber + subNbr + ".jpg"
+            #préoblitéré
+            elif stampType == "Préoblitéré COURS INSTRUCTION":
+                nbr = "T01-253-" + stampNumber + subNbr + ".jpg"
+            elif stampType == "RECOUVREMENT COURS INSTRUCTION":
+                nbr = "T01-254-" + stampNumber + subNbr + ".jpg"
+            elif stampType.strip() == "TAXES COURS INSTRUCTION":
+                nbr = "T01-255-" + stampNumber + subNbr + ".jpg"
+            #Poste
+            else:
+                nbr = "T01-000-" + stampNumber + subNbr + ".jpg"
+
         return nbr
 
     def getBoxInfo(self, box):
