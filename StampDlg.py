@@ -570,8 +570,8 @@ class StampDlg(QDialog):
         elif type == "DI":
             nbr = "T01-260-" + stampNumber[2:len(stampNumber)] + subNbr + ".jpg"
         # instruction
-        elif type == "CI":
-            nbr = "T01-250-" + stampNumber[2:len(stampNumber)] + subNbr + ".jpg"
+        #elif type == "CI":
+        #    nbr = "T01-250-" + stampNumber[2:len(stampNumber)] + subNbr + ".jpg"
         else:
             #COURS INSTRUCTION
             if stampType == "COURS INSTRUCTION":
