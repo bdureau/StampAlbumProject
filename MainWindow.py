@@ -1142,7 +1142,7 @@ class Window(QMainWindow):
     # application on line help
     def help(self):
         if sys.platform.startswith('win32'):
-            os.startfile("Help\\StampAlbum Manuel utilisateur 01-08-2023.pdf")
+            os.startfile("Help\\StampAlbum Manuel utilisateur 03-11-2024.pdf")
 
     # align menu functions
     def alignBottom(self):
