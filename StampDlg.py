@@ -583,6 +583,8 @@ class StampDlg(QDialog):
                 nbr = "T01-254-" + stampNumber + subNbr + ".jpg"
             elif stampType.strip() == "TAXES COURS INSTRUCTION":
                 nbr = "T01-255-" + stampNumber + subNbr + ".jpg"
+            elif stampType.strip() == "POSTE AERIENNE MILITAIRE":
+                nbr = "T01-256-" + stampNumber + subNbr + ".jpg"
             #Poste
             else:
                 nbr = "T01-000-" + stampNumber + subNbr + ".jpg"

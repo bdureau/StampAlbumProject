@@ -47,7 +47,7 @@ class Window(QMainWindow):
         self.setWindowIcon(QtGui.QIcon('stamp_book1170.png'))
         #self.setMaximumWidth(222 / (25.4 / 96))
 
-        self.resize(222 / (25.4 / 96), 800)
+        self.resize((int)(222 / (25.4 / 96)), 800)
 
         self.pageCount = 0
         self.lastStampObj = {}
@@ -513,16 +513,14 @@ class Window(QMainWindow):
 
         view = GraphicsView(page)
 
-        view.resize(210 / (25.4 / 96), 297 / (25.4 / 96))
-        ###view.setRenderHint(QPainter.Antialiasing)
-
-
-        if self.pageType == "portrait":
-            view.setMaximumWidth(210 / (25.4 / 96))
-            view.setMaximumHeight(297 / (25.4 / 96))
-        else:
-            view.setMaximumWidth(297 / (25.4 / 96))
-            view.setMaximumHeight(210 / (25.4 / 96))
+        # view.resize((int)(210 / (25.4 / 96)), (int) (297 / (25.4 / 96)))
+        #
+        # if self.pageType == "portrait":
+        #     view.setMaximumWidth((int)(210 / (25.4 / 96)))
+        #     view.setMaximumHeight((int)(297 / (25.4 / 96)))
+        # else:
+        #     view.setMaximumWidth((int) (297 / (25.4 / 96)))
+        #     view.setMaximumHeight((int) (210 / (25.4 / 96)))
         #scroll to top
         view.scrollContentsBy(0, 0)
         tab1 = QWidget()
@@ -1333,154 +1331,3 @@ class Window(QMainWindow):
         if res == 1:
             print("Clicked ok")
 
-    ##########################################" obsolete code to be removed ############################################
-    # obsolete
-    def showdialog(self):
-        print("not used")
-
-    # obsolete
-    def testDialog(self):
-        print("Dialog")
-        info = "info"
-        d = QDialog(self)
-        l = QVBoxLayout()
-        print("dialog 1")
-        d.setLayout(l)
-        v = QPlainTextEdit()
-        d.setWindowTitle("title")
-        v.setPlainText(info)
-        v.setMinimumWidth(400)
-        v.setMinimumHeight(350)
-        l.addWidget(v)
-
-        bb = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
-        bb.accepted.connect(d.accept)
-        bb.rejected.connect(d.reject)
-        l.addWidget(bb)
-
-        bb.addButton('Copy to clipboard', bb.StandardButton.ActionRole)
-
-        bb.clicked.connect(lambda:
-                           self.saveStuff(d))
-        res = d.exec()
-        #accepted
-        if res == 1:
-            print(v.toPlainText())
-        #rejected
-        if res == 0:
-            print("Clicked cancel")
-
-    # obsolete
-    def saveFile(self):
-        # Logic for saving a file goes here...
-        # export as xml form
-        print("Export as xml")
-        self.page.savePageToFile("albumfile.xml")
-
-    # obsolete
-    def openFile(self):
-        # Logic for opening an existing file goes here...
-        # self.centralWidget.setText("<b>File > Open...</b> clicked")
-        print("Open page")
-
-        self.page.openPage("albumfile.xml")
-
-    # obsolete
-    def saveStuff(self, dlg):
-        print("in stuff")
-        dlg.close()
-
-    # obsolete
-    # review !!!!
-    def printPage(self):
-        print("Print page")
-
-
-        # printer.setPageSize(QtGui.QPagedPaintDevice.A4)
-        # printer.setResolution(100)
-        #
-        # painter = QtGui.QPainter(printer)
-        # delta = 20
-        # f = painter.font()
-        # f.setPixelSize(delta)
-        # painter.setFont(f)
-        #
-        # target = QtCore.QRectF(0, 0, printer.width(), 0)
-        #
-        # print(printer.width())
-        # print(printer.height())
-
-        # for item in self.page.scene.items():
-        #     #source = item.mapToScene(item.boundingRect()).boundingRect()
-        #     source = item.boundingRect()
-        #     print("item size")
-        #     print(source.height())
-        #     print(source.width())
-        #
-        #     target.setHeight(source.height())
-        #     if target.bottom() > printer.height():
-        #         printer.newPage()
-        #         target.moveTop(0)
-        #     self.page.scene.render(painter, target, source)
-        # if item.type().real == 8:
-        #     print("type 8")
-        #     par = item.parentItem()
-        #     # exclude all item where parent is a group
-        #     if par is None:
-        #         self.page.scene.render(painter, target, source)
-        # elif item.type().real == 10:
-        #     print("type 10")
-        #     self.page.scene.render(painter, target, source)
-
-        # stampItems = item.childItems()
-        # for stampItem in stampItems:
-
-        # f = painter.font()
-        # f.setPixelSize(delta)
-        # painter.drawText(
-        #     QtCore.QRectF(
-        #         target.bottomLeft(), QtCore.QSizeF(printer.width(), delta + 5)
-        #     ),
-        #     "test",
-        # )
-        # painter.end()
-
-        # print all pages
-    def printPreviewAllPagesOld(self):
-            print("print all pages_old")
-            previewDialog = QPrintPreviewDialog()
-
-            previewDialog.printer().setResolution(QPrinter.PrinterMode().HighResolution)
-            previewDialog.printer().setOutputFormat(QPrinter.OutputFormat.PdfFormat)
-            previewDialog.printer().setPageSize(QtGui.QPagedPaintDevice.A4)
-            previewDialog.exec()
-
-            # TODO select the file to print
-            # printer.setOutputFileName("album4.pdf")
-            scale = previewDialog.printer().resolution() / 96.0
-
-            previewDialog.printer().setPageMargins(0, 0, 0, 0, QPrinter.Unit.Millimeter)
-            p = QPainter(previewDialog.printer())
-            for x in range(self.tabs.count()):
-                self.tabs.setCurrentIndex(x)
-                currentScene = self.getCurrentPageScene()
-
-                # first unselect all objects
-                for item in currentScene.items():
-                    item.setSelected(False)
-
-                if currentScene.pageType == "portrait":
-                    previewDialog.printer().setPageOrientation(0)
-                    print("Portrait")
-                else:
-                    previewDialog.printer().setPageOrientation(1)
-                    print("Landscape")
-                if x > 0:
-                    previewDialog.printer().newPage()
-
-                source = QtCore.QRectF(0, 0, currentScene.width(), currentScene.height())
-                target = QRectF(0, 0, source.size().width() * scale, source.size().height() * scale)
-
-                currentScene.render(p, target, source)
-
-            p.end()

@@ -2,9 +2,15 @@
 # This an application that will create stamp album pages from a database file and some stamp photos
 # This was originally written in VBA in early 2000
 # I am re-writing it in Python
+# import pyodbc
+# print(pyodbc.__path__)
 # The ability to import and convert old pages generated using Excel will be implemented
 # author: Boris du Reau 2022
 #
+import PyQt6
+print(PyQt6.__path__)
+
+
 from PyQt6.QtWidgets import (
     QApplication
 )

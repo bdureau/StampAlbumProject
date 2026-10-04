@@ -24,29 +24,23 @@ def item_to_ds(it, ds):
     ds.writeQString(it.__class__.__module__)
     ds.writeQString(it.__class__.__name__)
 
-    # save the flag
-    print(it.flags())
     ds.writeInt(it.flags().value)
 
-    # save the position of the object
+    # Position and Data
     ds << it.pos()
-    # save the comment about the object
-    ds.writeQString(it.data(0))
-    print(it.data(0))
-    # we have a simple text object
+    ds.writeQString(str(it.data(0)) if it.data(0) is not None else "")
+
+    # Objet simple text
     if it.__class__.__name__ == "QGraphicsTextItem":
-        print("QGraphicsTextItem")
         ds.writeQString(it.toPlainText())
-        # get the font
         ds.writeBool(it.font().bold())
         ds.writeBool(it.font().italic())
         ds.writeBool(it.font().strikeOut())
         ds.writeBool(it.font().underline())
         ds.writeInt(it.font().pointSize())
 
-    # we have a stamp object
+    # Stamp Group
     if it.__class__.__name__ == "QGraphicsItemGroup" and it.data(0) == "stampGroup":
-
         for child in it.childItems():
 
             if child.__class__.__name__ == "QGraphicsRectItem":
@@ -54,23 +48,24 @@ def item_to_ds(it, ds):
                 ds << child.boundingRect()
                 ds << child.pos()
                 ds.writeInt(child.pen().width())
-                ds.writeInt(child.pen().color().value())
-                ds.writeInt(child.data(1)) #box width
-                ds.writeInt(child.data(2)) # box height
-
+                # Correction : Utiliser rgba() ou directement le QDataStream pour QColor
+                ds << child.pen().color()
+                ds.writeInt(int(child.data(1)) if child.data(1) else 0) # box width
+                ds.writeInt(int(child.data(2)) if child.data(2) else 0) # box height
 
             if child.__class__.__name__ == "QGraphicsTextItem":
                 ds.writeQString(child.__class__.__name__)
                 ds.writeQString(child.toPlainText())
                 ds << child.pos()
-                ds.writeBool(child.scene().font().bold())
-                ds.writeBool(child.scene().font().italic())
-                ds.writeBool(child.scene().font().strikeOut())
-                ds.writeBool(child.scene().font().underline())
-                ds.writeInt(child.scene().font().pointSize())
+                # Sécurisation si la scène est None
+                font = child.font()
+                ds.writeBool(font.bold())
+                ds.writeBool(font.italic())
+                ds.writeBool(font.strikeOut())
+                ds.writeBool(font.underline())
+                ds.writeInt(font.pointSize())
 
             if child.__class__.__name__ == "QGraphicsPixmapItem":
-                print("QGraphicsPixmapItem")
                 ds.writeQString(child.__class__.__name__)
                 ds.writeQVariant(child.pixmap())
                 ds << child.pos()
@@ -81,11 +76,8 @@ def item_to_ds(it, ds):
 
     if isinstance(it, QtWidgets.QAbstractGraphicsShapeItem):
         ds << it.brush() << it.pen()
-        print(it.pen())
-        print(it.brush())
     if isinstance(it, QtWidgets.QGraphicsPathItem):
         ds << it.path()
-
 
 
 def ds_to_item(ds):
@@ -122,8 +114,11 @@ def ds_to_item(ds):
         pen.setWidth(ds.readInt())
         #pen.setColor(ds.readInt())
         #not sure how to get the color working !!!
-        penC = ds.readInt()
-        print(penC)
+        #penC = ds.readInt()
+        #print(penC)
+        penColor = QtGui.QColor()
+        ds >> penColor
+        pen.setColor(penColor)
         print("done with pen")
         boxW = ds.readInt()
         boxWidth = boxW / (25.4 / 96.0)
@@ -324,12 +319,16 @@ def ds_to_item(ds):
 class GraphicsView(QtWidgets.QGraphicsView):
     def __init__(self, parent=None):
         super().__init__(parent)
-        #self.setDragMode(QtWidgets.QGraphicsView.RubberBandDrag)
-
         self.setScene(parent)
 
-        print(self.scene().getPageName())
+        # Permet un redimensionnement fluide de la scène
+        self.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)
+        self.setRenderHint(QtGui.QPainter.RenderHint.SmoothPixmapTransform)
+        #print(self.scene().getPageName())
 
+        # Assure l'affichage de l'ascenseur vertical quand nécessaire
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 
         QShortcut(
              QtGui.QKeySequence(QtGui.QKeySequence.StandardKey.Copy), self, activated=self.copy_items
@@ -339,6 +338,22 @@ class GraphicsView(QtWidgets.QGraphicsView):
              self,
              activated=self.paste_items,
         )
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+
+        if self.scene():
+            # Récupère la largeur disponible dans la vue (moins la largeur de la scrollbar si présente)
+            viewport_width = self.viewport().width()
+            scene_width = self.scene().sceneRect().width()
+
+            if scene_width > 0:
+                # Calcule le facteur d'échelle basé sur la LARGEUR uniquement
+                scale_factor = viewport_width / scene_width
+
+                # Réinitialise la transformation et applique l'échelle identique en X et Y (pour garder le ratio)
+                self.resetTransform()
+                self.scale(scale_factor, scale_factor)
 
     @QtCore.pyqtSlot()
     def copy_items(self):
