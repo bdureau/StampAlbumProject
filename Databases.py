@@ -69,72 +69,57 @@ class DB:
         return cursor
 
     def loadBoxList(self):
-        print("load list")
         query = "SELECT pochette FROM StampBox ORDER BY lx, ly ASC"
         res = self.DBExecute(self.dbCurMaster, query)
-        print("after load list")
         return [row[0] for row in res.fetchall()]
 
     def getCurrentBox(self, SelectedBox: str):
-        print("getCurrentBox")
         query = "SELECT lx, ly FROM StampBox WHERE pochette = ?"
         res = self.DBExecute(self.dbCurMaster, query, (SelectedBox,))
         row = res.fetchone()
-        print("after getCurrentBox")
         return [row[0], row[1]] if row else []
 
     def loadStampType(self):
-        print("before execute stamp type")
         query = (
             "SELECT DISTINCT type FROM Stamp_List WHERE type IS NOT NULL ORDER"
             " BY type ASC"
         )
         res = self.DBExecute(self.dbCurCountry, query)
-        print("after execute2")
         return [row[0] for row in res.fetchall() if row[0] is not None]
 
     def loadStampList(self, stampType: str, year: str):
-        print("loadStampList")
         query = """
             SELECT key, nbr FROM Stamp_list 
             WHERE type = ? AND year = ? 
             ORDER BY sequence, ascii_seq, nbr, year ASC
         """
         res = self.DBExecute(self.dbCurCountry, query, (stampType, year))
-        print("after loadStampList")
         return [[row[0], row[1]] for row in res.fetchall() if row[0] is not None]
 
     def getMinYearForType(self, stampType: str):
-        print("getMinYearForType")
         query = (
             "SELECT DISTINCT year FROM Stamp_List WHERE type = ? AND year IS NOT"
             " NOT NULL ORDER BY year ASC"
         )
         res = self.DBExecute(self.dbCurCountry, query, (stampType,))
         row = res.fetchone()
-        print("after getMinYearForType")
         return row[0] if row else ""
 
     def loadYearList(self, stampType: str):
-        print("loadYearList")
         query = """
             SELECT DISTINCT year FROM Stamp_list 
             WHERE type = ? AND year IS NOT NULL 
             ORDER BY year ASC
         """
         res = self.DBExecute(self.dbCurCountry, query, (stampType,))
-        print("after loadYearList")
         return [row[0] for row in res.fetchall()]
 
     def getStampSubNbr(self, Key):
-        print("getStampSubNbr")
         query = "SELECT sub_nbr FROM stamp_list WHERE Key = ?"
         res = self.DBExecute(self.dbCurCountry, query, (Key,))
-        print("after getStampSubNbr")
         return [row[0] for row in res.fetchall()]
 
     def getPochette(self, stampNbr, stampType, stampYear, stampKey):
-        print("getPochette")
         query1 = """
             SELECT width, height FROM stamp_list 
             WHERE type = ? AND year = ? AND nbr = ? AND key = ?
@@ -155,11 +140,9 @@ class DB:
 
         if not ret:
             ret.append("Pochette 30x41")
-        print("after getPochette")
         return ret
 
     def stampChanged(self, stampNbr, Key):
-        print("stampChanged")
         query = """
             SELECT nbr, year, valuecolor, stampDescription, width, height, sub_nbr, stampDescription1 
             FROM stamp_list
@@ -167,9 +150,7 @@ class DB:
         """
         print(query)
         res = self.DBExecute(self.dbCurCountry, query, (str(stampNbr), Key))
-        print("after query")
         row = res.fetchone()
-        print("after stampChanged")
         return list(row) if row else []
 
     def getMessage(self, msgLanguage: str, msgCode):

@@ -1,6 +1,7 @@
 from os import walk
 from PyQt6.QtCore import QPointF, Qt, QPoint, QByteArray, QRectF
 from PyQt6 import QtCore, QtGui
+from pathlib import Path
 from PyQt6.QtWidgets import (
     QMessageBox, QGraphicsRectItem,
     QGraphicsScene, QComboBox, QRadioButton, QButtonGroup, QGroupBox, QListWidgetItem,
@@ -24,7 +25,9 @@ class ConfigDlg(QDialog):
         super(ConfigDlg, self).__init__(parent)
         self.setWindowTitle(_("Application configuration"))
         self.configParser = configparser.RawConfigParser()
-        self.configFilePath = r'stamp_album.cfg'
+        self.base_dir = Path(__file__).resolve().parent
+        self.configFilePath = self.base_dir / 'stamp_album.cfg'
+        #self.configFilePath = r'stamp_album.cfg'
         self.configParser.read(self.configFilePath)
         self.createDlg()
 

@@ -24,12 +24,9 @@ class EditStampDlg(QDialog):
     def __init__(self, stampObj, parent=None):
         super(EditStampDlg, self).__init__(parent)
         self.setWindowTitle(_("Edit stamp"))
-        #self.setWindowModality(Qt.ApplicationModal)
         self.createDlg(stampObj)
 
     def createDlg(self, stampObj):
-        #self.setWindowModality(Qt.ApplicationModal)
-        #self.setWindowFlags(Qt.Dialog)
         print("createDlg")
         self.eTitle = QPlainTextEdit()
         self.eTitle.setPlainText(stampObj['stampDesc_text'])
@@ -48,11 +45,15 @@ class EditStampDlg(QDialog):
         self.photo.setFixedHeight(200)
         self.photo.setFixedWidth(200)
 
-        try:
-            pix = QPixmap(stampObj['pixmapItem_image'])
-            print(pix)
-        except:
-            print("error")
+        # try:
+        #     pix = QPixmap(stampObj['pixmapItem_image'])
+        #     print(pix)
+        # except:
+        #     print("error")
+        #     return
+        pix = stampObj.get('pixmapItem_image')
+        if not isinstance(pix, QPixmap) or pix.isNull():
+            print("invalid Pixmap ")
             return
 
         if pix.width() > pix.height():
@@ -69,12 +70,12 @@ class EditStampDlg(QDialog):
 
         # pochettes type
         print("Pochette type")
-        vLayout1 = QVBoxLayout()
-        pochettesType = QLabel(_("Pochette type"))
-        self.pochetteList = QListWidget()
-        self.pochetteList.setMaximumWidth(150)
-        vLayout1.addWidget(pochettesType)
-        vLayout1.addWidget(self.pochetteList)
+        # vLayout1 = QVBoxLayout()
+        # pochettesType = QLabel(_("Pochette type"))
+        # self.pochetteList = QListWidget()
+        # self.pochetteList.setMaximumWidth(150)
+        # vLayout1.addWidget(pochettesType)
+        # vLayout1.addWidget(self.pochetteList)
 
         # ok /cancel button
         bb = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)

@@ -1,33 +1,36 @@
-#
-# This an application that will create stamp album pages from a database file and some stamp photos
-# This was originally written in VBA in early 2000
-# I am re-writing it in Python
-# import pyodbc
-# print(pyodbc.__path__)
-# The ability to import and convert old pages generated using Excel will be implemented
-# author: Boris du Reau 2022
-#
-import PyQt6
-print(PyQt6.__path__)
+"""
+Stamp Album Creator
+-------------------
+An application designed to create and assemble custom stamp album pages from
+database files and image assets.
 
+Originally written in VBA (Excel) in the early 2000s, this application has been
+modernized and re-engineered in Python 3 using PyQt6.
 
-from PyQt6.QtWidgets import (
-    QApplication
-)
-
+Author: Boris du Reau
+Year: 2022-2026
+"""
 import sys
+import PyQt6
+from PyQt6.QtWidgets import QApplication
 
 from MainWindow import Window
 
 
-
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-
+def main():
+    """Application entry point."""
     app = QApplication(sys.argv)
+
+    # Set standard Windows widget styling for a consistent desktop layout
     app.setStyle('Windows')
 
+    # Initialize and display the main GUI window
     win = Window()
     win.show()
 
-    app.exec()
+    # Start the Qt event loop
+    sys.exit(app.exec())
+
+
+if __name__ == '__main__':
+    main()
