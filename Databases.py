@@ -1,3 +1,15 @@
+"""
+Database Access Module
+----------------------
+Handles database connections and queries for both the master database
+(stamp boxes, global settings, messages) and country-specific databases
+(stamp catalogues, series, types, and issues).
+
+Supports SQLite and Microsoft Access (via PyODBC).
+
+Author: Boris du Reau
+"""
+import sys
 import configparser
 from pathlib import Path
 import pyodbc
@@ -5,24 +17,24 @@ import sqlite3
 
 
 class DB:
-
+    """Manages database connections and query operations for master and country databases."""
     def __init__(self, country: str):
         self.country = country
         self.dbtype = "sqlite"
 
-        # Chemins de fichiers portables
-        self.base_dir = Path(__file__).resolve().parent
+        # Define portable system paths using pathlib
+        self.base_dir = self.get_app_dir()
         self.db_dir = self.base_dir / "databases"
         config_path = self.base_dir / "stamp_album.cfg"
 
-        # Lecture de la configuration
+        # Load database engine preference from configuration file
         configParser = configparser.RawConfigParser()
         if config_path.exists():
             configParser.read(config_path)
             if configParser.has_option("CONF", "database type"):
                 self.dbtype = configParser.get("CONF", "database type")
 
-        # Initialisation des connexions
+        # Initialize connection and cursor instances
         self.con_master = None
         self.con_country = None
         self.dbCurMaster = None
@@ -30,11 +42,22 @@ class DB:
 
         self._init_db_connections(country)
 
+    def get_app_dir(self) -> Path:
+        """Return the base directory path, compatible with PyInstaller frozen executables."""
+        if getattr(sys, 'frozen', False):
+            # Executable congelé (PyInstaller / CX_Freeze)
+            # sys.executable pointe vers le dossier où se trouve le .exe
+            return Path(sys.executable).resolve().parent
+        else:
+            # Script Python normal (.py)
+            return Path(__file__).resolve().parent
+
     def _init_db_connections(self, country: str):
+        """Establish connections to master and selected country databases based on configuration."""
         if self.dbtype == "sqlite":
             master_db = self.db_dir / "master.db"
             country_db = self.db_dir / f"{country}.db"
-
+            #print(master_db
             self.con_master = sqlite3.connect(master_db)
             self.dbCurMaster = self.con_master.cursor()
 
@@ -48,7 +71,7 @@ class DB:
             self.OpenCountryDB(country)
 
     def OpenCountryDB(self, country: str):
-        # Fermeture propre de la base country existante
+        """Close existing country connection and open a new country database."""
         if self.dbCurCountry:
             self.dbCurCountry.close()
         if self.con_country:
@@ -64,22 +87,25 @@ class DB:
             self.dbCurCountry = self.con_country.cursor()
 
     def DBExecute(self, cursor, statement: str, params: tuple = ()):
-        """Exécution sécurisée avec paramètres tuple"""
+        """Execute a SQL statement using parameterized queries to prevent SQL injection."""
         cursor.execute(statement, params)
         return cursor
 
     def loadBoxList(self):
+        """Retrieve all available stamp mount box names ordered by dimension."""
         query = "SELECT pochette FROM StampBox ORDER BY lx, ly ASC"
         res = self.DBExecute(self.dbCurMaster, query)
         return [row[0] for row in res.fetchall()]
 
     def getCurrentBox(self, SelectedBox: str):
+        """Get width (lx) and height (ly) dimensions for a selected stamp box name."""
         query = "SELECT lx, ly FROM StampBox WHERE pochette = ?"
         res = self.DBExecute(self.dbCurMaster, query, (SelectedBox,))
         row = res.fetchone()
         return [row[0], row[1]] if row else []
 
     def loadStampType(self):
+        """Retrieve distinct stamp category types from the active country catalogue."""
         query = (
             "SELECT DISTINCT type FROM Stamp_List WHERE type IS NOT NULL ORDER"
             " BY type ASC"
@@ -88,6 +114,7 @@ class DB:
         return [row[0] for row in res.fetchall() if row[0] is not None]
 
     def loadStampList(self, stampType: str, year: str):
+        """Load stamp keys and catalogue numbers filtered by stamp category and issue year."""
         query = """
             SELECT key, nbr FROM Stamp_list 
             WHERE type = ? AND year = ? 
@@ -97,6 +124,7 @@ class DB:
         return [[row[0], row[1]] for row in res.fetchall() if row[0] is not None]
 
     def getMinYearForType(self, stampType: str):
+        """Find the earliest available issue year for a given stamp type."""
         query = (
             "SELECT DISTINCT year FROM Stamp_List WHERE type = ? AND year IS NOT"
             " NOT NULL ORDER BY year ASC"
@@ -106,6 +134,7 @@ class DB:
         return row[0] if row else ""
 
     def loadYearList(self, stampType: str):
+        """Retrieve all unique issue years for a specified stamp category."""
         query = """
             SELECT DISTINCT year FROM Stamp_list 
             WHERE type = ? AND year IS NOT NULL 
@@ -115,11 +144,13 @@ class DB:
         return [row[0] for row in res.fetchall()]
 
     def getStampSubNbr(self, Key):
+        """Get sub-number designations associated with a specific stamp record key."""
         query = "SELECT sub_nbr FROM stamp_list WHERE Key = ?"
         res = self.DBExecute(self.dbCurCountry, query, (Key,))
         return [row[0] for row in res.fetchall()]
 
     def getPochette(self, stampNbr, stampType, stampYear, stampKey):
+        """Find matching stamp mount box dimensions based on stamp width and height."""
         query1 = """
             SELECT width, height FROM stamp_list 
             WHERE type = ? AND year = ? AND nbr = ? AND key = ?
@@ -143,6 +174,7 @@ class DB:
         return ret
 
     def stampChanged(self, stampNbr, Key):
+        """Fetch full details for a selected stamp record."""
         query = """
             SELECT nbr, year, valuecolor, stampDescription, width, height, sub_nbr, stampDescription1 
             FROM stamp_list
@@ -154,7 +186,7 @@ class DB:
         return list(row) if row else []
 
     def getMessage(self, msgLanguage: str, msgCode):
-
+        """Fetch system UI message strings from master database by language and code."""
         query = (
             "SELECT message_text, message_type FROM messages WHERE"
             " message_language = ? AND message_code = ?"
@@ -165,6 +197,7 @@ class DB:
         return [row[0] for row in res.fetchall()]
 
     def getTranslation(self, msgLanguage: str, msgCode):
+        """Fetch localized text translations from master database."""
         query = (
             "SELECT msg_text FROM translations WHERE msg_language = ? AND"
             " msg_code = ?"
@@ -175,7 +208,7 @@ class DB:
         return [row[0] for row in res.fetchall()]
 
     def close(self):
-        """Fermeture explicite des connexions"""
+        """Explicitly close all active master and country database connections."""
         if self.con_country:
             self.con_country.close()
         if self.con_master:

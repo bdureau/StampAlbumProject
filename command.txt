@@ -3,3 +3,11 @@ python C:\Users\bdure\AppData\Local\Programs\Python\Python39\Tools\i18n\pygettex
 python C:\Users\bdure\AppData\Local\Programs\Python\Python39\Tools\i18n\pygettext.py -d MainWindow MainWindow.py
 
 python C:\Users\bdure\AppData\Local\Programs\Python\Python39\Tools\i18n\msgfmt.py  locale/fr/LC_MESSAGES/MainWindow.po
+
+
+python C:\Users\boris\AppData\Local\Programs\Python\Python312\Tools\i18n\pygettext.py -d main main.py
+python C:\Users\boris\AppData\Local\Programs\Python\Python312\Tools\i18n\pygettext.py -d MainWindow MainWindow.py
+
+python C:\Users\boris\AppData\Local\Programs\Python\Python312\Tools\i18n\msgfmt.py  locale/fr/LC_MESSAGES/MainWindow.po
+
+pyinstaller --onefile main.py

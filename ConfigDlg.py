@@ -13,7 +13,7 @@ from PyQt6.QtGui import QFont, QBrush, QPainter, QPen, QPixmap, QPolygonF, QImag
 from PyQt6.QtPrintSupport import QPrintPreviewDialog, QPrinter, QPrintDialog
 
 import configparser
-
+import sys
 import gettext
 gettext.find("ConfigDlg")
 translate = gettext.translation('ConfigDlg', localedir='locale', languages=['fr'])
@@ -25,11 +25,22 @@ class ConfigDlg(QDialog):
         super(ConfigDlg, self).__init__(parent)
         self.setWindowTitle(_("Application configuration"))
         self.configParser = configparser.RawConfigParser()
-        self.base_dir = Path(__file__).resolve().parent
+
+        self.base_dir = self.get_app_dir()
         self.configFilePath = self.base_dir / 'stamp_album.cfg'
-        #self.configFilePath = r'stamp_album.cfg'
+
         self.configParser.read(self.configFilePath)
         self.createDlg()
+
+    def get_app_dir(self) -> Path:
+        """Return the base directory path, compatible with PyInstaller frozen executables."""
+        if getattr(sys, 'frozen', False):
+            # Executable congelé (PyInstaller / CX_Freeze)
+            # sys.executable pointe vers le dossier où se trouve le .exe
+            return Path(sys.executable).resolve().parent
+        else:
+            # Script Python normal (.py)
+            return Path(__file__).resolve().parent
 
     def createDlg(self):
         # self.setWindowModality(Qt.ApplicationModal)
