@@ -1,3 +1,4 @@
+from PageBorder import PageBorder  # Import de la classe de bordures
 from os import walk
 from PyQt6.QtCore import QPointF, Qt, QPoint, QByteArray, QRectF
 from PyQt6 import QtCore, QtGui
@@ -43,15 +44,17 @@ class ConfigDlg(QDialog):
             return Path(__file__).resolve().parent
 
     def createDlg(self):
-        # self.setWindowModality(Qt.ApplicationModal)
-        # self.setWindowFlags(Qt.Dialog)
 
         # default Copyright
         self.eCopyRight = QLineEdit()
         self.eCopyRight.setFixedWidth(400)
         # default border type
         self.selectedBorderCombo = QComboBox()
-        self.selectedBorderCombo.setMaximumWidth(100)
+        self.selectedBorderCombo.setMaximumWidth(150)
+        self.selectedBorderCombo.addItem("Triple (Classique)", PageBorder.STYLE_TRIPLE)
+        self.selectedBorderCombo.addItem("Simple (Filet)", PageBorder.STYLE_SIMPLE)
+        self.selectedBorderCombo.addItem("Grecque (Encoches)", PageBorder.STYLE_GREEK)
+        self.selectedBorderCombo.addItem("Dentelle (Philatélie)", PageBorder.STYLE_DENTELLE)
         # default country
         self.selectedCountryCombo = QComboBox()
         self.selectedCountryCombo.setMaximumWidth(100)
@@ -71,9 +74,9 @@ class ConfigDlg(QDialog):
 
         flo = QFormLayout()
         flo.addRow(_("Default Copyright:"), self.eCopyRight)
-        flo.addRow(_("Border type"), self.selectedBorderCombo)
-        flo.addRow(_("Default Country"), self.selectedCountryCombo)
-        flo.addRow(_("Default Database"), self.selectedDatabaseCombo)
+        flo.addRow(_("Border type:"), self.selectedBorderCombo)
+        flo.addRow(_("Default Country:"), self.selectedCountryCombo)
+        flo.addRow(_("Default Database:"), self.selectedDatabaseCombo)
 
         flo.addRow(bb)
 
@@ -81,7 +84,7 @@ class ConfigDlg(QDialog):
         self.readConfig()
 
 
-    def readConfig(self):
+    def readConfig_old(self):
         print("read")
 
         # get the list of countries from the databases available
@@ -102,7 +105,7 @@ class ConfigDlg(QDialog):
         # select the first country available
         self.selectedCountryCombo.addItems(self.retCountryCombo)
 
-        self.selectedBorderCombo.addItem("type 1")
+        #self.selectedBorderCombo.addItem("type 1")
 
         self.selectedDatabaseCombo.addItem("Access")
         self.selectedDatabaseCombo.addItem("sqlite")
@@ -130,12 +133,64 @@ class ConfigDlg(QDialog):
             with open(self.configFilePath, 'w') as config:
                 self.configParser.write(config)
 
+    def readConfig(self):
+        # get the list of countries from the databases available
+        self.retCountryCombo = []
+        #self.db = None
+        filenames = next(walk("databases"), (None, None, []))[2]  # [] if no file
+
+        # create an array of file name first the open the db with the first one
+        self.stampCountries = []
+        for file in filenames:
+            shortFile = file.rsplit(".")
+            if shortFile[0] != "master":
+                if shortFile[1] == "mdb":
+                    self.stampCountries.append(shortFile[0])
+
+        for country in self.stampCountries:
+            self.retCountryCombo.append(country)
+        # select the first country available
+        self.selectedCountryCombo.addItems(self.retCountryCombo)
+
+        self.selectedBorderCombo.addItem("type 1")
+
+        self.selectedDatabaseCombo.addItem("Access")
+        self.selectedDatabaseCombo.addItem("sqlite")
+        print("after country")
+
+        if self.configParser.has_section('CONF'):
+            conf = self.configParser['CONF']
+            if self.configParser.has_option('CONF', 'copyright'):
+                self.eCopyRight.setText(conf['copyright'])
+            if self.configParser.has_option('CONF', 'default country'):
+                self.selectedCountryCombo.setCurrentText(str(conf['default country']))
+            if self.configParser.has_option('CONF', 'type encadrement'):
+                border_type = conf['type encadrement']
+                # Sélectionne l'élément par sa valeur d'action (userData ou texte)
+                index = self.selectedBorderCombo.findData(border_type)
+                if index != -1:
+                    self.selectedBorderCombo.setCurrentIndex(index)
+                else:
+                    self.selectedBorderCombo.setCurrentText(border_type)
+            if self.configParser.has_option('CONF', 'database type'):
+                self.selectedDatabaseCombo.setCurrentText(str(conf['database type']))
+        else:
+            self.configParser["CONF"] = {
+                "copyright": "CopyRight © Boris du Reau 2003-2026",
+                "default country": "France",
+                "type encadrement": PageBorder.STYLE_TRIPLE,
+                "database type": "sqlite"
+            }
+            with open(self.configFilePath, 'w') as config:
+                self.configParser.write(config)
+
     def saveConfig(self):
-        print("")
+        # On sauvegarde le code interne du style de bordure (ex: 'triple', 'greek', etc.)
+        selected_border = self.selectedBorderCombo.currentData() or self.selectedBorderCombo.currentText()
         self.configParser["CONF"] = {
             "copyright": self.eCopyRight.text(),
             "default country": self.selectedCountryCombo.currentText(),
-            "type encadrement": self.selectedBorderCombo.currentText(),
+            "type encadrement": selected_border,
             "database type": self.selectedDatabaseCombo.currentText()
         }
         # Write the above sections to stamp_album.cfg file

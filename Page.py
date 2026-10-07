@@ -1,4 +1,5 @@
 
+from PageBorder import PageBorder
 from PyQt6.QtCore import QPointF, Qt, QRectF, QMarginsF
 from PyQt6 import QtCore, QtGui, QtPrintSupport
 from PyQt6.QtWidgets import (
@@ -14,9 +15,11 @@ from StampDlg import StampDlg
 from TextDlg import TextDlg
 from Stamp import Stamp
 from EditStampDlg import EditStampDlg
-
-
+import configparser
+from pathlib import Path
+from PageBorder import PageBorder
 import gettext
+
 gettext.find("PageDlg")
 translate = gettext.translation('PageDlg', localedir='locale', languages=['fr'])
 translate.install()
@@ -54,7 +57,37 @@ class Page(QGraphicsScene):
         #self.backgroundBrush().texture().detach()
         return ""
 
-    def addBorder(self, boxWidth, boxHeight, margin_left, margin_right, margin_top, margin_bottom):
+    def get_configured_border_style(self) -> str:
+        """Read default border style from configuration file."""
+        config_path = Path(__file__).resolve().parent / 'stamp_album.cfg'
+        if config_path.exists():
+            parser = configparser.RawConfigParser()
+            parser.read(config_path)
+            if parser.has_option('CONF', 'type encadrement'):
+                return parser.get('CONF', 'type encadrement')
+        return PageBorder.STYLE_TRIPLE
+
+    def addBorder(self, boxWidth, boxHeight, margin_left, margin_right, margin_top, margin_bottom,):
+        """Add a decorative border to the page using PageBorder class."""
+
+        style = self.get_configured_border_style()
+
+        print(style)
+        if style is None:
+            style = PageBorder.STYLE_TRIPLE
+            print("style forced")
+
+        border = PageBorder(boxWidth, boxHeight, style=style)
+
+        if margin_top != 0:
+            margin_top2 = margin_top
+        else:
+            margin_top2 = (self.height() - border.boundingRect().size().height()) / 2
+
+        border.setPos(margin_left, margin_top2)
+        self.addItem(border)
+
+    def addBorder_old(self, boxWidth, boxHeight, margin_left, margin_right, margin_top, margin_bottom):
         borderBox = QGraphicsRectItem(0, 0, boxWidth, boxHeight)
         boxPen = QPen()
         boxPen.setColor(Qt.GlobalColor.black)
@@ -102,6 +135,8 @@ class Page(QGraphicsScene):
         group.setData(2, boxHeight)
         group.setData(3, margin_left)
         self.addItem(group)
+
+
 
     def addTextLabel(self, text, x=20, y=20, font=None, align=Qt.AlignmentFlag.AlignCenter, labelType ="textLabel"):
 

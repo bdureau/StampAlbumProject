@@ -6,6 +6,8 @@ tabbed page displays, actions, and file I/O operations (XML/gzip).
 
 Author: Boris du Reau
 """
+from PageBorder import PageBorder
+from AboutDlg import AboutDlg  # Import de la nouvelle boîte de dialogue
 from PyQt6.QtCore import QPointF, Qt, QPoint, QByteArray, QRectF
 from PyQt6 import QtCore, QtWidgets, QtGui
 from PyQt6.QtWidgets import (
@@ -593,7 +595,7 @@ class Window(QMainWindow):
         self.deleteAllPages()
         self.currentAlbumName = ""
 
-    def newBorder(self):
+    def newBorder_old(self):
         """Add a decorative page border to the current scene."""
         print("change border")
         if self.getCurrentPageScene().pageType == "portrait":
@@ -610,6 +612,24 @@ class Window(QMainWindow):
                            0,
                            19 / (25.4 / 96.0),
                            0)
+
+    def newBorder(self):
+        """Add a new page border using the default style configured in settings."""
+        scene = self.getCurrentPageScene()
+        if scene.pageType == "portrait":
+            scene.addBorder(
+                177 / (25.4 / 96.0),
+                272 / (25.4 / 96.0),
+                19 / (25.4 / 96.0),
+                0, 0, 0
+            )
+        else:
+            scene.addBorder(
+                272 / (25.4 / 96.0),
+                177 / (25.4 / 96.0),
+                ((297 - 272) / 2) / (25.4 / 96.0),
+                0, 19 / (25.4 / 96.0), 0
+            )
 
     # file menu functions
     def newFile(self):
@@ -1139,7 +1159,7 @@ class Window(QMainWindow):
 
     # help menu functions
     # about the application
-    def about(self):
+    def about_old(self):
         """Display 'About' dialog information."""
         aboutMsg = QMessageBox()
         aboutMsg.setWindowTitle(_("About Stamp Album"))
@@ -1147,6 +1167,10 @@ class Window(QMainWindow):
         aboutMsg.setIcon(QMessageBox.Icon.Information)
         aboutMsg.exec()
 
+    def about(self):
+        """Display custom scrollable 'About' dialog."""
+        dlg = AboutDlg(self)
+        dlg.exec()
     # application on line help
     def help(self):
         """Open user help PDF document in default system viewer."""
