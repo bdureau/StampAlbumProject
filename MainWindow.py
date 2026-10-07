@@ -1143,7 +1143,7 @@ class Window(QMainWindow):
         """Display 'About' dialog information."""
         aboutMsg = QMessageBox()
         aboutMsg.setWindowTitle(_("About Stamp Album"))
-        aboutMsg.setText(_("Stamp Album ver5.0.2 \n Copyright Boris du Reau 2003-2023"))
+        aboutMsg.setText(_("Stamp Album ver5.0.3 \n Copyright Boris du Reau 2003-2026"))
         aboutMsg.setIcon(QMessageBox.Icon.Information)
         aboutMsg.exec()
 

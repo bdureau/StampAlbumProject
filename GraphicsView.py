@@ -1,3 +1,13 @@
+
+"""
+Graphics View Module
+--------------------
+Handles custom QGraphicsView display, scene scaling, object serialization,
+deserialization, and clipboard actions (Copy, Cut, Paste).
+
+Author: Boris du Reau
+"""
+
 from PyQt6.QtCore import QPointF, Qt, QPoint, QByteArray, QRectF
 from PyQt6 import QtCore, QtWidgets, QtGui
 from PyQt6.QtWidgets import (
@@ -17,20 +27,29 @@ custom_mimeType = "application/x-qgraphicsitems"
 
 # serialise the item
 def item_to_ds(it, ds):
-    print("item_to_ds")
+    """
+        Serialize a QGraphicsItem instance into a QDataStream for clipboard operations.
+
+        Args:
+            it (QtWidgets.QGraphicsItem): Item to serialize.
+            ds (QtCore.QDataStream): Stream to write data to.
+    """
     if not isinstance(it, QtWidgets.QGraphicsItem):
         return
 
+    # Write class module and type name
     ds.writeQString(it.__class__.__module__)
     ds.writeQString(it.__class__.__name__)
 
-    ds.writeInt(it.flags().value)
+    # Write item flags as an integer
+    #ds.writeInt(it.flags().value)
+    ds.writeInt(int(it.flags()))
 
-    # Position and Data
+    # Write position and item custom identifier
     ds << it.pos()
     ds.writeQString(str(it.data(0)) if it.data(0) is not None else "")
 
-    # Objet simple text
+    # Handle standard text items
     if it.__class__.__name__ == "QGraphicsTextItem":
         ds.writeQString(it.toPlainText())
         ds.writeBool(it.font().bold())
@@ -39,20 +58,21 @@ def item_to_ds(it, ds):
         ds.writeBool(it.font().underline())
         ds.writeInt(it.font().pointSize())
 
-    # Stamp Group
+    # Handle stamp group items and their children
     if it.__class__.__name__ == "QGraphicsItemGroup" and it.data(0) == "stampGroup":
         for child in it.childItems():
 
+            # Stamp mount box rectangle
             if child.__class__.__name__ == "QGraphicsRectItem":
                 ds.writeQString(child.__class__.__name__)
                 ds << child.boundingRect()
                 ds << child.pos()
                 ds.writeInt(child.pen().width())
-                # Correction : Utiliser rgba() ou directement le QDataStream pour QColor
                 ds << child.pen().color()
                 ds.writeInt(int(child.data(1)) if child.data(1) else 0) # box width
                 ds.writeInt(int(child.data(2)) if child.data(2) else 0) # box height
 
+            # Stamp text elements (Title, Number, Nominal Value)
             if child.__class__.__name__ == "QGraphicsTextItem":
                 ds.writeQString(child.__class__.__name__)
                 ds.writeQString(child.toPlainText())
@@ -65,15 +85,18 @@ def item_to_ds(it, ds):
                 ds.writeBool(font.underline())
                 ds.writeInt(font.pointSize())
 
+            # Stamp image item
             if child.__class__.__name__ == "QGraphicsPixmapItem":
                 ds.writeQString(child.__class__.__name__)
                 ds.writeQVariant(child.pixmap())
                 ds << child.pos()
 
+    # Write transform attributes
     ds.writeFloat(it.opacity())
     ds.writeFloat(it.rotation())
     ds.writeFloat(it.scale())
 
+    # Write shape pens and brushes if applicable
     if isinstance(it, QtWidgets.QAbstractGraphicsShapeItem):
         ds << it.brush() << it.pen()
     if isinstance(it, QtWidgets.QGraphicsPathItem):
@@ -81,6 +104,15 @@ def item_to_ds(it, ds):
 
 
 def ds_to_item(ds):
+    """
+        Deserialize a QGraphicsItem instance from a QDataStream.
+
+        Args:
+            ds (QtCore.QDataStream): Stream to read data from.
+
+        Returns:
+            QtWidgets.QGraphicsItem: Reconstructed graphic item.
+    """
     print("ds to item")
     module_name = ds.readQString()
     class_name = ds.readQString()
@@ -90,6 +122,8 @@ def ds_to_item(ds):
     pos = QtCore.QPointF()
     ds >> pos
     it.setData(0, ds.readQString())
+
+    # Reconstruct standalone text items
     if class_name == "QGraphicsTextItem":
         it.setPlainText(ds.readQString())
         font = QFont()
@@ -100,9 +134,10 @@ def ds_to_item(ds):
         font.setPointSize(ds.readInt())
         it.setFont(font)
 
+    # Reconstruct stamp group items
     if class_name == "QGraphicsItemGroup" and it.data(0) == "stampGroup":
-        # QGraphicsRectItem
-        class1 = ds.readQString()
+        # 1. Read QGraphicsRectItem parameters
+        class1 = ds.readQString() # Class name
         print(class1)
         bounding_rect = QtCore.QRectF()
         ds >> bounding_rect
@@ -112,10 +147,6 @@ def ds_to_item(ds):
         print(pos1)
         pen = QPen()
         pen.setWidth(ds.readInt())
-        #pen.setColor(ds.readInt())
-        #not sure how to get the color working !!!
-        #penC = ds.readInt()
-        #print(penC)
         penColor = QtGui.QColor()
         ds >> penColor
         pen.setColor(penColor)
@@ -125,7 +156,7 @@ def ds_to_item(ds):
         boxH = ds.readInt()
         boxHeight = boxH / (25.4 / 96.0)
 
-        # QGraphicsTextItem
+        # 2. Read stamp description text
         class2 = ds.readQString()
         print(class2)
         pos2 = QtCore.QPointF()
@@ -138,7 +169,7 @@ def ds_to_item(ds):
         font2.setUnderline(ds.readBool())
         font2.setPointSize(ds.readInt())
 
-        # QGraphicsTextItem
+        # 3. Read stamp number text
         class3 = ds.readQString()
         print(class3)
         pos3 = QtCore.QPointF()
@@ -151,7 +182,7 @@ def ds_to_item(ds):
         font3.setUnderline(ds.readBool())
         font3.setPointSize(ds.readInt())
 
-        # QGraphicsTextItem
+        # 4. Read stamp value text
         class4 = ds.readQString()
         print(class4)
         pos4 = QtCore.QPointF()
@@ -164,14 +195,14 @@ def ds_to_item(ds):
         font4.setUnderline(ds.readBool())
         font4.setPointSize(ds.readInt())
 
-        # QGraphicsPixmapItem
+        # 5. Read pixmap image
         class5 = ds.readQString()
         print(class5)
         pos5 = QtCore.QPointF()
         pixmap = ds.readQVariant()
         ds >> pos5
 
-
+        # Re-assemble stamp description
         stampDesc = QGraphicsTextItem(desc)
         stampDesc.setData(0, "stampDesc")
         stampDesc.setPos(pos2.x(), pos2.y())
@@ -189,18 +220,12 @@ def ds_to_item(ds):
         cursor.clearSelection()
         stampDesc.setTextCursor(cursor)
 
-        #stampBox = QGraphicsRectItem(0, 0, bounding_rect.width(), bounding_rect.height())
+        # Re-assemble stamp box
         stampBox = QGraphicsRectItem(0, 0, boxWidth, boxHeight)
-
-        #stampBox.setPos(pos1.x(), pos1.y())
         stampBox.setPos(pos2.x() + (stampDesc.boundingRect().size().width() / 2) - (boxWidth/2),
                         pos2.y() + stampDesc.boundingRect().size().height() +20)
-                        #pos1.y())
-        ##boxPen = QPen()
-        ##boxPen.setColor(Qt.black)
-        ##boxPen.setWidth(1)
-        stampBox.setPen(pen)
 
+        stampBox.setPen(pen)
         stampBox.setFlags(QGraphicsRectItem.GraphicsItemFlag.ItemIsMovable |
                           QGraphicsRectItem.GraphicsItemFlag.ItemIsSelectable)
         stampBox.setData(0, "stampBox")
@@ -208,15 +233,8 @@ def ds_to_item(ds):
         stampBox.setData(2, boxH)
         print("created box")
 
+        # Re-assemble stamp image and calculate scale factor
         pixmapitem = QGraphicsPixmapItem(pixmap)
-        print("got pixmap")
-
-        #print(stampBox.boundingRect().size().width())
-        #print(pixmapitem.boundingRect().size().width())
-        # calculate scale
-        #scale1 = (stampBox.boundingRect().size().width() - 4) / (pixmapitem.boundingRect().size().width())
-        #scale2 = (stampBox.boundingRect().size().height() - 4) / (pixmapitem.boundingRect().size().height())
-
         scale1 = (boxWidth - 4) / (pixmapitem.boundingRect().size().width())
         scale2 = (boxHeight - 4) / (pixmapitem.boundingRect().size().height())
 
@@ -227,23 +245,18 @@ def ds_to_item(ds):
         print("scale calculated")
         pixmapitem.setScale(image_scale)
         print("set scale pixmap")
-        #pixmapitem.setPos(0 + stampBox.boundingRect().size().width() / 2 - (image_scale * pixmapitem.boundingRect().size().width()) / 2, 0)
-        #pixmapitem.setPos(pos5.x(), pos5.y())
+
         pixmapitem.setPos(pos2.x() + (stampDesc.boundingRect().size().width() / 2) - (image_scale * pixmapitem.boundingRect().size().width() / 2),
                           pos2.y() + stampDesc.boundingRect().size().height() + 20 + (boxHeight / 2 - (image_scale * pixmapitem.boundingRect().size().height()) / 2))
-        #boxHeight / 2 - (image_scale * childItem.boundingRect().size().height()) / 2
-                          #pos5.y())
         pixmapitem.setData(0, "pixmapItem")
 
-        print("created pixmap")
+        # Re-assemble stamp number
         stampNbr = QGraphicsTextItem(nbr)
         stampNbr.setData(0, "stampNbr")
 
         stampNbr.setFlags(QGraphicsTextItem.GraphicsItemFlag.ItemIsMovable |
                           QGraphicsTextItem.GraphicsItemFlag.ItemIsSelectable)
-        #stampNbr.setPos(0 + stampBox.boundingRect().size().width() / 2 - stampNbr.boundingRect().size().width() / 2, 0 + stampBox.boundingRect().size().height())
 
-        #print("created nbr")
 
         stampNbr.setTextWidth(stampNbr.boundingRect().size().width())
         cursor = stampNbr.textCursor()
@@ -253,11 +266,11 @@ def ds_to_item(ds):
         cursor.mergeBlockFormat(format)
         cursor.clearSelection()
         stampNbr.setTextCursor(cursor)
-        #stampNbr.setPos(pos3.x(), pos3.y())
+
         stampNbr.setPos(pos2.x() + stampDesc.boundingRect().size().width() / 2 - stampNbr.boundingRect().size().width() / 2,
                         pos2.y() + stampDesc.boundingRect().size().height() + 20 + boxHeight)
 
-
+        # Re-assemble stamp nominal value
         stampValue = QGraphicsTextItem(value)
         stampValue.setData(0, "stampValue")
         stampValue.setFlags(QGraphicsTextItem.GraphicsItemFlag.ItemIsMovable |
@@ -272,17 +285,13 @@ def ds_to_item(ds):
         cursor.mergeBlockFormat(format)
         cursor.clearSelection()
         stampValue.setTextCursor(cursor)
-        #stampValue.setPos(pos4.x(), pos4.y())
+
         stampValue.setPos(
              pos2.x() + (stampDesc.boundingRect().size().width() / 2) - (stampValue.boundingRect().size().width() / 2),
              pos2.y() + stampDesc.boundingRect().size().height() + 20 + boxHeight +
              stampNbr.boundingRect().size().height() + 0)
-        # stampValue.setPos(
-        #     0 + boxWidth / 2 - stampValue.boundingRect().size().width() / 2,
-        #     stampDesc.boundingRect().size().height() + 20 + boxHeight +
-        #     stampNbr.boundingRect().size().height() + 0)
 
-        #group = QGraphicsItemGroup()
+        # Group components into the master item
         it.addToGroup(stampBox)
         it.addToGroup(stampDesc)
         it.addToGroup(stampNbr)
@@ -290,11 +299,11 @@ def ds_to_item(ds):
         it.addToGroup(pixmapitem)
         it.setFlags(QGraphicsItemGroup.GraphicsItemFlag.ItemIsMovable |
                     QGraphicsItemGroup.GraphicsItemFlag.ItemIsSelectable)
-        #it.setData(0, "stampGroup")
-        #group.setPos(pos)
+
 
         print("end of stamp")
 
+    # Restore generic item properties
     it.setFlags(flags)
     it.setPos(pos)
     it.setOpacity(ds.readFloat())
@@ -317,22 +326,28 @@ def ds_to_item(ds):
 
 
 class GraphicsView(QtWidgets.QGraphicsView):
+    """Custom QGraphicsView with dynamic scaling and clipboard support."""
     def __init__(self, parent=None):
+        """Initialize viewport rendering options and keyboard shortcuts."""
         super().__init__(parent)
         self.setScene(parent)
 
-        # Permet un redimensionnement fluide de la scène
+        # Enable smooth anti-aliased rendering during scaling
         self.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)
         self.setRenderHint(QtGui.QPainter.RenderHint.SmoothPixmapTransform)
-        #print(self.scene().getPageName())
 
-        # Assure l'affichage de l'ascenseur vertical quand nécessaire
+
+        # Enable horizontal and vertical scrollbars when scene overflows viewport
         self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-        self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        #self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
 
+        # Bind standard Copy and Paste shortcuts
         QShortcut(
-             QtGui.QKeySequence(QtGui.QKeySequence.StandardKey.Copy), self, activated=self.copy_items
-         )
+            QtGui.QKeySequence(QtGui.QKeySequence.StandardKey.Copy),
+            self,
+            activated=self.copy_items
+        )
         QShortcut(
              QtGui.QKeySequence(QtGui.QKeySequence.StandardKey.Paste),
              self,
@@ -340,6 +355,7 @@ class GraphicsView(QtWidgets.QGraphicsView):
         )
 
     def resizeEvent(self, event):
+        """Re-evaluate scene scale ratio on viewport resize."""
         super().resizeEvent(event)
 
         if self.scene():
@@ -348,8 +364,12 @@ class GraphicsView(QtWidgets.QGraphicsView):
             scene_width = self.scene().sceneRect().width()
 
             if scene_width > 0:
-                # Calcule le facteur d'échelle basé sur la LARGEUR uniquement
-                scale_factor = viewport_width / scene_width
+                # Maintain aspect ratio based on available viewport width
+                #scale_factor = viewport_width / scene_width
+
+                # Exemple : on fixe une échelle minimale de 1.0 (ou 0.8)
+                min_scale = 1.0
+                scale_factor = max(viewport_width / scene_width, min_scale)
 
                 # Réinitialise la transformation et applique l'échelle identique en X et Y (pour garder le ratio)
                 self.resetTransform()
@@ -357,6 +377,7 @@ class GraphicsView(QtWidgets.QGraphicsView):
 
     @QtCore.pyqtSlot()
     def copy_items(self):
+        """Serialize selected items and copy them to the system clipboard."""
         print("Copy")
         mimedata = QtCore.QMimeData()
         ba = QtCore.QByteArray()
@@ -370,7 +391,8 @@ class GraphicsView(QtWidgets.QGraphicsView):
 
     @QtCore.pyqtSlot()
     def paste_items(self):
-        pos2 = QtCore.QPointF(40, 40)
+        """Deserialize items from clipboard and add them to the current scene."""
+        #pos2 = QtCore.QPointF(40, 40)
 
         clipboard = QtGui.QGuiApplication.clipboard()
         mimedata = clipboard.mimeData()
