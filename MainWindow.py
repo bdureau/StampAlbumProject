@@ -35,11 +35,12 @@ import os, gzip
 from TextDlg import TextDlg
 
 import gettext
+from PyQt6.QtGui import QAction, QIcon, QKeySequence
 
 # Set up gettext localization
 gettext.find("MainWindow")
 translate = gettext.translation('MainWindow', localedir='locale', languages=['fr'])
-#translate = gettext.translation('MainWindow', localedir='locale', fallback=True)
+
 translate.install()
 _ = translate.gettext
 
@@ -103,6 +104,9 @@ class Window(QMainWindow):
 
         # Edit Menu
         editMenu = menuBar.addMenu(_("&Edit"))
+        editMenu.addAction(self.undoAction)
+        editMenu.addAction(self.redoAction)
+        editMenu.addSeparator()
         editMenu.addAction(self.copyAction)
         editMenu.addAction(self.pasteAction)
         editMenu.addAction(self.cutAction)
@@ -362,6 +366,18 @@ class Window(QMainWindow):
         iconAbout.addPixmap(QPixmap("images/about.png"), QIcon.Mode.Normal, QIcon.State.Off)
         self.aboutAction.setIcon(iconAbout)
 
+        # Action Annuler (Ctrl+Z)
+        self.undoAction = QAction(_("&Undo"), self)
+        self.undoAction.setShortcut(QKeySequence.StandardKey.Undo)
+        self.undoAction.setIcon(QIcon("images/undo.png"))  # ou via qtawesome
+        self.undoAction.triggered.connect(self.undo)
+
+        # Action Rétablir (Ctrl+Y / Shift+Ctrl+Z)
+        self.redoAction = QAction(_("&Redo"), self)
+        self.redoAction.setShortcut(QKeySequence.StandardKey.Redo)
+        self.redoAction.setIcon(QIcon("images/redo.png"))
+        self.redoAction.triggered.connect(self.redo)
+
     def _createToolBars(self):
         """Construct application toolbars."""
         # File Toolbar
@@ -492,6 +508,18 @@ class Window(QMainWindow):
             event.accept()
         else:
             event.ignore()
+
+    def undo(self):
+        """Annule la dernière action sur la page active."""
+        scene = self.getCurrentPageScene()
+        if scene and hasattr(scene, "undoStack"):
+            scene.undoStack.undo()
+
+    def redo(self):
+        """Rétablit la dernière action annulée sur la page active."""
+        scene = self.getCurrentPageScene()
+        if scene and hasattr(scene, "undoStack"):
+            scene.undoStack.redo()
 
     def exitApp(self):
         """Close the main window."""
@@ -1144,7 +1172,6 @@ class Window(QMainWindow):
     # stamp menu functions
     def createNewStamp(self):
         """Open creation dialog to insert a new stamp item."""
-        print("creating new stamp")
         stamp = self.getCurrentPageScene().newStamp(self.lastStampObj)
         if stamp is not None:
             self.lastStampObj['year'] = stamp['year']
@@ -1159,13 +1186,13 @@ class Window(QMainWindow):
 
     # help menu functions
     # about the application
-    def about_old(self):
-        """Display 'About' dialog information."""
-        aboutMsg = QMessageBox()
-        aboutMsg.setWindowTitle(_("About Stamp Album"))
-        aboutMsg.setText(_("Stamp Album ver5.0.3 \n Copyright Boris du Reau 2003-2026"))
-        aboutMsg.setIcon(QMessageBox.Icon.Information)
-        aboutMsg.exec()
+    # def about_old(self):
+    #     """Display 'About' dialog information."""
+    #     aboutMsg = QMessageBox()
+    #     aboutMsg.setWindowTitle(_("About Stamp Album"))
+    #     aboutMsg.setText(_("Stamp Album ver5.0.3 \n Copyright Boris du Reau 2003-2026"))
+    #     aboutMsg.setIcon(QMessageBox.Icon.Information)
+    #     aboutMsg.exec()
 
     def about(self):
         """Display custom scrollable 'About' dialog."""
@@ -1242,20 +1269,20 @@ class Window(QMainWindow):
         return pixmap
 
     # used to delete the grid
-    def deleteGrid2(self):
-        """Generate transparent texture pixmap to disable grid."""
-        self.pixmap = QPixmap(10, 10)
-        pixmapWidth = self.pixmap.width() - 1
-        painter = QPainter()
-
-        self.pixmap.fill(Qt.GlobalColor.transparent)
-
-        painter.begin(self.pixmap)
-        #painter.setPen(Qt.GlobalColor.white)
-        painter.setPen(Qt.GlobalColor.transparent)
-        painter.drawLine(0, 0, pixmapWidth, 0)
-        painter.drawLine(0, 0, 0, pixmapWidth)
-        return self.pixmap
+    # def deleteGrid2(self):
+    #     """Generate transparent texture pixmap to disable grid."""
+    #     self.pixmap = QPixmap(10, 10)
+    #     pixmapWidth = self.pixmap.width() - 1
+    #     painter = QPainter()
+    #
+    #     self.pixmap.fill(Qt.GlobalColor.transparent)
+    #
+    #     painter.begin(self.pixmap)
+    #     #painter.setPen(Qt.GlobalColor.white)
+    #     painter.setPen(Qt.GlobalColor.transparent)
+    #     painter.drawLine(0, 0, pixmapWidth, 0)
+    #     painter.drawLine(0, 0, 0, pixmapWidth)
+    #     return self.pixmap
 
     def pixmapToBytes(self, pixmap):
         """Encode QPixmap to Base64 PNG string."""
@@ -1274,19 +1301,18 @@ class Window(QMainWindow):
         assert ok
         return pixmap
 
-    def bytesToPixmap2(self, pixmap_bytes):
-        # convert bytes to QPixmap
-        # do we still need it?
-        ba = QtCore.QByteArray().fromBase64(pixmap_bytes.encode())
-        pixmap = QtGui.QPixmap()
-        ok = pixmap.loadFromData(ba, "JPG")
-        assert ok
-        return pixmap
+    # def bytesToPixmap2(self, pixmap_bytes):
+    #     # convert bytes to QPixmap
+    #     # do we still need it?
+    #     ba = QtCore.QByteArray().fromBase64(pixmap_bytes.encode())
+    #     pixmap = QtGui.QPixmap()
+    #     ok = pixmap.loadFromData(ba, "JPG")
+    #     assert ok
+    #     return pixmap
 
     # get the current page content
     def getCurrentPageScene(self):
         """Return QGraphicsScene instance from the active tab widget."""
-        print("getCurrentPageScene")
         for child in self.tabs.currentWidget().children():
             if child.__class__.__name__ == "GraphicsView":
                 # return the current scene

@@ -80,7 +80,7 @@ class AboutDlg(QDialog):
             <h2>À propos de Stamp Album</h2>
             <div class="author">
                 <b>Auteur :</b> Boris du Reau<br>
-                <b>Version :</b> 5.0.2 (2003-2026)
+                <b>Version :</b> 5.0.3 (2003-2026)
             </div>
 
             <h3>Description de l'application</h3>
@@ -105,7 +105,7 @@ class AboutDlg(QDialog):
             <h2>About Stamp Album</h2>
             <div class="author">
                 <b>Author:</b> Boris du Reau<br>
-                <b>Version:</b> 5.0.2 (2003-2026)
+                <b>Version:</b> 5.0.3 (2003-2026)
             </div>
 
             <h3>Application Overview</h3>

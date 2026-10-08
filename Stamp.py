@@ -141,7 +141,11 @@ class Stamp:
 
         # 8. Set final absolute position in scene
         group.setPos(x, y)
-        scene.addItem(group)
+
+        if hasattr(scene, 'addItemWithUndo'):
+            scene.addItemWithUndo(group, "Add Stamp")
+        else:
+            scene.addItem(group)
 
     # Create stamp
     # this can be used for old version

@@ -42,8 +42,9 @@ def item_to_ds(it, ds):
     ds.writeQString(it.__class__.__name__)
 
     # Write item flags as an integer
-    #ds.writeInt(it.flags().value)
-    ds.writeInt(int(it.flags()))
+    # Safe int conversion for flags in PyQt6
+    flags_val = int(it.flags().value) if hasattr(it.flags(), 'value') else int(it.flags())
+    ds.writeInt(flags_val)
 
     # Write position and item custom identifier
     ds << it.pos()
@@ -207,7 +208,6 @@ def ds_to_item(ds):
         stampDesc.setData(0, "stampDesc")
         stampDesc.setPos(pos2.x(), pos2.y())
         stampDesc.setFont(font2)
-        #print(stampDesc.boundingRect().size().width())
         stampDesc.setFlags(QGraphicsTextItem.GraphicsItemFlag.ItemIsMovable |
                            QGraphicsTextItem.GraphicsItemFlag.ItemIsSelectable)
         print("created desc")
@@ -299,9 +299,6 @@ def ds_to_item(ds):
         it.addToGroup(pixmapitem)
         it.setFlags(QGraphicsItemGroup.GraphicsItemFlag.ItemIsMovable |
                     QGraphicsItemGroup.GraphicsItemFlag.ItemIsSelectable)
-
-
-        print("end of stamp")
 
     # Restore generic item properties
     it.setFlags(flags)

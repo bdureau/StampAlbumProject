@@ -20,16 +20,12 @@ class HelpDlg(QDialog):
         self.createDlg()
 
     def createDlg(self):
-        print("create dialog")
-        #self.setWindowModality(Qt.ApplicationModal)
-        #self.setWindowFlags(Qt.Dialog)
         output = QTextBrowser()
         output.setSource(QtCore.QUrl.fromLocalFile("Help/stamp_album_help.html"))
 
         # ok /cancel button
         bb = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok)
         bb.accepted.connect(self.accept)
-
 
         flo = QFormLayout()
         flo.addRow(output)

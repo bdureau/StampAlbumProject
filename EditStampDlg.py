@@ -27,7 +27,6 @@ class EditStampDlg(QDialog):
         self.createDlg(stampObj)
 
     def createDlg(self, stampObj):
-        print("createDlg")
         self.eTitle = QPlainTextEdit()
         self.eTitle.setPlainText(stampObj['stampDesc_text'])
         self.eTitle.setFixedHeight(50)
@@ -40,17 +39,10 @@ class EditStampDlg(QDialog):
         self.eValue.setFixedHeight(30)
 
         # image
-        print("image")
         self.photo = QLabel()
         self.photo.setFixedHeight(200)
         self.photo.setFixedWidth(200)
 
-        # try:
-        #     pix = QPixmap(stampObj['pixmapItem_image'])
-        #     print(pix)
-        # except:
-        #     print("error")
-        #     return
         pix = stampObj.get('pixmapItem_image')
         if not isinstance(pix, QPixmap) or pix.isNull():
             print("invalid Pixmap ")
@@ -69,13 +61,6 @@ class EditStampDlg(QDialog):
         imageButton.clicked.connect(self.loadImage)
 
         # pochettes type
-        print("Pochette type")
-        # vLayout1 = QVBoxLayout()
-        # pochettesType = QLabel(_("Pochette type"))
-        # self.pochetteList = QListWidget()
-        # self.pochetteList.setMaximumWidth(150)
-        # vLayout1.addWidget(pochettesType)
-        # vLayout1.addWidget(self.pochetteList)
 
         # ok /cancel button
         bb = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
@@ -106,7 +91,6 @@ class EditStampDlg(QDialog):
         self.populateData(stampObj)
 
     def populateData(self, stampObj):
-        print("populateData")
         self.db = None
         filenames = next(walk("databases"), (None, None, []))[2]  # [] if no file
 
@@ -129,7 +113,6 @@ class EditStampDlg(QDialog):
 
         retPochette ="Pochette " + str(stampObj['stampBox_boxWidth']) + "x" + str(stampObj['stampBox_boxHeight'])
         if len(retPochette) > 0:
-            # print(retPochette[0])
             pochetteItem = self.pochetteList.findItems(retPochette, Qt.MatchFlag.MatchExactly)
 
             if len(pochetteItem) > 0:

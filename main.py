@@ -11,7 +11,6 @@ Author: Boris du Reau
 Year: 2022-2026
 """
 import sys
-import PyQt6
 from PyQt6.QtWidgets import QApplication
 
 from MainWindow import Window

@@ -57,7 +57,7 @@ class DB:
         if self.dbtype == "sqlite":
             master_db = self.db_dir / "master.db"
             country_db = self.db_dir / f"{country}.db"
-            #print(master_db
+
             self.con_master = sqlite3.connect(master_db)
             self.dbCurMaster = self.con_master.cursor()
 
@@ -180,7 +180,6 @@ class DB:
             FROM stamp_list
             WHERE nbr = ? AND Key = ?
         """
-        print(query)
         res = self.DBExecute(self.dbCurCountry, query, (str(stampNbr), Key))
         row = res.fetchone()
         return list(row) if row else []

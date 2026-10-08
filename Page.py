@@ -19,19 +19,26 @@ import configparser
 from pathlib import Path
 from PageBorder import PageBorder
 import gettext
+from PyQt6.QtWidgets import QGraphicsScene
+from PyQt6.QtGui import QUndoStack
+from UndoCommands import AddItemCommand, DeleteItemsCommand, MoveCommand
 
 gettext.find("PageDlg")
 translate = gettext.translation('PageDlg', localedir='locale', languages=['fr'])
 translate.install()
 _ = translate.gettext
 
-import configparser
 
 
 class Page(QGraphicsScene):
     def __init__(self, pageType = "portrait", border=None, parent=None):
         super(Page, self).__init__(parent)
         self.pageType = pageType
+        # Gestionnaire d'historique Undo/Redo propre à la page
+        self.undoStack = QUndoStack(self)
+
+        self.mouse_press_positions = {}
+
         if self.pageType == "portrait":
             self.setSceneRect(0, 0, 210 / (25.4 / 96), 297 / (25.4 / 96))
             if border is not None and border:
@@ -52,6 +59,40 @@ class Page(QGraphicsScene):
                            0)
 
         self.gridOn = False
+
+    def addItemNative(self, item):
+        """Ajout direct à la scène sans ajouter de commande dans l'historique."""
+        if item.scene() != self:
+            super().addItem(item)
+
+    def removeItemNative(self, item):
+        """Suppression directe de la scène sans ajouter de commande dans l'historique."""
+        if item.scene() == self:
+            super().removeItem(item)
+
+    def addItemWithUndo(self, item, text="Add Item"):
+        """Méthode explicite pour ajouter un élément ET créer une action Undo."""
+        if item.parentItem() is None:
+            cmd = AddItemCommand(self, item, text)
+            self.undoStack.push(cmd)  # Push appelle automatiquement cmd.redo() une fois !
+        else:
+            self.addItemNative(item)
+
+    def addItem(self, item):
+        """Surchargé pour enregistrer les ajouts dans l'historique."""
+        super().addItem(item)
+        # N'enregistre que les objets principaux (pas les enfants de groupes)
+        if item.parentItem() is None:
+            cmd = AddItemCommand(self, item)
+            self.undoStack.push(cmd)
+
+    def removeItems(self):
+        """Surchargé pour enregistrer les suppressions dans l'historique."""
+        #items = self.selectedItems()
+        items = [it for it in self.selectedItems() if it.parentItem() is None]
+        if items:
+            cmd = DeleteItemsCommand(self, items)
+            self.undoStack.push(cmd)
 
     def getPageName(self):
         #self.backgroundBrush().texture().detach()
@@ -87,55 +128,55 @@ class Page(QGraphicsScene):
         border.setPos(margin_left, margin_top2)
         self.addItem(border)
 
-    def addBorder_old(self, boxWidth, boxHeight, margin_left, margin_right, margin_top, margin_bottom):
-        borderBox = QGraphicsRectItem(0, 0, boxWidth, boxHeight)
-        boxPen = QPen()
-        boxPen.setColor(Qt.GlobalColor.black)
-        boxPen.setWidth(1)
-        borderBox.setPen(boxPen)
-        borderBox.setData(1, boxWidth)
-        borderBox.setData(2, boxHeight)
-        borderBox.setData(3, margin_left)
-
-        borderBox2 = QGraphicsRectItem(0, 0, boxWidth - 4 - 6, (boxHeight-4-6))
-        boxPen2 = QPen()
-        boxPen2.setColor(Qt.GlobalColor.black)
-        boxPen2.setWidth(4)
-        borderBox2.setPen(boxPen2)
-        borderBox2.setData(1, boxWidth - 4 - 6)
-        borderBox2.setData(2, boxHeight - 4 - 6)
-        borderBox2.setData(3, margin_left)
-
-        borderBox3 = QGraphicsRectItem(0, 0, boxWidth - 4 - 6 - 9, (boxHeight - 4 - 6 - 9))
-        boxPen3 = QPen()
-        boxPen3.setColor(Qt.GlobalColor.black)
-        boxPen3.setWidth(1)
-        borderBox3.setPen(boxPen3)
-        borderBox3.setData(1, boxWidth - 4 - 6 - 9)
-        borderBox3.setData(2, boxHeight - 4 - 6 - 9)
-        borderBox3.setData(3, margin_left)
-
-        borderBox2.setPos((borderBox.boundingRect().size().width() -1) / 2 - (borderBox2.boundingRect().size().width() -4) / 2,
-                          (borderBox.boundingRect().size().height() -1) / 2 - (borderBox2.boundingRect().size().height()-4) / 2)
-        borderBox3.setPos(
-            (borderBox.boundingRect().size().width() - 1) / 2 - (borderBox3.boundingRect().size().width() - 1) / 2,
-            (borderBox.boundingRect().size().height() - 1) / 2 - (borderBox3.boundingRect().size().height() - 1) / 2)
-        group = QGraphicsItemGroup()
-        group.addToGroup(borderBox)
-        group.addToGroup(borderBox2)
-        group.addToGroup(borderBox3)
-        print(group.boundingRect().size().height())
-        if margin_top != 0:
-            margin_top2 = margin_top
-        else:
-            margin_top2 = (self.height() - group.boundingRect().size().height())/2
-        group.setPos(margin_left, margin_top2)
-        group.setData(0, "borderGroup")
-        group.setData(1, boxWidth)
-        group.setData(2, boxHeight)
-        group.setData(3, margin_left)
-        self.addItem(group)
-
+    # def addBorder_old(self, boxWidth, boxHeight, margin_left, margin_right, margin_top, margin_bottom):
+    #     borderBox = QGraphicsRectItem(0, 0, boxWidth, boxHeight)
+    #     boxPen = QPen()
+    #     boxPen.setColor(Qt.GlobalColor.black)
+    #     boxPen.setWidth(1)
+    #     borderBox.setPen(boxPen)
+    #     borderBox.setData(1, boxWidth)
+    #     borderBox.setData(2, boxHeight)
+    #     borderBox.setData(3, margin_left)
+    #
+    #     borderBox2 = QGraphicsRectItem(0, 0, boxWidth - 4 - 6, (boxHeight-4-6))
+    #     boxPen2 = QPen()
+    #     boxPen2.setColor(Qt.GlobalColor.black)
+    #     boxPen2.setWidth(4)
+    #     borderBox2.setPen(boxPen2)
+    #     borderBox2.setData(1, boxWidth - 4 - 6)
+    #     borderBox2.setData(2, boxHeight - 4 - 6)
+    #     borderBox2.setData(3, margin_left)
+    #
+    #     borderBox3 = QGraphicsRectItem(0, 0, boxWidth - 4 - 6 - 9, (boxHeight - 4 - 6 - 9))
+    #     boxPen3 = QPen()
+    #     boxPen3.setColor(Qt.GlobalColor.black)
+    #     boxPen3.setWidth(1)
+    #     borderBox3.setPen(boxPen3)
+    #     borderBox3.setData(1, boxWidth - 4 - 6 - 9)
+    #     borderBox3.setData(2, boxHeight - 4 - 6 - 9)
+    #     borderBox3.setData(3, margin_left)
+    #
+    #     borderBox2.setPos((borderBox.boundingRect().size().width() -1) / 2 - (borderBox2.boundingRect().size().width() -4) / 2,
+    #                       (borderBox.boundingRect().size().height() -1) / 2 - (borderBox2.boundingRect().size().height()-4) / 2)
+    #     borderBox3.setPos(
+    #         (borderBox.boundingRect().size().width() - 1) / 2 - (borderBox3.boundingRect().size().width() - 1) / 2,
+    #         (borderBox.boundingRect().size().height() - 1) / 2 - (borderBox3.boundingRect().size().height() - 1) / 2)
+    #     group = QGraphicsItemGroup()
+    #     group.addToGroup(borderBox)
+    #     group.addToGroup(borderBox2)
+    #     group.addToGroup(borderBox3)
+    #     print(group.boundingRect().size().height())
+    #     if margin_top != 0:
+    #         margin_top2 = margin_top
+    #     else:
+    #         margin_top2 = (self.height() - group.boundingRect().size().height())/2
+    #     group.setPos(margin_left, margin_top2)
+    #     group.setData(0, "borderGroup")
+    #     group.setData(1, boxWidth)
+    #     group.setData(2, boxHeight)
+    #     group.setData(3, margin_left)
+    #     self.addItem(group)
+    #
 
 
     def addTextLabel(self, text, x=20, y=20, font=None, align=Qt.AlignmentFlag.AlignCenter, labelType ="textLabel"):
@@ -162,7 +203,8 @@ class Page(QGraphicsScene):
         textLabel.setData(0, labelType)
 
         textLabel.setSelected(True)
-        self.addItem(textLabel)
+        #self.addItem(textLabel)
+        self.addItemWithUndo(textLabel, "Add Text")
 
 
     def clearPage(self):
@@ -770,7 +812,57 @@ class Page(QGraphicsScene):
                 pixmapitem = ResizablePixmapItem(pixmap)
                 # Positionnement initial sur la scène
                 pixmapitem.setPos(50, 50)
+                #self.addItemWithUndo(pixmapitem)
                 self.addItem(pixmapitem)
+
+
 
     def mouseDoubleClickEvent(self, event):
         print("mouse move double clicked on page")
+        # --- Capture du déplacement à la souris ---
+
+    def mousePressEvent(self, event):
+        """Enregistre les positions de départ des éléments sélectionnés."""
+        self.mouse_press_positions = {
+            item: item.pos() for item in self.selectedItems() if item.parentItem() is None
+        }
+        super().mousePressEvent(event)
+
+    def mouseReleaseEvent_old(self, event):
+        """Vérifie si les éléments ont bougé et crée une MoveCommand."""
+        super().mouseReleaseEvent(event)
+
+        moved_items = []
+        old_positions = []
+
+        for item, old_pos in self.mouse_press_positions.items():
+            if item.pos() != old_pos:
+                moved_items.append(item)
+                old_positions.append(old_pos)
+
+        if moved_items:
+            cmd = MoveCommand(moved_items, old_positions)
+            self.undoStack.push(cmd)
+
+        self.mouse_press_positions.clear()
+
+    def mouseReleaseEvent(self, event):
+        super().mouseReleaseEvent(event)
+
+        moved_items = []
+        old_positions = []
+
+        for item, old_pos in self.mouse_press_positions.items():
+            # Ne crée MoveCommand que si l'élément n'était pas en cours de redimensionnement
+            if hasattr(item, 'is_resizing') and item.is_resizing:
+                continue
+
+            if item.pos() != old_pos:
+                moved_items.append(item)
+                old_positions.append(old_pos)
+
+        if moved_items:
+            cmd = MoveCommand(moved_items, old_positions)
+            self.undoStack.push(cmd)
+
+        self.mouse_press_positions.clear()

@@ -84,59 +84,55 @@ class ConfigDlg(QDialog):
         self.readConfig()
 
 
-    def readConfig_old(self):
-        print("read")
-
-        # get the list of countries from the databases available
-        self.retCountryCombo = []
-        #self.db = None
-        filenames = next(walk("databases"), (None, None, []))[2]  # [] if no file
-
-        # create an array of file name first the open the db with the first one
-        self.stampCountries = []
-        for file in filenames:
-            shortFile = file.rsplit(".")
-            if shortFile[0] != "master":
-                if shortFile[1] == "mdb":
-                    self.stampCountries.append(shortFile[0])
-
-        for country in self.stampCountries:
-            self.retCountryCombo.append(country)
-        # select the first country available
-        self.selectedCountryCombo.addItems(self.retCountryCombo)
-
-        #self.selectedBorderCombo.addItem("type 1")
-
-        self.selectedDatabaseCombo.addItem("Access")
-        self.selectedDatabaseCombo.addItem("sqlite")
-        print("after country")
-        if self.configParser.has_section('CONF'):
-            conf = self.configParser['CONF']
-            if self.configParser.has_option('CONF', 'copyright'):
-                self.eCopyRight.setText(conf['copyright'])
-            if self.configParser.has_option('CONF', 'default country'):
-                self.selectedCountryCombo.setCurrentText(str(conf['default country']))
-            if self.configParser.has_option('CONF', 'type encadrement'):
-                print("type encadrement")
-                self.selectedBorderCombo.setCurrentText(str(conf['type encadrement']))
-            if self.configParser.has_option('CONF', 'database type'):
-                self.selectedDatabaseCombo.setCurrentText(str(conf['database type']))
-        else:
-            self.configParser["CONF"] = {
-                "copyright": "CopyRight © Boris du Reau 2003-2023",
-                "default country": "France",
-                "type encadrement": "type 1",
-                "database type": "sqlite"
-            }
-            #self.eCopyRight.setText("CopyRight © Boris du Reau 2023")
-            # Write the above sections to stamp_album.cfg file
-            with open(self.configFilePath, 'w') as config:
-                self.configParser.write(config)
+    # def readConfig_old(self):
+    #     print("read")
+    #
+    #     # get the list of countries from the databases available
+    #     self.retCountryCombo = []
+    #     filenames = next(walk("databases"), (None, None, []))[2]  # [] if no file
+    #
+    #     # create an array of file name first the open the db with the first one
+    #     self.stampCountries = []
+    #     for file in filenames:
+    #         shortFile = file.rsplit(".")
+    #         if shortFile[0] != "master":
+    #             if shortFile[1] == "mdb":
+    #                 self.stampCountries.append(shortFile[0])
+    #
+    #     for country in self.stampCountries:
+    #         self.retCountryCombo.append(country)
+    #     # select the first country available
+    #     self.selectedCountryCombo.addItems(self.retCountryCombo)
+    #
+    #     self.selectedDatabaseCombo.addItem("Access")
+    #     self.selectedDatabaseCombo.addItem("sqlite")
+    #
+    #     if self.configParser.has_section('CONF'):
+    #         conf = self.configParser['CONF']
+    #         if self.configParser.has_option('CONF', 'copyright'):
+    #             self.eCopyRight.setText(conf['copyright'])
+    #         if self.configParser.has_option('CONF', 'default country'):
+    #             self.selectedCountryCombo.setCurrentText(str(conf['default country']))
+    #         if self.configParser.has_option('CONF', 'type encadrement'):
+    #             self.selectedBorderCombo.setCurrentText(str(conf['type encadrement']))
+    #         if self.configParser.has_option('CONF', 'database type'):
+    #             self.selectedDatabaseCombo.setCurrentText(str(conf['database type']))
+    #     else:
+    #         self.configParser["CONF"] = {
+    #             "copyright": "CopyRight © Boris du Reau 2003-2023",
+    #             "default country": "France",
+    #             "type encadrement": "type 1",
+    #             "database type": "sqlite"
+    #         }
+    #
+    #         # Write the above sections to stamp_album.cfg file
+    #         with open(self.configFilePath, 'w') as config:
+    #             self.configParser.write(config)
 
     def readConfig(self):
         # get the list of countries from the databases available
         self.retCountryCombo = []
-        #self.db = None
+
         filenames = next(walk("databases"), (None, None, []))[2]  # [] if no file
 
         # create an array of file name first the open the db with the first one
@@ -156,7 +152,7 @@ class ConfigDlg(QDialog):
 
         self.selectedDatabaseCombo.addItem("Access")
         self.selectedDatabaseCombo.addItem("sqlite")
-        print("after country")
+
 
         if self.configParser.has_section('CONF'):
             conf = self.configParser['CONF']
