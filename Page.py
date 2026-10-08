@@ -1,5 +1,5 @@
 
-from PageBorder import PageBorder
+from ResizablePixmapItem import ResizablePixmapItem  # Import du composant
 from PyQt6.QtCore import QPointF, Qt, QRectF, QMarginsF
 from PyQt6 import QtCore, QtGui, QtPrintSupport
 from PyQt6.QtWidgets import (
@@ -749,7 +749,7 @@ class Page(QGraphicsScene):
                 selected = selected+1
         return selected
 
-    def addImage(self, fileName):
+    def addImage_old(self, fileName):
         print("add image")
         if fileName:
             print(fileName)
@@ -760,6 +760,17 @@ class Page(QGraphicsScene):
             self.addItem(pixmapitem)
         else:
             return
+
+    def addImage(self, fileName):
+        """Add an image to the scene with interactive resize handles."""
+        print("add image")
+        if fileName:
+            pixmap = QPixmap(fileName)
+            if not pixmap.isNull():
+                pixmapitem = ResizablePixmapItem(pixmap)
+                # Positionnement initial sur la scène
+                pixmapitem.setPos(50, 50)
+                self.addItem(pixmapitem)
 
     def mouseDoubleClickEvent(self, event):
         print("mouse move double clicked on page")
