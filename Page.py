@@ -38,7 +38,7 @@ class Page(QGraphicsScene):
         self.undoStack = QUndoStack(self)
 
         self.mouse_press_positions = {}
-
+        style = self.get_configured_border_style()
         if self.pageType == "portrait":
             self.setSceneRect(0, 0, 210 / (25.4 / 96), 297 / (25.4 / 96))
             if border is not None and border:
@@ -47,7 +47,7 @@ class Page(QGraphicsScene):
                            19 / (25.4 / 96.0),
                            0,
                            0,
-                           0)
+                           0,style)
         else:
             self.setSceneRect(0, 0, 297 / (25.4 / 96), 210 / (25.4 / 96))
             if border is not None and border:
@@ -56,7 +56,7 @@ class Page(QGraphicsScene):
                            ((297-272) / 2) / (25.4 / 96.0),
                            0,
                            19 / (25.4 / 96.0),
-                           0)
+                           0,style)
 
         self.gridOn = False
 
@@ -108,15 +108,17 @@ class Page(QGraphicsScene):
                 return parser.get('CONF', 'type encadrement')
         return PageBorder.STYLE_TRIPLE
 
-    def addBorder(self, boxWidth, boxHeight, margin_left, margin_right, margin_top, margin_bottom,):
+    def addBorder(self, boxWidth, boxHeight, margin_left, margin_right, margin_top, margin_bottom,style=None):
         """Add a decorative border to the page using PageBorder class."""
 
-        style = self.get_configured_border_style()
+        if not style:
+            style = PageBorder.STYLE_TRIPLE  # Style par défaut : Triple (Classic)
+        #style = self.get_configured_border_style()
 
         print(style)
-        if style is None:
-            style = PageBorder.STYLE_TRIPLE
-            print("style forced")
+        # if style is None:
+        #     style = PageBorder.STYLE_TRIPLE
+        #     print("style forced")
 
         border = PageBorder(boxWidth, boxHeight, style=style)
 
@@ -278,10 +280,9 @@ class Page(QGraphicsScene):
                 print("text label")
 
     def editLabel(self, item):
-
         dlg = TextDlg(item)
         res = dlg.exec()
-        print("edit label")
+        #print("edit label")
         #accepted
         if res == 1:
             text = dlg.eTXT.toPlainText()
@@ -341,7 +342,7 @@ class Page(QGraphicsScene):
             stamp.updateStamp(stampItem, stampObj, self)
 
     def printPagePDF(self,fileName2):
-        print("printPagePDF")
+        #print("printPagePDF")
         # first unselect all objects
         for item in self.items():
             item.setSelected(False)
@@ -791,21 +792,20 @@ class Page(QGraphicsScene):
                 selected = selected+1
         return selected
 
-    def addImage_old(self, fileName):
-        print("add image")
-        if fileName:
-            print(fileName)
-            pixmap = QPixmap(fileName)
-            pixmapitem = QGraphicsPixmapItem(pixmap)
-            pixmapitem.setFlags(QGraphicsTextItem.GraphicsItemFlag.ItemIsMovable |
-                                QGraphicsTextItem.GraphicsItemFlag.ItemIsSelectable)
-            self.addItem(pixmapitem)
-        else:
-            return
+    # def addImage_old(self, fileName):
+    #     print("add image")
+    #     if fileName:
+    #         print(fileName)
+    #         pixmap = QPixmap(fileName)
+    #         pixmapitem = QGraphicsPixmapItem(pixmap)
+    #         pixmapitem.setFlags(QGraphicsTextItem.GraphicsItemFlag.ItemIsMovable |
+    #                             QGraphicsTextItem.GraphicsItemFlag.ItemIsSelectable)
+    #         self.addItem(pixmapitem)
+    #     else:
+    #         return
 
     def addImage(self, fileName):
         """Add an image to the scene with interactive resize handles."""
-        print("add image")
         if fileName:
             pixmap = QPixmap(fileName)
             if not pixmap.isNull():
@@ -814,7 +814,6 @@ class Page(QGraphicsScene):
                 pixmapitem.setPos(50, 50)
                 #self.addItemWithUndo(pixmapitem)
                 self.addItem(pixmapitem)
-
 
 
     def mouseDoubleClickEvent(self, event):
@@ -828,23 +827,23 @@ class Page(QGraphicsScene):
         }
         super().mousePressEvent(event)
 
-    def mouseReleaseEvent_old(self, event):
-        """Vérifie si les éléments ont bougé et crée une MoveCommand."""
-        super().mouseReleaseEvent(event)
-
-        moved_items = []
-        old_positions = []
-
-        for item, old_pos in self.mouse_press_positions.items():
-            if item.pos() != old_pos:
-                moved_items.append(item)
-                old_positions.append(old_pos)
-
-        if moved_items:
-            cmd = MoveCommand(moved_items, old_positions)
-            self.undoStack.push(cmd)
-
-        self.mouse_press_positions.clear()
+    # def mouseReleaseEvent_old(self, event):
+    #     """Vérifie si les éléments ont bougé et crée une MoveCommand."""
+    #     super().mouseReleaseEvent(event)
+    #
+    #     moved_items = []
+    #     old_positions = []
+    #
+    #     for item, old_pos in self.mouse_press_positions.items():
+    #         if item.pos() != old_pos:
+    #             moved_items.append(item)
+    #             old_positions.append(old_pos)
+    #
+    #     if moved_items:
+    #         cmd = MoveCommand(moved_items, old_positions)
+    #         self.undoStack.push(cmd)
+    #
+    #     self.mouse_press_positions.clear()
 
     def mouseReleaseEvent(self, event):
         super().mouseReleaseEvent(event)

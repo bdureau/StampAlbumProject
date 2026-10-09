@@ -148,7 +148,7 @@ class ConfigDlg(QDialog):
         # select the first country available
         self.selectedCountryCombo.addItems(self.retCountryCombo)
 
-        self.selectedBorderCombo.addItem("type 1")
+        #self.selectedBorderCombo.addItem("type 1")
 
         self.selectedDatabaseCombo.addItem("Access")
         self.selectedDatabaseCombo.addItem("sqlite")

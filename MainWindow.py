@@ -44,6 +44,8 @@ translate = gettext.translation('MainWindow', localedir='locale', languages=['fr
 translate.install()
 _ = translate.gettext
 
+FILE_FORMAT_VERSION = "1.0"
+
 class Window(QMainWindow):
     """Main application window managing UI layout, actions, and user interactions."""
 
@@ -623,23 +625,23 @@ class Window(QMainWindow):
         self.deleteAllPages()
         self.currentAlbumName = ""
 
-    def newBorder_old(self):
-        """Add a decorative page border to the current scene."""
-        print("change border")
-        if self.getCurrentPageScene().pageType == "portrait":
-            self.getCurrentPageScene().addBorder(177 / (25.4 / 96.0),
-                           272 / (25.4 / 96.0),
-                           19 / (25.4 / 96.0),
-                           0,
-                           0,
-                           0)
-        else:
-            self.getCurrentPageScene().addBorder(272 / (25.4 / 96.0),
-                           177 / (25.4 / 96.0),
-                           ((297-272) / 2) / (25.4 / 96.0),
-                           0,
-                           19 / (25.4 / 96.0),
-                           0)
+    # def newBorder_old(self):
+    #     """Add a decorative page border to the current scene."""
+    #     print("change border")
+    #     if self.getCurrentPageScene().pageType == "portrait":
+    #         self.getCurrentPageScene().addBorder(177 / (25.4 / 96.0),
+    #                        272 / (25.4 / 96.0),
+    #                        19 / (25.4 / 96.0),
+    #                        0,
+    #                        0,
+    #                        0)
+    #     else:
+    #         self.getCurrentPageScene().addBorder(272 / (25.4 / 96.0),
+    #                        177 / (25.4 / 96.0),
+    #                        ((297-272) / 2) / (25.4 / 96.0),
+    #                        0,
+    #                        19 / (25.4 / 96.0),
+    #                        0)
 
     def newBorder(self):
         """Add a new page border using the default style configured in settings."""
@@ -678,12 +680,12 @@ class Window(QMainWindow):
 
     def newPageNbr(self):
         """Add a page number to the current page."""
-        print("newPageNbr")
+        #print("newPageNbr")
         self.getCurrentPageScene().newPageNbr()
 
     def newPageNbrAllPages(self):
         """Prompt user and apply page numbers across all album pages."""
-        print("Create new  nbr")
+        #print("Create new  nbr")
         textLabel = QGraphicsTextItem("")
         textLabelFont = textLabel.font()
         textLabelFont.setPointSize(8)
@@ -754,10 +756,10 @@ class Window(QMainWindow):
         fileName, _ = QFileDialog.getOpenFileName(self, "Open Album file", "",
                                                   "Album Files (*.sta)", options=options)
         if fileName:
-            print(fileName)
+            #print(fileName)
             fileNameArray = fileName.split(".")
-            print(fileNameArray[1])
-            print(len(fileNameArray))
+            #print(fileNameArray[1])
+            #print(len(fileNameArray))
         else:
             return
 
@@ -771,6 +773,9 @@ class Window(QMainWindow):
         mytree = ET.parse(f)
         f.close()
         myroot = mytree.getroot()
+        # Lecture de la version du format de fichier (par défaut "0.9" si absent)
+        file_version = myroot.attrib.get("version", "0.9")
+        print(f"Loading album file format version: {file_version}")
 
         for it in myroot.findall('page'):
             # create new page
@@ -885,16 +890,18 @@ class Window(QMainWindow):
                 print("Page border!!")
                 pos = border.find('borderPos')
                 x = pos.find('x').text
-                print(x)
+                #print(x)
                 y = pos.find('y').text
-                print(y)
+                #print(y)
                 width1 = border.find('width1').text
-                print(width1)
+                #print(width1)
                 height1 = border.find('height1').text
-                print(height1)
+                #print(height1)
                 # print(currentPage.getPageName)
+                # Récupère le style sauvegardé ; si absent, utilise 'triple' par défaut
+                border_style = border.attrib.get("style", PageBorder.STYLE_TRIPLE)
                 currentPage.addBorder(float(width1), float(height1),
-                                      float(x), float(y), 0, 0)
+                                      float(x), float(y), 0, 0, style=border_style)
 
             # Open the Stamps
             stampItems = it.findall('stampGroup')
@@ -951,7 +958,7 @@ class Window(QMainWindow):
     # save an album to a file
     def saveAlbumToFile(self):
         """Serialize album structure into a gzip-compressed XML file (.sta)."""
-        print("Save album to file")
+        #print("Save album to file")
         options = QFileDialog.Option.DontUseNativeDialog
         fileName, _ = QFileDialog.getSaveFileName(self, "Save Album", "",
                                                   "Album Files (*.sta)", options=options)
@@ -968,7 +975,9 @@ class Window(QMainWindow):
             return
 
         self.currentAlbumName = fileName
-        root = ET.Element("album")
+        # Ajout de l'attribut file_version sur la balise racine <album>
+        root = ET.Element("album", version=FILE_FORMAT_VERSION)
+        #root = ET.Element("album")
 
         for x in range(self.tabs.count()):
             self.tabs.setCurrentIndex(x)
@@ -1000,6 +1009,11 @@ class Window(QMainWindow):
                 elif item.type().real == 10 and item.data(0) == "borderGroup":
                     print("border group")
                     border = ET.SubElement(page, item.data(0))
+
+                    # Sauvegarde du style du cadre (ex: 'triple', 'simple', 'greek', 'dentelle')
+                    border_style = item.data(4) or PageBorder.STYLE_TRIPLE
+                    border.set("style", str(border_style))
+
                     borderItems = item.childItems()
                     pos = ET.SubElement(border, "borderPos")
                     ET.SubElement(pos, "x").text = str(item.x())

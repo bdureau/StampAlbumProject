@@ -36,6 +36,7 @@ class PageBorder(QGraphicsItemGroup):
         self.setData(0, "borderGroup")
         self.setData(1, width)
         self.setData(2, height)
+        self.setData(4, style)  # <-- Stocke le code du style ('triple', 'simple', 'greek', 'dentelle')
 
         self._build_border()
 

@@ -139,19 +139,19 @@ def ds_to_item(ds):
     if class_name == "QGraphicsItemGroup" and it.data(0) == "stampGroup":
         # 1. Read QGraphicsRectItem parameters
         class1 = ds.readQString() # Class name
-        print(class1)
+        #print(class1)
         bounding_rect = QtCore.QRectF()
         ds >> bounding_rect
-        print(bounding_rect)
+        #print(bounding_rect)
         pos1 = QtCore.QPointF()
         ds >> pos1
-        print(pos1)
+        #print(pos1)
         pen = QPen()
         pen.setWidth(ds.readInt())
         penColor = QtGui.QColor()
         ds >> penColor
         pen.setColor(penColor)
-        print("done with pen")
+        #print("done with pen")
         boxW = ds.readInt()
         boxWidth = boxW / (25.4 / 96.0)
         boxH = ds.readInt()
@@ -159,7 +159,7 @@ def ds_to_item(ds):
 
         # 2. Read stamp description text
         class2 = ds.readQString()
-        print(class2)
+        #print(class2)
         pos2 = QtCore.QPointF()
         desc = ds.readQString()
         ds >> pos2
@@ -172,7 +172,7 @@ def ds_to_item(ds):
 
         # 3. Read stamp number text
         class3 = ds.readQString()
-        print(class3)
+        #print(class3)
         pos3 = QtCore.QPointF()
         nbr = ds.readQString()
         ds >> pos3
@@ -185,7 +185,7 @@ def ds_to_item(ds):
 
         # 4. Read stamp value text
         class4 = ds.readQString()
-        print(class4)
+        #print(class4)
         pos4 = QtCore.QPointF()
         value = ds.readQString()
         ds >> pos4
@@ -198,7 +198,7 @@ def ds_to_item(ds):
 
         # 5. Read pixmap image
         class5 = ds.readQString()
-        print(class5)
+        #print(class5)
         pos5 = QtCore.QPointF()
         pixmap = ds.readQVariant()
         ds >> pos5
@@ -210,7 +210,7 @@ def ds_to_item(ds):
         stampDesc.setFont(font2)
         stampDesc.setFlags(QGraphicsTextItem.GraphicsItemFlag.ItemIsMovable |
                            QGraphicsTextItem.GraphicsItemFlag.ItemIsSelectable)
-        print("created desc")
+        #print("created desc")
         stampDesc.setTextWidth(stampDesc.boundingRect().size().width())
         cursor = stampDesc.textCursor()
         cursor.select(QTextCursor.SelectionType.Document)
@@ -231,7 +231,7 @@ def ds_to_item(ds):
         stampBox.setData(0, "stampBox")
         stampBox.setData(1, boxW)
         stampBox.setData(2, boxH)
-        print("created box")
+        #rint("created box")
 
         # Re-assemble stamp image and calculate scale factor
         pixmapitem = QGraphicsPixmapItem(pixmap)
@@ -242,9 +242,9 @@ def ds_to_item(ds):
             image_scale = scale1
         else:
             image_scale = scale2
-        print("scale calculated")
+        #print("scale calculated")
         pixmapitem.setScale(image_scale)
-        print("set scale pixmap")
+        #print("set scale pixmap")
 
         pixmapitem.setPos(pos2.x() + (stampDesc.boundingRect().size().width() / 2) - (image_scale * pixmapitem.boundingRect().size().width() / 2),
                           pos2.y() + stampDesc.boundingRect().size().height() + 20 + (boxHeight / 2 - (image_scale * pixmapitem.boundingRect().size().height()) / 2))
@@ -276,7 +276,7 @@ def ds_to_item(ds):
         stampValue.setFlags(QGraphicsTextItem.GraphicsItemFlag.ItemIsMovable |
                             QGraphicsTextItem.GraphicsItemFlag.ItemIsSelectable)
 
-        print("created value")
+        #print("created value")
         stampValue.setTextWidth(stampValue.boundingRect().size().width())
         cursor = stampValue.textCursor()
         cursor.select(QTextCursor.SelectionType.Document)
@@ -318,7 +318,7 @@ def ds_to_item(ds):
         ds >> path
         it.setPath(path)
 
-    print("end of DS to item")
+    #print("end of DS to item")
     return it
 
 
