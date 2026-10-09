@@ -6,6 +6,7 @@ tabbed page displays, actions, and file I/O operations (XML/gzip).
 
 Author: Boris du Reau
 """
+from ResizablePixmapItem import ResizablePixmapItem
 from PageBorder import PageBorder
 from AboutDlg import AboutDlg  # Import de la nouvelle boîte de dialogue
 from PyQt6.QtCore import QPointF, Qt, QPoint, QByteArray, QRectF
@@ -140,6 +141,7 @@ class Window(QMainWindow):
         # Objects Menu
         objectMenu = menuBar.addMenu(_("Objects"))
         objectMenu.addAction(self.newTextAction)
+        objectMenu.addAction(self.newRichTextAction)  # Add Rich Text to Objects menu
         objectMenu.addAction(self.newImageAction)
         objectMenu.addAction(self.newBorderAction)
         objectMenu.addAction(self.newCopyRightAction)
@@ -273,6 +275,12 @@ class Window(QMainWindow):
         iconNewText = QIcon()
         iconNewText.addPixmap(QPixmap("images/text.png"), QIcon.Mode.Normal, QIcon.State.Off)
         self.newTextAction.setIcon(iconNewText)
+
+        # Action for Rich Text
+        self.newRichTextAction = QAction(_("New Rich Text ..."), self)
+        iconRichText = QIcon()
+        iconRichText.addPixmap(QPixmap("images/text.png"), QIcon.Mode.Normal, QIcon.State.Off)
+        self.newRichTextAction.setIcon(iconRichText)
 
         self.newImageAction = QAction(_("New Image ..."), self)
         iconNewImage = QIcon()
@@ -429,6 +437,7 @@ class Window(QMainWindow):
         # Objects Toolbar
         objectToolBar = QToolBar("Objects", self)
         objectToolBar.addAction(self.newTextAction)
+        objectToolBar.addAction(self.newRichTextAction)  # Add Rich Text button to toolbar
         self.addToolBar(objectToolBar)
 
         # Help Toolbar
@@ -486,6 +495,7 @@ class Window(QMainWindow):
 
         # Object signals
         self.newTextAction.triggered.connect(self.createText)
+        self.newRichTextAction.triggered.connect(self.createRichText)  # Connect to handler
         self.newCopyRightAction.triggered.connect(self.newCopyRight)
         self.newCopyRightAllPagesAction.triggered.connect(self.newCopyRightAllPages)
         self.newImageAction.triggered.connect(self.newImage)
@@ -625,24 +635,6 @@ class Window(QMainWindow):
         self.deleteAllPages()
         self.currentAlbumName = ""
 
-    # def newBorder_old(self):
-    #     """Add a decorative page border to the current scene."""
-    #     print("change border")
-    #     if self.getCurrentPageScene().pageType == "portrait":
-    #         self.getCurrentPageScene().addBorder(177 / (25.4 / 96.0),
-    #                        272 / (25.4 / 96.0),
-    #                        19 / (25.4 / 96.0),
-    #                        0,
-    #                        0,
-    #                        0)
-    #     else:
-    #         self.getCurrentPageScene().addBorder(272 / (25.4 / 96.0),
-    #                        177 / (25.4 / 96.0),
-    #                        ((297-272) / 2) / (25.4 / 96.0),
-    #                        0,
-    #                        19 / (25.4 / 96.0),
-    #                        0)
-
     def newBorder(self):
         """Add a new page border using the default style configured in settings."""
         scene = self.getCurrentPageScene()
@@ -677,6 +669,11 @@ class Window(QMainWindow):
         # Create one empty page
         self.newPage(None, True)
 
+    def createRichText(self):
+        """Create a new rich text block on the current active page."""
+        scene = self.getCurrentPageScene()
+        if scene and hasattr(scene, "addRichText"):
+            scene.addRichText()
 
     def newPageNbr(self):
         """Add a page number to the current page."""
@@ -685,7 +682,6 @@ class Window(QMainWindow):
 
     def newPageNbrAllPages(self):
         """Prompt user and apply page numbers across all album pages."""
-        #print("Create new  nbr")
         textLabel = QGraphicsTextItem("")
         textLabelFont = textLabel.font()
         textLabelFont.setPointSize(8)
@@ -709,12 +705,10 @@ class Window(QMainWindow):
 
     def addYearToPage(self):
         """Add a year header to the active page."""
-        print("addYearToPage")
         self.getCurrentPageScene().addPageYear()
 
     def addYearToAllPages(self):
         """Prompt user and apply a year header across all album pages."""
-        print("addYearToAllPages")
         textLabel = QGraphicsTextItem("")
         textLabelFont = textLabel.font()
         textLabelFont.setPointSize(10)
@@ -739,32 +733,26 @@ class Window(QMainWindow):
 
     def openAlbumFile(self):
         """Open and deserialize a compressed (.sta) album XML file."""
-        print("Open album")
         qm = QMessageBox()
-
-        ret = qm.question(self, "Delete all pages", "Are you sure you want to delete all the pages?",
-                          qm.StandardButton.Yes | qm.StandardButton.No)
+        ret = qm.question(
+            self, "Delete all pages", "Are you sure you want to delete all the pages?",
+            qm.StandardButton.Yes | qm.StandardButton.No
+        )
 
         if ret == qm.StandardButton.No:
             return
 
-        # first delete all pages
         self.deleteAllPages()
-
         options = QFileDialog.Option.DontUseNativeDialog
 
-        fileName, _ = QFileDialog.getOpenFileName(self, "Open Album file", "",
-                                                  "Album Files (*.sta)", options=options)
-        if fileName:
-            #print(fileName)
-            fileNameArray = fileName.split(".")
-            #print(fileNameArray[1])
-            #print(len(fileNameArray))
-        else:
+        fileName, _ = QFileDialog.getOpenFileName(
+            self, "Open Album file", "", "Album Files (*.sta)", options=options
+        )
+        if not fileName:
             return
 
-        # Open plain text or gzip-compressed XML file
-        if (fileNameArray[len(fileNameArray)-1] == "sta"):
+        fileNameArray = fileName.split(".")
+        if fileNameArray[len(fileNameArray) - 1] == "sta":
             f = gzip.open(fileName, 'r')
         else:
             f = open(fileName, 'r')
@@ -773,21 +761,17 @@ class Window(QMainWindow):
         mytree = ET.parse(f)
         f.close()
         myroot = mytree.getroot()
-        # Lecture de la version du format de fichier (par défaut "0.9" si absent)
+
         file_version = myroot.attrib.get("version", "0.9")
         print(f"Loading album file format version: {file_version}")
 
         for it in myroot.findall('page'):
-            # create new page
             self.newPage(str(it.attrib.get("type")), False)
-
-            # get the current page
             currentPage = self.getCurrentPageScene()
 
-            # Open the text label
+            # --- Restore Standard Text Labels ---
             textLabelsItems = it.findall('textLabel')
             for textLabel in textLabelsItems:
-                print("labels!!")
                 label = textLabel.find('label').text
                 font = textLabel.find('font')
                 bold = font.find('bold').text
@@ -809,208 +793,218 @@ class Window(QMainWindow):
 
                 currentPage.addTextLabel(label, float(x), float(y), myFont)
 
+            # --- Restore Rich Text Labels ---
+            richTextLabelsItems = it.findall('richTextLabel')
+            for richLabel in richTextLabelsItems:
+                html_element = richLabel.find('html_label')
+                html_content = html_element.text if html_element is not None else ""
+
+                pos = richLabel.find('labelPos')
+                x = pos.find('x').text if pos is not None and pos.find('x') is not None else 50.0
+                y = pos.find('y').text if pos is not None and pos.find('y') is not None else 50.0
+
+                currentPage.addRichText(html_content, float(x), float(y))
+
+            # --- Restore Standalone Images ---
+            imageItems = it.findall('imageItem')
+            for img_node in imageItems:
+                pixmap_data = img_node.find('pixmapData')
+                if pixmap_data is not None and pixmap_data.text:
+                    pixmap = self.bytesToPixmap(pixmap_data.text)
+
+                    if not pixmap.isNull():
+                        pos = img_node.find('imagePos')
+                        x = float(pos.find('x').text) if pos is not None and pos.find('x') is not None else 50.0
+                        y = float(pos.find('y').text) if pos is not None and pos.find('y') is not None else 50.0
+                        scale_val = float(img_node.find('scale').text) if img_node.find('scale') is not None else 1.0
+
+                        # Re-create ResizablePixmapItem with stored position and scale
+                        pixmap_item = ResizablePixmapItem(pixmap)
+                        pixmap_item.setPos(x, y)
+                        pixmap_item.setScale(scale_val)
+
+                        currentPage.addItem(pixmap_item)
+
+            # --- Restore Copyright Labels ---
             copyrightLabelsItems = it.findall('labelCopyRight')
             for copyrightLabel in copyrightLabelsItems:
-                # print("labels!!")
                 label = copyrightLabel.find('label').text
-
                 font = copyrightLabel.find('font')
-                bold = font.find('bold').text
-                underline = font.find('underline').text
-                italic = font.find('italic').text
-                strikeOut = font.find('strikeOut').text
-                pointSize = font.find('pointSize').text
-
                 myFont = QFont()
-                myFont.setBold(self.str_to_bool(bold))
-                myFont.setUnderline(self.str_to_bool(underline))
-                myFont.setItalic(self.str_to_bool(italic))
-                myFont.setStrikeOut(self.str_to_bool(strikeOut))
-                myFont.setPointSize(int(pointSize))
+                myFont.setBold(self.str_to_bool(font.find('bold').text))
+                myFont.setUnderline(self.str_to_bool(font.find('underline').text))
+                myFont.setItalic(self.str_to_bool(font.find('italic').text))
+                myFont.setStrikeOut(self.str_to_bool(font.find('strikeOut').text))
+                myFont.setPointSize(int(font.find('pointSize').text))
 
                 pos = copyrightLabel.find('labelPos')
-                x = pos.find('x').text
-                y = pos.find('y').text
+                currentPage.addTextLabel(
+                    label, float(pos.find('x').text), float(pos.find('y').text),
+                    myFont, Qt.AlignmentFlag.AlignLeft, "labelCopyRight"
+                )
 
-                currentPage.addTextLabel(label, float(x), float(y), myFont, Qt.AlignmentFlag.AlignLeft, "labelCopyRight")
-
+            # --- Restore Page Number Labels ---
             pageNbrLabelsItems = it.findall('labelPageNbr')
             for pageNbrLabel in pageNbrLabelsItems:
-                # print("labels!!")
                 label = pageNbrLabel.find('label').text
-
                 font = pageNbrLabel.find('font')
-                bold = font.find('bold').text
-                underline = font.find('underline').text
-                italic = font.find('italic').text
-                strikeOut = font.find('strikeOut').text
-                pointSize = font.find('pointSize').text
-
                 myFont = QFont()
-                myFont.setBold(self.str_to_bool(bold))
-                myFont.setUnderline(self.str_to_bool(underline))
-                myFont.setItalic(self.str_to_bool(italic))
-                myFont.setStrikeOut(self.str_to_bool(strikeOut))
-                myFont.setPointSize(int(pointSize))
+                myFont.setBold(self.str_to_bool(font.find('bold').text))
+                myFont.setUnderline(self.str_to_bool(font.find('underline').text))
+                myFont.setItalic(self.str_to_bool(font.find('italic').text))
+                myFont.setStrikeOut(self.str_to_bool(font.find('strikeOut').text))
+                myFont.setPointSize(int(font.find('pointSize').text))
 
                 pos = pageNbrLabel.find('labelPos')
-                x = pos.find('x').text
-                y = pos.find('y').text
+                currentPage.addTextLabel(
+                    label, float(pos.find('x').text), float(pos.find('y').text),
+                    myFont, Qt.AlignmentFlag.AlignLeft, "labelPageNbr"
+                )
 
-                currentPage.addTextLabel(label, float(x), float(y), myFont, Qt.AlignmentFlag.AlignLeft, "labelPageNbr")
-
+            # --- Restore Year Labels ---
             yearLabelsItems = it.findall('labelYear')
             for yearLabel in yearLabelsItems:
-                # print("year labels!!")
                 label = yearLabel.find('label').text
-
                 font = yearLabel.find('font')
-                bold = font.find('bold').text
-                underline = font.find('underline').text
-                italic = font.find('italic').text
-                strikeOut = font.find('strikeOut').text
-                pointSize = font.find('pointSize').text
-
                 myFont = QFont()
-                myFont.setBold(self.str_to_bool(bold))
-                myFont.setUnderline(self.str_to_bool(underline))
-                myFont.setItalic(self.str_to_bool(italic))
-                myFont.setStrikeOut(self.str_to_bool(strikeOut))
-                myFont.setPointSize(int(pointSize))
+                myFont.setBold(self.str_to_bool(font.find('bold').text))
+                myFont.setUnderline(self.str_to_bool(font.find('underline').text))
+                myFont.setItalic(self.str_to_bool(font.find('italic').text))
+                myFont.setStrikeOut(self.str_to_bool(font.find('strikeOut').text))
+                myFont.setPointSize(int(font.find('pointSize').text))
 
                 pos = yearLabel.find('labelPos')
-                x = pos.find('x').text
-                y = pos.find('y').text
+                currentPage.addTextLabel(
+                    label, float(pos.find('x').text), float(pos.find('y').text),
+                    myFont, Qt.AlignmentFlag.AlignCenter, "labelYear"
+                )
 
-                currentPage.addTextLabel(label, float(x), float(y), myFont, Qt.AlignmentFlag.AlignCenter, "labelYear")
-
-            # open the page border
+            # --- Restore Page Borders ---
             pageBorderItem = it.findall('borderGroup')
             for border in pageBorderItem:
-                print("Page border!!")
                 pos = border.find('borderPos')
                 x = pos.find('x').text
-                #print(x)
                 y = pos.find('y').text
-                #print(y)
                 width1 = border.find('width1').text
-                #print(width1)
                 height1 = border.find('height1').text
-                #print(height1)
-                # print(currentPage.getPageName)
-                # Récupère le style sauvegardé ; si absent, utilise 'triple' par défaut
                 border_style = border.attrib.get("style", PageBorder.STYLE_TRIPLE)
-                currentPage.addBorder(float(width1), float(height1),
-                                      float(x), float(y), 0, 0, style=border_style)
 
-            # Open the Stamps
+                currentPage.addBorder(
+                    float(width1), float(height1),
+                    float(x), float(y), 0, 0, style=border_style
+                )
+
+            # --- Restore Stamp Groups ---
             stampItems = it.findall('stampGroup')
             for stamp in stampItems:
-                print("stamps!!")
                 pos = stamp.find('stampPos')
                 x = pos.find('x').text
-                print(x)
                 y = pos.find('y').text
-                print(y)
 
                 sizeBox = stamp.find('stampBox')
                 width = sizeBox.find('width').text
-                print(width)
                 height = sizeBox.find('height').text
-                print(height)
                 try:
                     stampBox_width = sizeBox.find('stampBox_width').text
-                    print(stampBox_width)
                     stampBox_height = sizeBox.find('stampBox_height').text
-                    print(stampBox_height)
                     use_new = 1
                 except:
-                    print("An exception occurred")
                     use_new = 0
 
-                stampDesc = stamp.find('stampDesc').text
-                print(stampDesc)
-
-                if stampDesc is None:
-                    stampDesc = ""
+                stampDesc = stamp.find('stampDesc').text or ""
                 stampNbr = stamp.find('stampNbr').text
-                print(stampNbr)
                 stampValue = stamp.find('stampValue').text
-                print(stampValue)
-                print("after Value")
-                try:
-                    pixmapItem = stamp.find('pixmapItem').text
-                except:
-                    print("An exception occurred")
-                stamp = Stamp()
+                pixmapItem = stamp.find('pixmapItem').text
 
+                stamp_obj = Stamp()
                 pixmap = self.bytesToPixmap(pixmapItem)
 
                 if use_new == 1:
-                    stamp.createStampPix(currentPage, str(stampNbr), str(stampValue), str(stampDesc),
-                                        float(stampBox_width), float(stampBox_height),
-                                        float(x), float(y), pixmap)
+                    stamp_obj.createStampPix(
+                        currentPage, str(stampNbr), str(stampValue), str(stampDesc),
+                        float(stampBox_width), float(stampBox_height),
+                        float(x), float(y), pixmap
+                    )
                 else:
-                    stamp.createStampPix(currentPage, str(stampNbr), str(stampValue), str(stampDesc),
-                                        float(width) * (25.4 / 96.0), float(height) * (25.4 / 96.0),
-                                        float(x), float(y), pixmap)
+                    stamp_obj.createStampPix(
+                        currentPage, str(stampNbr), str(stampValue), str(stampDesc),
+                        float(width) * (25.4 / 96.0), float(height) * (25.4 / 96.0),
+                        float(x), float(y), pixmap
+                    )
 
     # save an album to a file
     def saveAlbumToFile(self):
         """Serialize album structure into a gzip-compressed XML file (.sta)."""
-        #print("Save album to file")
         options = QFileDialog.Option.DontUseNativeDialog
-        fileName, _ = QFileDialog.getSaveFileName(self, "Save Album", "",
-                                                  "Album Files (*.sta)", options=options)
+        fileName, _ = QFileDialog.getSaveFileName(
+            self, "Save Album", "", "Album Files (*.sta)", options=options
+        )
         if fileName:
-            print(fileName)
             if fileName.find(".") != -1:
                 fileNameArray = fileName.split(".")
-                print(fileNameArray[1])
-                print(len(fileNameArray))
-                if (fileNameArray[len(fileNameArray) - 1] == "sta"):
-                    print(fileName.rsplit('.', maxsplit=1)[0])
+                if fileNameArray[len(fileNameArray) - 1] == "sta":
                     fileName = fileName.rsplit('.', maxsplit=1)[0]
         else:
             return
 
         self.currentAlbumName = fileName
-        # Ajout de l'attribut file_version sur la balise racine <album>
+        # Set file format version on root element
         root = ET.Element("album", version=FILE_FORMAT_VERSION)
-        #root = ET.Element("album")
 
         for x in range(self.tabs.count()):
             self.tabs.setCurrentIndex(x)
 
             currentScene = self.getCurrentPageScene()
-            page = ET.SubElement(root, "page", name="%s" % x, type="%s" % currentScene.pageType)
-            print("scene")
+            page = ET.SubElement(
+                root, "page", name="%s" % x, type="%s" % currentScene.pageType
+            )
             items = currentScene.items()
+
             for item in items:
+                # 1. Text Items (QGraphicsTextItem)
                 if item.type().real == 8:
                     par = item.parentItem()
-                    # exclude all item where parent is a group
                     if par is None:
-                        print("label")
-                        textLbl = ET.SubElement(page, item.data(0))
-                        ET.SubElement(textLbl, "label").text = item.toPlainText()
+                        item_type = item.data(0) or "textLabel"
+                        textLbl = ET.SubElement(page, item_type)
 
-                        font = ET.SubElement(textLbl, "font")
-                        ET.SubElement(font, "bold").text = str(item.font().bold())
-                        ET.SubElement(font, "underline").text = str(item.font().underline())
-                        ET.SubElement(font, "italic").text = str(item.font().italic())
-                        ET.SubElement(font, "strikeOut").text = str(item.font().strikeOut())
-                        ET.SubElement(font, "pointSize").text = str(item.font().pointSize())
+                        if item_type == "richTextLabel":
+                            # Save complete HTML structure for rich text items
+                            ET.SubElement(textLbl, "html_label").text = item.toHtml()
+                        else:
+                            # Standard plaintext label serialization
+                            ET.SubElement(textLbl, "label").text = item.toPlainText()
+
+                            font = ET.SubElement(textLbl, "font")
+                            ET.SubElement(font, "bold").text = str(item.font().bold())
+                            ET.SubElement(font, "underline").text = str(item.font().underline())
+                            ET.SubElement(font, "italic").text = str(item.font().italic())
+                            ET.SubElement(font, "strikeOut").text = str(item.font().strikeOut())
+                            ET.SubElement(font, "pointSize").text = str(item.font().pointSize())
 
                         pos = ET.SubElement(textLbl, "labelPos")
                         ET.SubElement(pos, "x").text = str(item.x())
                         ET.SubElement(pos, "y").text = str(item.y())
 
-                elif item.type().real == 10 and item.data(0) == "borderGroup":
-                    print("border group")
-                    border = ET.SubElement(page, item.data(0))
+                # 2. Standalone Image Items (QGraphicsPixmapItem / ResizablePixmapItem)
+                elif item.type().real == 7:
+                    par = item.parentItem()
+                    if par is None:
+                        img_node = ET.SubElement(page, "imageItem")
 
-                    # Sauvegarde du style du cadre (ex: 'triple', 'simple', 'greek', 'dentelle')
+                        # Serialize pixmap to Base64 PNG string
+                        pix = item.pixmap()
+                        ET.SubElement(img_node, "pixmapData").text = str(self.pixmapToBytes(pix))
+
+                        # Save position and scale factor
+                        pos = ET.SubElement(img_node, "imagePos")
+                        ET.SubElement(pos, "x").text = str(item.x())
+                        ET.SubElement(pos, "y").text = str(item.y())
+                        ET.SubElement(img_node, "scale").text = str(item.scale())
+
+                # 3. Page Border Group
+                elif item.type().real == 10 and item.data(0) == "borderGroup":
+                    border = ET.SubElement(page, item.data(0))
                     border_style = item.data(4) or PageBorder.STYLE_TRIPLE
                     border.set("style", str(border_style))
 
@@ -1021,13 +1015,12 @@ class Window(QMainWindow):
                     i = 0
                     for borderItem in borderItems:
                         if borderItem.type().real == 3:
-                            i = i + 1
-
+                            i += 1
                             ET.SubElement(border, "width" + str(i)).text = str(borderItem.data(1))
                             ET.SubElement(border, "height" + str(i)).text = str(borderItem.data(2))
 
+                # 4. Stamp Group Item
                 elif item.type().real == 10 and item.data(0) == "stampGroup":
-                    print("stampGroup")
                     stamp = ET.SubElement(page, item.data(0))
                     stampItems = item.childItems()
 
@@ -1035,33 +1028,27 @@ class Window(QMainWindow):
                     ET.SubElement(pos, "x").text = str(item.x())
                     ET.SubElement(pos, "y").text = str(item.y())
                     for stampItem in stampItems:
-                        print(stampItem.data(0))
-                        # if it is a textBox child
                         if stampItem.type().real == 8:
                             ET.SubElement(stamp, stampItem.data(0)).text = stampItem.toPlainText()
-                        # This is the pixmap
                         elif stampItem.type().real == 7:
                             pix = stampItem.pixmap()
-                            #print(self.pixmapToBytes(pix))
                             ET.SubElement(stamp, stampItem.data(0)).text = str(self.pixmapToBytes(pix))
-                        # This is the stamp box
                         elif stampItem.type().real == 3:
-                            #print(stampItem.boundingRect().width())
                             size = ET.SubElement(stamp, stampItem.data(0))
                             ET.SubElement(size, "width").text = str(stampItem.boundingRect().width())
                             ET.SubElement(size, "height").text = str(stampItem.boundingRect().height())
                             ET.SubElement(size, "stampBox_width").text = str(int(stampItem.data(1)))
                             ET.SubElement(size, "stampBox_height").text = str(int(stampItem.data(2)))
-                    print("finished stamp group")
-        print("finished")
-        tree = ET.ElementTree(root)
 
+        tree = ET.ElementTree(root)
         tree.write(fileName)
 
+        # Compress XML to Gzip file (.sta)
         f = gzip.open(fileName + '.sta', 'wb')
         ET.ElementTree(root).write(f)
         f.close()
-        # delete uncompressed file
+
+        # Remove temporary uncompressed XML file
         if os.path.isfile(fileName):
             os.remove(fileName)
 
@@ -1198,16 +1185,6 @@ class Window(QMainWindow):
         """Edit currently selected stamp item."""
         self.getCurrentPageScene().editObject()
 
-    # help menu functions
-    # about the application
-    # def about_old(self):
-    #     """Display 'About' dialog information."""
-    #     aboutMsg = QMessageBox()
-    #     aboutMsg.setWindowTitle(_("About Stamp Album"))
-    #     aboutMsg.setText(_("Stamp Album ver5.0.3 \n Copyright Boris du Reau 2003-2026"))
-    #     aboutMsg.setIcon(QMessageBox.Icon.Information)
-    #     aboutMsg.exec()
-
     def about(self):
         """Display custom scrollable 'About' dialog."""
         dlg = AboutDlg(self)
@@ -1282,22 +1259,6 @@ class Window(QMainWindow):
         pixmap.fill(Qt.GlobalColor.transparent)
         return pixmap
 
-    # used to delete the grid
-    # def deleteGrid2(self):
-    #     """Generate transparent texture pixmap to disable grid."""
-    #     self.pixmap = QPixmap(10, 10)
-    #     pixmapWidth = self.pixmap.width() - 1
-    #     painter = QPainter()
-    #
-    #     self.pixmap.fill(Qt.GlobalColor.transparent)
-    #
-    #     painter.begin(self.pixmap)
-    #     #painter.setPen(Qt.GlobalColor.white)
-    #     painter.setPen(Qt.GlobalColor.transparent)
-    #     painter.drawLine(0, 0, pixmapWidth, 0)
-    #     painter.drawLine(0, 0, 0, pixmapWidth)
-    #     return self.pixmap
-
     def pixmapToBytes(self, pixmap):
         """Encode QPixmap to Base64 PNG string."""
         ba = QtCore.QByteArray()
@@ -1315,14 +1276,6 @@ class Window(QMainWindow):
         assert ok
         return pixmap
 
-    # def bytesToPixmap2(self, pixmap_bytes):
-    #     # convert bytes to QPixmap
-    #     # do we still need it?
-    #     ba = QtCore.QByteArray().fromBase64(pixmap_bytes.encode())
-    #     pixmap = QtGui.QPixmap()
-    #     ok = pixmap.loadFromData(ba, "JPG")
-    #     assert ok
-    #     return pixmap
 
     # get the current page content
     def getCurrentPageScene(self):
@@ -1361,7 +1314,6 @@ class Window(QMainWindow):
 
     # need to review is it still used?
     def mouseDoubleClickEvent(self, event):
-        print("mouse move double clicked")
         self.getCurrentPageScene().editObject()
 
     # Delete selected objects

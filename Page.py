@@ -130,56 +130,6 @@ class Page(QGraphicsScene):
         border.setPos(margin_left, margin_top2)
         self.addItem(border)
 
-    # def addBorder_old(self, boxWidth, boxHeight, margin_left, margin_right, margin_top, margin_bottom):
-    #     borderBox = QGraphicsRectItem(0, 0, boxWidth, boxHeight)
-    #     boxPen = QPen()
-    #     boxPen.setColor(Qt.GlobalColor.black)
-    #     boxPen.setWidth(1)
-    #     borderBox.setPen(boxPen)
-    #     borderBox.setData(1, boxWidth)
-    #     borderBox.setData(2, boxHeight)
-    #     borderBox.setData(3, margin_left)
-    #
-    #     borderBox2 = QGraphicsRectItem(0, 0, boxWidth - 4 - 6, (boxHeight-4-6))
-    #     boxPen2 = QPen()
-    #     boxPen2.setColor(Qt.GlobalColor.black)
-    #     boxPen2.setWidth(4)
-    #     borderBox2.setPen(boxPen2)
-    #     borderBox2.setData(1, boxWidth - 4 - 6)
-    #     borderBox2.setData(2, boxHeight - 4 - 6)
-    #     borderBox2.setData(3, margin_left)
-    #
-    #     borderBox3 = QGraphicsRectItem(0, 0, boxWidth - 4 - 6 - 9, (boxHeight - 4 - 6 - 9))
-    #     boxPen3 = QPen()
-    #     boxPen3.setColor(Qt.GlobalColor.black)
-    #     boxPen3.setWidth(1)
-    #     borderBox3.setPen(boxPen3)
-    #     borderBox3.setData(1, boxWidth - 4 - 6 - 9)
-    #     borderBox3.setData(2, boxHeight - 4 - 6 - 9)
-    #     borderBox3.setData(3, margin_left)
-    #
-    #     borderBox2.setPos((borderBox.boundingRect().size().width() -1) / 2 - (borderBox2.boundingRect().size().width() -4) / 2,
-    #                       (borderBox.boundingRect().size().height() -1) / 2 - (borderBox2.boundingRect().size().height()-4) / 2)
-    #     borderBox3.setPos(
-    #         (borderBox.boundingRect().size().width() - 1) / 2 - (borderBox3.boundingRect().size().width() - 1) / 2,
-    #         (borderBox.boundingRect().size().height() - 1) / 2 - (borderBox3.boundingRect().size().height() - 1) / 2)
-    #     group = QGraphicsItemGroup()
-    #     group.addToGroup(borderBox)
-    #     group.addToGroup(borderBox2)
-    #     group.addToGroup(borderBox3)
-    #     print(group.boundingRect().size().height())
-    #     if margin_top != 0:
-    #         margin_top2 = margin_top
-    #     else:
-    #         margin_top2 = (self.height() - group.boundingRect().size().height())/2
-    #     group.setPos(margin_left, margin_top2)
-    #     group.setData(0, "borderGroup")
-    #     group.setData(1, boxWidth)
-    #     group.setData(2, boxHeight)
-    #     group.setData(3, margin_left)
-    #     self.addItem(group)
-    #
-
 
     def addTextLabel(self, text, x=20, y=20, font=None, align=Qt.AlignmentFlag.AlignCenter, labelType ="textLabel"):
 
@@ -208,6 +158,43 @@ class Page(QGraphicsScene):
         #self.addItem(textLabel)
         self.addItemWithUndo(textLabel, "Add Text")
 
+    def addRichText(self, html_content="", x=50, y=50, label_type="richTextLabel"):
+        """
+        Add a rich-text block supporting HTML content, character-level styling,
+        font family, sizes, colors, and paragraph alignments.
+        """
+        text_item = QGraphicsTextItem()
+        text_item.setData(0, label_type)
+
+        if html_content:
+            text_item.setHtml(html_content)
+        else:
+            text_item.setHtml(
+                "<p style='font-family:Sans-Serif; font-size:12pt;'>Double-click to edit rich text...</p>")
+
+        text_item.setTextWidth(200)
+        text_item.setPos(x, y)
+        text_item.setFlags(
+            QGraphicsTextItem.GraphicsItemFlag.ItemIsMovable |
+            QGraphicsTextItem.GraphicsItemFlag.ItemIsSelectable
+        )
+
+        if hasattr(self, 'addItemWithUndo'):
+            self.addItemWithUndo(text_item, "Add Rich Text")
+        else:
+            self.addItem(text_item)
+
+        return text_item
+
+    def editRichText(self, item):
+        """Open the rich text dialog editor for an existing text block."""
+        try:
+            from RichTextDlg import RichTextDlg
+            dlg = RichTextDlg(item)
+            if dlg.exec() == 1:  # Accepted
+                item.setHtml(dlg.get_html())
+        except Exception as e:
+            print(f"Error editing rich text: {e}")
 
     def clearPage(self):
         items = self.items()
@@ -220,30 +207,36 @@ class Page(QGraphicsScene):
             self.removeItem(item)
 
     def editObject(self):
+        """Edit currently selected scene item safely."""
         items = self.selectedItems()
-        nbrOfItems = 0
-        for item in items:
-            nbrOfItems = nbrOfItems + 1
-
-        if nbrOfItems > 1:
-            print("more than one item selected")
+        if len(items) != 1:
             return
 
-        if nbrOfItems == 0:
-            print("no items selected")
-            return
+        selected_item = items[0]
 
-        itemType = 0
-        for item in items:
+        # Resolve to top-level parent item if a child item within a group was clicked
+        if selected_item.parentItem() is not None:
+            top_item = selected_item.parentItem()
+            while top_item.parentItem() is not None:
+                top_item = top_item.parentItem()
+        else:
+            top_item = selected_item
 
-            itemType = item.type().real
+        try:
+            # 1. Rich Text Item
+            if top_item.data(0) == "richTextLabel":
+                self.editRichText(top_item)
 
-            if itemType == 10:
-                # This is a stamp
-                self.editStamp(item)
-            elif itemType == 8:
-                # This is a text label
-                self.editLabel(item)
+            # 2. Standard Text Item (using direct class check)
+            elif isinstance(top_item, QGraphicsTextItem) or top_item.type().real == 8:
+                self.editLabel(top_item)
+
+            # 3. Stamp Group Item
+            elif top_item.data(0) == "stampGroup" or top_item.type().real == 10:
+                self.editStamp(top_item)
+
+        except Exception as e:
+            print(f"Error during item editing: {e}")
 
     def printObjectDebugInfo(self):
         items = self.selectedItems()
@@ -815,10 +808,22 @@ class Page(QGraphicsScene):
                 #self.addItemWithUndo(pixmapitem)
                 self.addItem(pixmapitem)
 
-
     def mouseDoubleClickEvent(self, event):
-        print("mouse move double clicked on page")
-        # --- Capture du déplacement à la souris ---
+        """Safely intercept double clicks to launch edit dialogs without triggering in-place editing."""
+        item = self.itemAt(event.scenePos(), QtGui.QTransform())
+        if item:
+            # Resolve to top-level item if child item was clicked
+            top_item = item.topLevelItem() if item.topLevelItem() else item
+
+            # Select target item explicitly
+            self.clearSelection()
+            top_item.setSelected(True)
+
+            # Trigger object edit dialog
+            self.editObject()
+            event.accept()
+        else:
+            super().mouseDoubleClickEvent(event)
 
     def mousePressEvent(self, event):
         """Enregistre les positions de départ des éléments sélectionnés."""
