@@ -5,6 +5,7 @@ Dialog window for selecting and creating stamp items from catalog databases.
 
 Author: Boris du Reau
 """
+
 from os import walk
 from PyQt6.QtCore import QPointF, Qt, QPoint, QByteArray, QRectF
 from PyQt6 import QtCore, QtGui
@@ -24,12 +25,14 @@ from Stamp import Stamp
 import configparser
 
 import gettext
+# Set up gettext localization
 gettext.find("StampDlg")
 translate = gettext.translation('StampDlg', localedir='locale', languages=['fr'])
 translate.install()
 _ = translate.gettext
 
 class StampDlg(QDialog):
+    """Dialog window for selecting catalog stamps and inserting them into the page."""
     def __init__(self, lastStampObj=None, scene=None, parent=None):
         super(StampDlg, self).__init__(parent)
         self.setWindowTitle(_("Create new stamp"))
@@ -43,7 +46,7 @@ class StampDlg(QDialog):
             print(lastStampObj['nbr'])
 
     def get_configured_country(self) -> str:
-        """Lit le pays par défaut dans le fichier stamp_album.cfg."""
+        """Read default country setting from stamp_album.cfg configuration file."""
         base_dir = Path(__file__).resolve().parent
         config_path = base_dir / 'stamp_album.cfg'
 
@@ -54,40 +57,8 @@ class StampDlg(QDialog):
                 return parser.get('CONF', 'default country')
         return "France"
 
-    # def populateCountries(self, lastStampObj):
-    #     """Remplit la liste des pays et sélectionne le pays par défaut lors de la première ouverture."""
-    #     filenames = next(walk("databases"), (None, None, []))[2]
-    #     self.stampCountries = []
-    #
-    #     for file in filenames:
-    #         shortFile = file.rsplit(".")
-    #         if shortFile[0] != "master":
-    #             if len(shortFile) > 1 and shortFile[1] in ["sqlite", "db", "mdb"]:
-    #                 self.stampCountries.append(shortFile[0])
-    #
-    #     self.countryCombo.clear()
-    #     self.countryCombo.addItems(self.stampCountries)
-    #
-    #     # 1. Si un timbre a déjà été sélectionné pendant la session, on garde ce pays
-    #     if lastStampObj and lastStampObj.get('country'):
-    #         target_country = lastStampObj['country']
-    #     else:
-    #         # 2. Sinon (première ouverture), on prend le pays configuré par défaut
-    #         target_country = self.get_configured_country()
-    #     print("target_country:"+ target_country)
-    #     # Sélection dans la ComboBox
-    #     index = self.countryCombo.findText(target_country)
-    #     if index != -1:
-    #         self.countryCombo.setCurrentIndex(index)
-    #     elif self.countryCombo.count() > 0:
-    #         self.countryCombo.setCurrentIndex(0)
-    #
-    #     # Connexion à la base de données du pays sélectionné
-    #     self.currentCountry = self.countryCombo.currentText()
-    #     if self.currentCountry:
-    #         self.db = DB(self.currentCountry)
-
     def keyPressEvent(self, e):
+        """Handle keyboard arrow navigation for stamp list selection."""
         print(e.key())
 
         if e.key() == Qt.Key.Key_Down:
@@ -97,9 +68,9 @@ class StampDlg(QDialog):
             #print("up")
             self.stampClicked(self.stampNbrList.currentIndex())
 
-
     def createDlg(self, lastStampObj):
-        # pochettes type
+        """Initialize dialog layout, widgets, and form controls."""
+        # Mount box types section
         vLayout1 = QVBoxLayout()
         pochettesType = QLabel(_("Pochette type"))
         self.pochetteList = QListWidget()
@@ -202,7 +173,6 @@ class StampDlg(QDialog):
         fLayout.addRow(_("Height:"), self.eHeight)
         fLayout.addRow(_("Year:"), self.eYear)
         fLayout.addRow(_("Value:"), self.eValue)
-
         fLayout.addRow(_("Stamp description:"), self.eStampDescription)
         fLayout.addRow(_("Stamp description2:"), self.eStampDescription2)
 
@@ -241,14 +211,13 @@ class StampDlg(QDialog):
 
         self.populateData(lastStampObj)
 
-
     def populateData(self,lastStampObj):
         if lastStampObj and lastStampObj.get('country'):
             target_country  = lastStampObj['country']
         else:
             target_country  = self.get_configured_country()
 
-        print("target_country:" + target_country )
+        #print("target_country:" + target_country )
         # get the list of countries from the databases available
         self.retCountryCombo = []
         self.db = None
@@ -312,11 +281,8 @@ class StampDlg(QDialog):
         if len(self.yearsList.selectedItems()) < 1:
             self.yearsList.setCurrentRow(0)
 
-        # self.yearsList.currentItem().setSelected(True)
-
         # load all available stamp number for the current year
         retStampNbrList = self.db.loadStampList(self.stampTypeCombo.currentText(), self.yearsList.currentItem().text())
-        #print(len(retStampNbrList))
 
         model = QtGui.QStandardItemModel(self.stampNbrList)
         myIndex = 0
@@ -355,17 +321,17 @@ class StampDlg(QDialog):
                 self.pochetteList.setCurrentItem(pochetteItem[0])
             else:
                 self.pochetteList.setCurrentRow(0)
-        #else:
-        #    self.pochetteList.setCurrentRow(0)
+
         self.setStampInfo(retitem)
 
     def yearChanged(self, year):
+        """Callback triggered when active selected year item changes."""
         if year is not None:
             self.yearClicked(year)
 
     # year has changed, let's retrieve all the stamps for that year
     def yearClicked(self, year):
-
+        """Update stamp list view according to selected year."""
         if year.text() != "":
             if self.db is not None:
                 # load all available stamp number for the current year
@@ -389,12 +355,13 @@ class StampDlg(QDialog):
 
     # stamp has changed let's change the image and all the stamp properties
     def stampClicked(self, index):
-        # stampKey, stampCountry
+        """Update preview image and form fields when a stamp is clicked."""
         retitem = self.stampNbrList.model().item(index.row(), 0)
         self.setStampInfo(retitem)
         self.currentStampNbr = retitem.text()
 
     def setStampInfo(self, retitem):
+        """Fetch stamp information and load image preview from country database."""
         if self.db is not None:
             # get pochette for the current stamp
             stampType = self.stampTypeCombo.currentText()
@@ -458,8 +425,7 @@ class StampDlg(QDialog):
                         self.photo.setPixmap(QPixmap(self.fullPhotoPath).scaledToHeight(200))
 
     def countryClicked(self, country):
-        # stampCountry
-
+        """Switch country database connection when country dropdown selection changes."""
         if country != "":
             if self.db is not None:
                 self.db.OpenCountryDB(country)
@@ -470,7 +436,7 @@ class StampDlg(QDialog):
                 self.stampTypeCombo.addItems(retStampType)
 
     def stampTypeClicked(self, stampType):
-        # stampType, stampCountry
+        """Reload available issue years when stamp type selection changes."""
         if stampType != "":
             if self.db is not None:
                 # get the available years from the current country open DB
@@ -486,11 +452,12 @@ class StampDlg(QDialog):
                     #self.yearClicked(self.yearsList.currentItem().text())
 
     def pochetteClicked(self, item):
-        # pochette
+        """Callback for pochette list item selection."""
         print("Current pochette %s" % item.text())
 
     def getPhotoName(self, stampNumber, stampType, stampSubNbr):
-        nbr = ""
+        """Generate relative photo image file name based on stamp category prefix."""
+        #nbr = ""
         subNbr = ""
 
         if stampSubNbr is not None:
@@ -607,12 +574,14 @@ class StampDlg(QDialog):
         return nbr
 
     def getBoxInfo(self, box):
+        """Retrieve box dimensions from database by mount box name."""
         ret = []
         if self.db is not None:
             ret = self.db.getCurrentBox(box)
         return ret
 
     def createStamp(self):
+        """Instantiate stamp graphic item on scene based on mount box dimensions."""
         stampDesc = self.eStampDescription.toPlainText()
 
         stampValue = self.eValue.text()
@@ -631,6 +600,7 @@ class StampDlg(QDialog):
                           float(width), float(height), float(0), float(0), pixmap)
 
     def createStamp2(self):
+        """Instantiate stamp graphic item using custom explicit width/height dimensions."""
         stampDesc = self.eStampDescription.toPlainText()
 
         stampValue = self.eValue.text()

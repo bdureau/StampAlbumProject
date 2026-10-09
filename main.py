@@ -11,6 +11,7 @@ Author: Boris du Reau
 Year: 2022-2026
 """
 import sys
+from PyQt6.QtCore import QLibraryInfo, QLocale, QTranslator
 from PyQt6.QtWidgets import QApplication
 
 from MainWindow import Window
@@ -19,6 +20,14 @@ from MainWindow import Window
 def main():
     """Application entry point."""
     app = QApplication(sys.argv)
+
+    # Load system Qt translation for native dialog buttons (OK, Cancel, Yes, No)
+    qt_translator = QTranslator()
+    translations_path = QLibraryInfo.path(QLibraryInfo.LibraryPath.TranslationsPath)
+
+    # Load qtbase translation matching system locale (e.g., qtbase_fr.qm)
+    if qt_translator.load(QLocale.system(), "qtbase", "_", translations_path):
+        app.installTranslator(qt_translator)
 
     # Set standard Windows widget styling for a consistent desktop layout
     app.setStyle('Windows')

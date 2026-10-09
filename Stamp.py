@@ -1,3 +1,12 @@
+"""
+Stamp Module
+------------
+Manages the creation, positioning, rendering, reading, and updating of
+grouped stamp items on a QGraphicsScene.
+
+Author: Boris du Reau
+"""
+import gettext
 from PyQt6.QtCore import QPointF, Qt
 from PyQt6.QtWidgets import (
     QGraphicsRectItem, QGraphicsScene, QGraphicsView, QApplication, QLabel, QMainWindow,
@@ -7,14 +16,34 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtGui import QBrush, QPainter, QPen, QPixmap, QPolygonF, QColor, QTextCursor, QTextBlockFormat, QAction
 import json
 from EditStampDlg import EditStampDlg
+# Set up gettext localization
+
+gettext.find("Stamp")
+translate = gettext.translation('Stamp', localedir='locale', languages=['fr'], fallback=True)
+translate.install()
+_ = translate.gettext
 
 class Stamp:
+    """Helper class providing methods to generate and modify stamp graphic groups."""
     def __init__(self):
-        print("")
+        pass
 
 
     def createStamp(self, scene, nbr, value, desc, boxWidth, boxHeight, x, y, picture):
-        #load picture from disk
+        """
+                Load an image file from disk and pass it to createStampPix.
+
+                Args:
+                    scene: Active QGraphicsScene instance.
+                    nbr (str): Stamp catalogue number.
+                    value (str): Nominal value text.
+                    desc (str): Description title text.
+                    boxWidth (float): Stamp mount width in millimeters.
+                    boxHeight (float): Stamp mount height in millimeters.
+                    x (float): Scene target X coordinate.
+                    y (float): Scene target Y coordinate.
+                    picture (str): Path to image asset file.
+                """
         pixmap = QPixmap(picture)
 
         if pixmap is None:
@@ -143,7 +172,7 @@ class Stamp:
         group.setPos(x, y)
 
         if hasattr(scene, 'addItemWithUndo'):
-            scene.addItemWithUndo(group, "Add Stamp")
+            scene.addItemWithUndo(group, _("Add Stamp"))
         else:
             scene.addItem(group)
 
@@ -238,7 +267,15 @@ class Stamp:
 
 
     def readStamp(self, stampItem):
+        """
+                Extract property text, box dimensions, and pixmap data from a stamp group.
 
+                Args:
+                    stampItem: Active QGraphicsItemGroup instance.
+
+                Returns:
+                    dict: Dictionary mapping stamp child keys to their corresponding values.
+        """
         stampObj = {}
         childrenItems = stampItem.childItems()
         for childItem in childrenItems:
@@ -252,15 +289,10 @@ class Stamp:
                 stampObj[childItem.data(0) + '_text'] = childItem.toPlainText()
             elif childItem.type().real == 7:
                 stampObj[childItem.data(0) + '_image'] = childItem.pixmap()
-                print(childItem.pixmap())
                 stampObj[childItem.data(0) + '_width'] = childItem.boundingRect().width()
                 stampObj[childItem.data(0) + '_height'] = childItem.boundingRect().height()
-                print(childItem.boundingRect().width())
-                print(childItem.boundingRect().height())
+
             elif childItem.type().real == 3:
-                print("we have a box")
-                print(childItem.boundingRect().width())
-                print(childItem.boundingRect().height())
                 stampObj[childItem.data(0) + '_width'] = childItem.boundingRect().width()
                 stampObj[childItem.data(0) + '_height'] = childItem.boundingRect().height()
                 stampObj[childItem.data(0) + '_boxWidth'] = int(childItem.data(1))

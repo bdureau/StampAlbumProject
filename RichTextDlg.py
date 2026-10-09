@@ -6,21 +6,26 @@ styles, and paragraph alignment.
 
 Author: Boris du Reau
 """
-
+import gettext
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QColor, QFont, QTextCharFormat, QTextBlockFormat
 from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QTextEdit,
     QSpinBox, QToolButton, QColorDialog, QDialogButtonBox, QFontComboBox
 )
-
+# Set up gettext localization
+gettext.find("RichTextDlg")
+translate = gettext.translation('RichTextDlg', localedir='locale', languages=['fr'], fallback=True)
+translate.install()
+_ = translate.gettext
 
 class RichTextDlg(QDialog):
     """Dialog allowing full rich-text formatting for QGraphicsTextItem."""
 
     def __init__(self, text_item=None, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Rich Text Editor")
+        #self.setWindowTitle("Rich Text Editor")
+        self.setWindowTitle(_("Rich Text Editor"))
         self.resize(600, 400)
         self.text_item = text_item
 
@@ -38,6 +43,7 @@ class RichTextDlg(QDialog):
 
         # Font family picker
         self.font_combo = QFontComboBox()
+        self.font_combo.setToolTip(_("Font Family"))
         self.font_combo.currentFontChanged.connect(self._set_font_family)
         toolbar.addWidget(self.font_combo)
 
@@ -45,26 +51,30 @@ class RichTextDlg(QDialog):
         self.size_spin = QSpinBox()
         self.size_spin.setRange(6, 144)
         self.size_spin.setValue(12)
+        self.size_spin.setToolTip(_("Font Size"))
         self.size_spin.valueChanged.connect(self._set_font_size)
         toolbar.addWidget(self.size_spin)
 
         # Bold, Italic, Underline buttons
         self.btn_bold = QToolButton()
-        self.btn_bold.setText("B")
+        self.btn_bold.setText(_("B"))
+        self.btn_bold.setToolTip(_("Bold"))
         self.btn_bold.setCheckable(True)
         self.btn_bold.setStyleSheet("font-weight: bold;")
         self.btn_bold.clicked.connect(self._toggle_bold)
         toolbar.addWidget(self.btn_bold)
 
         self.btn_italic = QToolButton()
-        self.btn_italic.setText("I")
+        self.btn_italic.setText(_("I"))
+        self.btn_italic.setToolTip(_("Italic"))
         self.btn_italic.setCheckable(True)
         self.btn_italic.setStyleSheet("font-style: italic;")
         self.btn_italic.clicked.connect(self._toggle_italic)
         toolbar.addWidget(self.btn_italic)
 
         self.btn_underline = QToolButton()
-        self.btn_underline.setText("U")
+        self.btn_underline.setText(_("U"))
+        self.btn_underline.setToolTip(_("Underline"))
         self.btn_underline.setCheckable(True)
         self.btn_underline.setStyleSheet("text-decoration: underline;")
         self.btn_underline.clicked.connect(self._toggle_underline)
@@ -73,27 +83,32 @@ class RichTextDlg(QDialog):
         # Text color picker
         self.btn_color = QToolButton()
         self.btn_color.setText("🎨")
+        self.btn_color.setToolTip(_("Text Color"))
         self.btn_color.clicked.connect(self._choose_color)
         toolbar.addWidget(self.btn_color)
 
         # Paragraph alignment buttons
         self.btn_align_left = QToolButton()
-        self.btn_align_left.setText("Left")
+        self.btn_align_left.setText(_("Left"))
+        self.btn_align_left.setToolTip(_("Align Left"))
         self.btn_align_left.clicked.connect(lambda: self._set_alignment(Qt.AlignmentFlag.AlignLeft))
         toolbar.addWidget(self.btn_align_left)
 
         self.btn_align_center = QToolButton()
-        self.btn_align_center.setText("Center")
+        self.btn_align_center.setText(_("Center"))
+        self.btn_align_center.setToolTip(_("Center"))
         self.btn_align_center.clicked.connect(lambda: self._set_alignment(Qt.AlignmentFlag.AlignCenter))
         toolbar.addWidget(self.btn_align_center)
 
         self.btn_align_right = QToolButton()
-        self.btn_align_right.setText("Right")
+        self.btn_align_right.setText(_("Right"))
+        self.btn_align_right.setToolTip(_("Align Right"))
         self.btn_align_right.clicked.connect(lambda: self._set_alignment(Qt.AlignmentFlag.AlignRight))
         toolbar.addWidget(self.btn_align_right)
 
         self.btn_align_justify = QToolButton()
-        self.btn_align_justify.setText("Justify")
+        self.btn_align_justify.setText(_("Justify"))
+        self.btn_align_justify.setToolTip(_("Justify"))
         self.btn_align_justify.clicked.connect(lambda: self._set_alignment(Qt.AlignmentFlag.AlignJustify))
         toolbar.addWidget(self.btn_align_justify)
 
@@ -136,7 +151,7 @@ class RichTextDlg(QDialog):
         self._apply_char_format(fmt)
 
     def _choose_color(self):
-        color = QColorDialog.getColor(self.editor.textColor(), self)
+        color = QColorDialog.getColor(self.editor.textColor(), self, _("Select Text Color"))
         if color.isValid():
             fmt = QTextCharFormat()
             fmt.setForeground(color)

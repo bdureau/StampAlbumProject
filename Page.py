@@ -1,4 +1,14 @@
+"""
+Page Module
+-----------
+Manages the graphics scene for custom stamp album pages including items,
+decorations, borders, rich text items, undo stack history, and print preview.
 
+Author: Boris du Reau
+"""
+import configparser
+from pathlib import Path
+import gettext
 from ResizablePixmapItem import ResizablePixmapItem  # Import du composant
 from PyQt6.QtCore import QPointF, Qt, QRectF, QMarginsF
 from PyQt6 import QtCore, QtGui, QtPrintSupport
@@ -31,13 +41,15 @@ _ = translate.gettext
 
 
 class Page(QGraphicsScene):
+    """Custom QGraphicsScene representing a single stamp album page."""
     def __init__(self, pageType = "portrait", border=None, parent=None):
         super(Page, self).__init__(parent)
         self.pageType = pageType
-        # Gestionnaire d'historique Undo/Redo propre à la page
-        self.undoStack = QUndoStack(self)
 
+        # Undo/Redo history stack for the current page scene
+        self.undoStack = QUndoStack(self)
         self.mouse_press_positions = {}
+
         style = self.get_configured_border_style()
         if self.pageType == "portrait":
             self.setSceneRect(0, 0, 210 / (25.4 / 96), 297 / (25.4 / 96))
@@ -61,7 +73,7 @@ class Page(QGraphicsScene):
         self.gridOn = False
 
     def addItemNative(self, item):
-        """Ajout direct à la scène sans ajouter de commande dans l'historique."""
+        """Add item directly to scene without pushing an Undo command."""
         if item.scene() != self:
             super().addItem(item)
 
@@ -71,7 +83,7 @@ class Page(QGraphicsScene):
             super().removeItem(item)
 
     def addItemWithUndo(self, item, text="Add Item"):
-        """Méthode explicite pour ajouter un élément ET créer une action Undo."""
+        """Remove item directly from scene without pushing an Undo command."""
         if item.parentItem() is None:
             cmd = AddItemCommand(self, item, text)
             self.undoStack.push(cmd)  # Push appelle automatiquement cmd.redo() une fois !
@@ -79,15 +91,16 @@ class Page(QGraphicsScene):
             self.addItemNative(item)
 
     def addItem(self, item):
-        """Surchargé pour enregistrer les ajouts dans l'historique."""
+        """Override addItem to automatically register undo history."""
         super().addItem(item)
         # N'enregistre que les objets principaux (pas les enfants de groupes)
         if item.parentItem() is None:
-            cmd = AddItemCommand(self, item)
+            #cmd = AddItemCommand(self, item)
+            cmd = AddItemCommand(self, item, _("Add Item"))
             self.undoStack.push(cmd)
 
     def removeItems(self):
-        """Surchargé pour enregistrer les suppressions dans l'historique."""
+        """Remove selected top-level items and record operation in Undo stack."""
         #items = self.selectedItems()
         items = [it for it in self.selectedItems() if it.parentItem() is None]
         if items:
@@ -95,7 +108,6 @@ class Page(QGraphicsScene):
             self.undoStack.push(cmd)
 
     def getPageName(self):
-        #self.backgroundBrush().texture().detach()
         return ""
 
     def get_configured_border_style(self) -> str:
@@ -110,15 +122,8 @@ class Page(QGraphicsScene):
 
     def addBorder(self, boxWidth, boxHeight, margin_left, margin_right, margin_top, margin_bottom,style=None):
         """Add a decorative border to the page using PageBorder class."""
-
         if not style:
             style = PageBorder.STYLE_TRIPLE  # Style par défaut : Triple (Classic)
-        #style = self.get_configured_border_style()
-
-        print(style)
-        # if style is None:
-        #     style = PageBorder.STYLE_TRIPLE
-        #     print("style forced")
 
         border = PageBorder(boxWidth, boxHeight, style=style)
 
@@ -130,9 +135,8 @@ class Page(QGraphicsScene):
         border.setPos(margin_left, margin_top2)
         self.addItem(border)
 
-
     def addTextLabel(self, text, x=20, y=20, font=None, align=Qt.AlignmentFlag.AlignCenter, labelType ="textLabel"):
-
+        """Add a text label to the page with alignment and font attributes."""
         textLabel = QGraphicsTextItem(text)
         textLabel.setData(0, "textLabel")
 
@@ -153,10 +157,9 @@ class Page(QGraphicsScene):
         textLabel.setFlags(QGraphicsTextItem.GraphicsItemFlag.ItemIsMovable |
                            QGraphicsTextItem.GraphicsItemFlag.ItemIsSelectable)
         textLabel.setData(0, labelType)
-
         textLabel.setSelected(True)
-        #self.addItem(textLabel)
-        self.addItemWithUndo(textLabel, "Add Text")
+
+        self.addItemWithUndo(textLabel, _("Add Text"))
 
     def addRichText(self, html_content="", x=50, y=50, label_type="richTextLabel"):
         """
@@ -180,7 +183,7 @@ class Page(QGraphicsScene):
         )
 
         if hasattr(self, 'addItemWithUndo'):
-            self.addItemWithUndo(text_item, "Add Rich Text")
+            self.addItemWithUndo(text_item, _("Add Rich Text"))
         else:
             self.addItem(text_item)
 
@@ -197,10 +200,12 @@ class Page(QGraphicsScene):
             print(f"Error editing rich text: {e}")
 
     def clearPage(self):
+        """Remove all items from the current page."""
         items = self.items()
         for item in items:
             self.removeItem(item)
 
+    #is it still in use?
     def removeItems(self):
         items = self.selectedItems()
         for item in items:
@@ -239,6 +244,7 @@ class Page(QGraphicsScene):
             print(f"Error during item editing: {e}")
 
     def printObjectDebugInfo(self):
+        """Print debug information for selected scene items."""
         items = self.selectedItems()
         nbrOfItems = 0
         for item in items:
@@ -269,17 +275,15 @@ class Page(QGraphicsScene):
 
             elif itemType == 8:
                 # This is a text label
-                #self.editLabel(item)
                 print("text label")
 
     def editLabel(self, item):
+        """Edit a standard text item using TextDlg."""
         dlg = TextDlg(item)
         res = dlg.exec()
-        #print("edit label")
         #accepted
         if res == 1:
             text = dlg.eTXT.toPlainText()
-
             font = dlg.eTXT.font()
             item.setPlainText(text)
             item.setFont(font)
@@ -288,7 +292,7 @@ class Page(QGraphicsScene):
             textLabel.setFont(font)
 
             item.setTextWidth(textLabel.boundingRect().size().width())
-            print("edit format")
+
             cursor = item.textCursor()
             cursor.select(QTextCursor.SelectionType.Document)
             format = QTextBlockFormat()
@@ -315,6 +319,7 @@ class Page(QGraphicsScene):
             print("Clicked cancel")
 
     def editStamp(self, stampItem):
+        """Edit stamp group attributes using EditStampDlg."""
         stamp = Stamp()
         stampObj = stamp.readStamp(stampItem)
         dlg = EditStampDlg(stampObj)
@@ -331,18 +336,16 @@ class Page(QGraphicsScene):
             height = ret[1]
             stampObj['stampBox_boxHeight'] = height
             stampObj['pixmapItem_image'] = dlg.photo.pixmap()
-            print("update stamp")
+
             stamp.updateStamp(stampItem, stampObj, self)
 
     def printPagePDF(self,fileName2):
-        #print("printPagePDF")
+        """Export current page as a PDF file."""
         # first unselect all objects
         for item in self.items():
             item.setSelected(False)
 
         printer = QPrinter(QPrinter.PrinterMode.HighResolution)
-
-        #printer.setPageSize(QtGui.QPagedPaintDevice.A4)
 
         if self.pageType == "portrait":
             printer.setPageOrientation(QPageLayout.Orientation.Portrait)
@@ -365,13 +368,11 @@ class Page(QGraphicsScene):
 
     # does the print preview
     def printPreview(self):
-        print("Print preview")
+        """Display print preview for the current page."""
         previewDialog = QPrintPreviewDialog()
-
         previewDialog.printer().setResolution(QPrinter.PrinterMode.HighResolution.value)
-
         previewDialog.printer().setOutputFormat(QPrinter.OutputFormat.PdfFormat)
-        #previewDialog.printer().setPageSize(QtGui.QPagedPaintDevice.A4)
+
         if self.pageType == "portrait":
             previewDialog.printer().setPageOrientation(QPageLayout.Orientation.Portrait)
         else:
@@ -382,16 +383,15 @@ class Page(QGraphicsScene):
 
     # called by the print preview
     def createPreview(self, printer):
+        """Render scene page preview for QPrintPreviewDialog."""
         # first unselect all objects
         for item in self.items():
             item.setSelected(False)
 
         scale = printer.resolution() / 96.0
-
         printer.setPageMargins(QtCore.QMarginsF(0.0, 0.0, 0.0, 0.0), QtGui.QPageLayout.Unit.Millimeter)
 
         p = QPainter(printer)
-
         source = QtCore.QRectF(0, 0, self.width(), self.height())
         target = QRectF(0, 0, source.size().width() * scale, source.size().height() * scale)
 
@@ -416,6 +416,7 @@ class Page(QGraphicsScene):
         painter.drawLine(0, 0, 0, 10)
         return pixmap
 
+    #is it still in use?
     def groupItem(self):
         sceneItems = self.items()
         for items in sceneItems:
@@ -426,44 +427,23 @@ class Page(QGraphicsScene):
 
     # create a new stamp
     def newStamp(self, lastStampObj):
-        print("New Stamp")
+        """Create and place a new stamp item from StampDlg."""
         dlg = StampDlg(lastStampObj, self)
         res = dlg.exec()
 
         #accepted
         if res == 1:
-            print("Clicked Done")
-            # print(dlg.eYear.text())
-            # stampDesc = dlg.eStampDescription.toPlainText()
-            # print(dlg.eStampDescription2.toPlainText())
-            # stampValue = dlg.eValue.text()
-            # pixmap = ""
-            # if dlg.fullPhotoPath is not None:
-            #     pixmap = dlg.fullPhotoPath
-            #
-            # print(dlg.pochetteList.currentItem().text())
-            # ret = dlg.getBoxInfo(dlg.pochetteList.currentItem().text())
-            # width = ret[0]
-            # height = ret[1]
-
-            #stampNbr = dlg.stampNbrList.model().item(0, 0).text()
             stampNbr = dlg.currentStampNbr
-            #
-            # stamp = Stamp()
-            # stamp.createStamp(self, str(stampNbr), str(stampValue), str(stampDesc),
-            #                   float(width), float(height), float(0), float(0), pixmap)
             lastStampObj['year'] = dlg.eYear.text()
             lastStampObj['type'] = dlg.stampTypeCombo.currentText()
             lastStampObj['country'] = dlg.currentCountry
             lastStampObj['nbr'] = stampNbr
 
             return lastStampObj
-        # if res == QDialog.Rejected:
-        #     print("Clicked cancel")
 
     # Add some text
     def newLabel(self):
-        print("Create new label")
+        """Prompt user for text and place a standard label."""
         textLabel = QGraphicsTextItem("")
         textLabelFont = textLabel.font()
         textLabelFont.setPointSize(10)
@@ -472,23 +452,17 @@ class Page(QGraphicsScene):
         dlg = TextDlg(textLabel)
         res = dlg.exec()
 
-        print(res)
         #accepted
         if res == 1:
-            print("Clicked ok")
             text = dlg.eTXT.toPlainText()
             font = dlg.eTXT.font()
             align = dlg.eTXT.alignment()
-
             self.addTextLabel(text, 50, 50, font, align)
-
-        #rejected
-        if res == 0:
-            print("Clicked cancel")
 
     # create a new copyright and add it at the bottom right of the page
     def newCopyRight(self):
-        text = "CopyRight © Boris du Reau 2003-2023"
+        """Add a copyright footer to the page."""
+        text = "CopyRight © Boris du Reau 2003-2026"
         #get it from config
         configParser = configparser.RawConfigParser()
         configFilePath = r'stamp_album.cfg'
@@ -506,32 +480,24 @@ class Page(QGraphicsScene):
             self.addTextLabel(text, 60, 710, font, Qt.AlignmentFlag.AlignLeft, "labelCopyRight")
 
     def newPageNbr(self):
-        print("Create new  nbr")
+        """Prompt user and create a page number label."""
         textLabel = QGraphicsTextItem("")
         textLabelFont = textLabel.font()
         textLabelFont.setPointSize(8)
         textLabel.setFont(textLabelFont)
 
         dlg = TextDlg(textLabel)
-        #dlg = TextDlg()
         res = dlg.exec()
 
         # accepted
         if res == 1:
-            print("Clicked ok")
             text = dlg.eTXT.toPlainText()
             font = dlg.eTXT.font()
             align = dlg.eTXT.alignment()
-
             self.addPageNbr(text, font, align)
-        # rejected
-        if res == 0:
-            print("Clicked cancel")
 
     def addPageNbr(self, pageName, font, align=Qt.AlignmentFlag.AlignLeft):
-        print("new page number")
-        #font = QFont()
-        #font.setPointSize(8)
+        """Position page number label at the bottom right of the page."""
         textLabel = QGraphicsTextItem(pageName)
         textLabel.setFont(font)
         textWidth = textLabel.boundingRect().size().width()
@@ -541,6 +507,7 @@ class Page(QGraphicsScene):
             self.addTextLabel(pageName, (297 / (25.4 / 96)) - 60 - textWidth, 710, font, align, "labelPageNbr")
 
     def addPageYear(self):
+        """Prompt user for year and place a header year label."""
         textLabel = QGraphicsTextItem("")
         textLabelFont = textLabel.font()
         textLabelFont.setPointSize(10)
@@ -552,19 +519,14 @@ class Page(QGraphicsScene):
 
         # accepted
         if res == 1:
-            print("Clicked ok")
             text = dlg.eTXT.toPlainText()
             font = dlg.eTXT.font()
             align = dlg.eTXT.alignment()
-
             self.addYear(text, font, align)
-        # rejected
-        if res == 0:
-            print("Clicked cancel")
+
 
     def addYear(self, year, font, align):
-        print("add year")
-
+        """Position year header label at top center of the page."""
         textLabel = QGraphicsTextItem(year)
         textLabel.setFont(font)
         textWidth = textLabel.boundingRect().size().width()
@@ -575,7 +537,7 @@ class Page(QGraphicsScene):
                               "labelYear")
 
     def alignTop(self):
-        print("alignTop")
+        """Align top boundaries of selected items."""
         topY = 0.0
         if self.countSelectedItems() > 1:
             for it in self.items():
@@ -591,7 +553,7 @@ class Page(QGraphicsScene):
             print("More than 1 item need to be selected fo aligning object")
 
     def alignBottom(self):
-        print("align bottom")
+        """Align bottom boundaries of selected items."""
         topY = 0.0
         if self.countSelectedItems() > 1:
             for it in self.items():
@@ -605,7 +567,7 @@ class Page(QGraphicsScene):
             print("More than 1 item need to be selected fo aligning object")
 
     def alignLeft(self):
-        print("alignLeft")
+        """Align left boundaries of selected items."""
         topX = self.sceneRect().width()
         if self.countSelectedItems() > 1:
             for it in self.items():
@@ -622,7 +584,7 @@ class Page(QGraphicsScene):
             print("More than 1 item need to be selected fo aligning object")
 
     def alignRight(self):
-        print("alignRight")
+        """Align right boundaries of selected items."""
         topX = 0.0
         if self.countSelectedItems() > 1:
             for it in self.items():
@@ -635,16 +597,15 @@ class Page(QGraphicsScene):
             print("More than 1 item need to be selected fo aligning object")
 
     def distributeHorizontally(self):
-        #review!!!!
-        print("distributeHorizontally")
+        """Space selected items horizontally with equal margins."""
         itemLength = 0
         minX = 0
         maxX = 0
         nbrItems = 0
         posX = []
+
         if self.countSelectedItems() > 2:
             for it in self.items():
-                print("it.x()%f" % it.x())
                 if it.isSelected() and it.parentItem() is None:
                     nbrItems = nbrItems + 1
                     if it.type().real == 8:
@@ -679,7 +640,7 @@ class Page(QGraphicsScene):
 
             space = (maxX - minX - itemLength)/(nbrItems - 1)
             posX.sort()
-            print(posX)
+
             nextX = minX
             for px in posX:
                 for i in self.items():
@@ -702,7 +663,7 @@ class Page(QGraphicsScene):
 
     # distribute all objects verticlly
     def distributeVertically(self):
-        print("distributeVertically")
+        """Space selected items vertically with equal margins."""
         itemLength = 0
         minY = 0
         maxY = 0
@@ -738,7 +699,7 @@ class Page(QGraphicsScene):
 
     # center all objects horizontally
     def centerHorizontally(self):
-        print("centerHorizontally")
+        """Center selected items horizontally on page."""
         if self.countSelectedItems() > 0:
             for it in self.items():
                 if it.isSelected() and it.parentItem() is None:
@@ -769,7 +730,7 @@ class Page(QGraphicsScene):
 
     # center all objects vertically
     def centerVertically(self):
-        print("centerVertically")
+        """Center selected items vertically on page."""
         if self.countSelectedItems() > 0:
             for it in self.items():
                 if it.isSelected() and it.parentItem() is None:
@@ -785,17 +746,6 @@ class Page(QGraphicsScene):
                 selected = selected+1
         return selected
 
-    # def addImage_old(self, fileName):
-    #     print("add image")
-    #     if fileName:
-    #         print(fileName)
-    #         pixmap = QPixmap(fileName)
-    #         pixmapitem = QGraphicsPixmapItem(pixmap)
-    #         pixmapitem.setFlags(QGraphicsTextItem.GraphicsItemFlag.ItemIsMovable |
-    #                             QGraphicsTextItem.GraphicsItemFlag.ItemIsSelectable)
-    #         self.addItem(pixmapitem)
-    #     else:
-    #         return
 
     def addImage(self, fileName):
         """Add an image to the scene with interactive resize handles."""
@@ -826,31 +776,16 @@ class Page(QGraphicsScene):
             super().mouseDoubleClickEvent(event)
 
     def mousePressEvent(self, event):
-        """Enregistre les positions de départ des éléments sélectionnés."""
+        """Record initial positions for items before drag operations."""
         self.mouse_press_positions = {
             item: item.pos() for item in self.selectedItems() if item.parentItem() is None
         }
         super().mousePressEvent(event)
 
-    # def mouseReleaseEvent_old(self, event):
-    #     """Vérifie si les éléments ont bougé et crée une MoveCommand."""
-    #     super().mouseReleaseEvent(event)
-    #
-    #     moved_items = []
-    #     old_positions = []
-    #
-    #     for item, old_pos in self.mouse_press_positions.items():
-    #         if item.pos() != old_pos:
-    #             moved_items.append(item)
-    #             old_positions.append(old_pos)
-    #
-    #     if moved_items:
-    #         cmd = MoveCommand(moved_items, old_positions)
-    #         self.undoStack.push(cmd)
-    #
-    #     self.mouse_press_positions.clear()
+
 
     def mouseReleaseEvent(self, event):
+        """Check for moved items on drag release and append to UndoStack."""
         super().mouseReleaseEvent(event)
 
         moved_items = []

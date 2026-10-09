@@ -6,21 +6,27 @@ and author details in both French and English with scrollable text.
 
 Author: Boris du Reau
 """
-
-from PyQt6.QtCore import Qt, QUrl
+import gettext
+from PyQt6.QtCore import (Qt, QUrl)
 from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel,
     QTextBrowser, QDialogButtonBox
 )
 from PyQt6.QtGui import QPixmap, QFont
 
+# Localization setup
+gettext.find("AboutDlg")
+translate = gettext.translation('AboutDlg', localedir='locale', languages=['fr'], fallback=True)
+translate.install()
+_ = translate.gettext
 
 class AboutDlg(QDialog):
     """Scrollable 'About' dialog displaying application overview in FR/EN."""
 
     def __init__(self, parent=None):
         super(AboutDlg, self).__init__(parent)
-        self.setWindowTitle("À propos de Stamp Album / About Stamp Album")
+        #elf.setWindowTitle("À propos de Stamp Album / About Stamp Album")
+        self.setWindowTitle(_("About Stamp Album"))
         self.resize(550, 450)
         self.createDlg()
 
@@ -36,7 +42,8 @@ class AboutDlg(QDialog):
             logo.setPixmap(pixmap.scaledToWidth(64, Qt.TransformationMode.SmoothTransformation))
         header_layout.addWidget(logo)
 
-        title_label = QLabel("Stamp Album")
+        #title_label = QLabel("Stamp Album")
+        title_label = QLabel(_("Stamp Album"))
         title_font = QFont()
         title_font.setPointSize(16)
         title_font.setBold(True)

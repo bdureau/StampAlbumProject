@@ -1,7 +1,7 @@
 from PageBorder import PageBorder  # Import de la classe de bordures
 from os import walk
-from PyQt6.QtCore import QPointF, Qt, QPoint, QByteArray, QRectF
-from PyQt6 import QtCore, QtGui
+#from PyQt6.QtCore import QPointF, Qt, QPoint, QByteArray, QRectF
+#from PyQt6 import QtCore, QtGui
 from pathlib import Path
 from PyQt6.QtWidgets import (
     QMessageBox, QGraphicsRectItem,
@@ -10,8 +10,8 @@ from PyQt6.QtWidgets import (
     QToolBar,  QGraphicsTextItem, QGraphicsItemGroup, QDialog, QPushButton, QListWidget,
     QLineEdit, QFormLayout, QStatusBar, QTabWidget, QWidget, QVBoxLayout, QDialogButtonBox, QPlainTextEdit
 )
-from PyQt6.QtGui import QFont, QBrush, QPainter, QPen, QPixmap, QPolygonF, QImage, QIcon, QAction, QStandardItem, QColor
-from PyQt6.QtPrintSupport import QPrintPreviewDialog, QPrinter, QPrintDialog
+#from PyQt6.QtGui import QFont, QBrush, QPainter, QPen, QPixmap, QPolygonF, QImage, QIcon, QAction, QStandardItem, QColor
+#from PyQt6.QtPrintSupport import QPrintPreviewDialog, QPrinter, QPrintDialog
 
 import configparser
 import sys
@@ -50,11 +50,19 @@ class ConfigDlg(QDialog):
         self.eCopyRight.setFixedWidth(400)
         # default border type
         self.selectedBorderCombo = QComboBox()
-        self.selectedBorderCombo.setMaximumWidth(150)
-        self.selectedBorderCombo.addItem("Triple (Classique)", PageBorder.STYLE_TRIPLE)
-        self.selectedBorderCombo.addItem("Simple (Filet)", PageBorder.STYLE_SIMPLE)
-        self.selectedBorderCombo.addItem("Grecque (Encoches)", PageBorder.STYLE_GREEK)
-        self.selectedBorderCombo.addItem("Dentelle (Philatélie)", PageBorder.STYLE_DENTELLE)
+        self.selectedBorderCombo.setMaximumWidth(200)
+
+        #self.selectedBorderCombo.addItem("Triple (Classique)", PageBorder.STYLE_TRIPLE)
+        #self.selectedBorderCombo.addItem("Simple (Filet)", PageBorder.STYLE_SIMPLE)
+        #self.selectedBorderCombo.addItem("Grecque (Encoches)", PageBorder.STYLE_GREEK)
+        #self.selectedBorderCombo.addItem("Dentelle (Philatélie)", PageBorder.STYLE_DENTELLE)
+
+        # addItem(Label Traduisible, UserData=CodeInterne)
+        self.selectedBorderCombo.addItem(_("Triple (Classic)"), PageBorder.STYLE_TRIPLE)
+        self.selectedBorderCombo.addItem(_("Simple (Frame)"), PageBorder.STYLE_SIMPLE)
+        self.selectedBorderCombo.addItem(_("Greek (Notched)"), PageBorder.STYLE_GREEK)
+        self.selectedBorderCombo.addItem(_("Dentelle (Philately)"), PageBorder.STYLE_DENTELLE)
+
         # default country
         self.selectedCountryCombo = QComboBox()
         self.selectedCountryCombo.setMaximumWidth(100)

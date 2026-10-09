@@ -7,7 +7,19 @@ python C:\Users\bdure\AppData\Local\Programs\Python\Python39\Tools\i18n\msgfmt.p
 
 python C:\Users\boris\AppData\Local\Programs\Python\Python312\Tools\i18n\pygettext.py -d main main.py
 python C:\Users\boris\AppData\Local\Programs\Python\Python312\Tools\i18n\pygettext.py -d MainWindow MainWindow.py
+python C:\Users\boris\AppData\Local\Programs\Python\Python312\Tools\i18n\pygettext.py -d ResizablePixmapItem ResizablePixmapItem.py
+python C:\Users\boris\AppData\Local\Programs\Python\Python312\Tools\i18n\pygettext.py -d PageDlg PageDlg.py
+python C:\Users\boris\AppData\Local\Programs\Python\Python312\Tools\i18n\pygettext.py -d RichTextDlg RichTextDlg.py
+python C:\Users\boris\AppData\Local\Programs\Python\Python312\Tools\i18n\pygettext.py -d ConfigDlg ConfigDlg.py
+python C:\Users\boris\AppData\Local\Programs\Python\Python312\Tools\i18n\pygettext.py -d
+
 
 python C:\Users\boris\AppData\Local\Programs\Python\Python312\Tools\i18n\msgfmt.py  locale/fr/LC_MESSAGES/MainWindow.po
-
+python C:\Users\boris\AppData\Local\Programs\Python\Python312\Tools\i18n\msgfmt.py  locale/fr/LC_MESSAGES/ConfigDlg.po
+python C:\Users\boris\AppData\Local\Programs\Python\Python312\Tools\i18n\msgfmt.py  locale/fr/LC_MESSAGES/EditStampDlg.po
+python C:\Users\boris\AppData\Local\Programs\Python\Python312\Tools\i18n\msgfmt.py  locale/fr/LC_MESSAGES/Page.po
+python C:\Users\boris\AppData\Local\Programs\Python\Python312\Tools\i18n\msgfmt.py  locale/fr/LC_MESSAGES/PageDlg.po
+python C:\Users\boris\AppData\Local\Programs\Python\Python312\Tools\i18n\msgfmt.py  locale/fr/LC_MESSAGES/StampDlg.po
+python C:\Users\boris\AppData\Local\Programs\Python\Python312\Tools\i18n\msgfmt.py  locale/fr/LC_MESSAGES/TextDlg.po
+python C:\Users\boris\AppData\Local\Programs\Python\Python312\Tools\i18n\msgfmt.py  locale/fr/LC_MESSAGES/RichTextDlg.po
 pyinstaller --onefile main.py

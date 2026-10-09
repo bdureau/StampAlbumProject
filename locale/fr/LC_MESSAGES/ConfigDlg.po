@@ -25,9 +25,29 @@ msgid "Default Copyright:"
 msgstr "Copyright par défaut:"
 
 #: ConfigDlg.py:56
-msgid "Border type"
-msgstr "Type encadrement"
+msgid "Border type:"
+msgstr "Type encadrement:"
 
 #: ConfigDlg.py:57
-msgid "Default Country"
-msgstr "Pays par défaut"
+msgid "Default Country:"
+msgstr "Pays par défaut:"
+
+#: ConfigDlg.py:87
+msgid "Default Database:"
+msgstr "Base de Données par défaut:"
+
+#: ConfigDlg.py:61
+msgid "Triple (Classic)"
+msgstr ""
+
+#: ConfigDlg.py:62
+msgid "Simple (Frame)"
+msgstr ""
+
+#: ConfigDlg.py:63
+msgid "Greek (Notched)"
+msgstr ""
+
+#: ConfigDlg.py:64
+msgid "Dentelle (Philately)"
+msgstr ""
