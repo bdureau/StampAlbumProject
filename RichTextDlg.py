@@ -2,29 +2,32 @@
 Rich Text Dialog Module
 -----------------------
 Provides a rich-text editor with formatting options for font, size, color,
-styles, and paragraph alignment.
+styles, and paragraph alignment using custom icon assets.
 
 Author: Boris du Reau
 """
+
 import gettext
-from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QColor, QFont, QTextCharFormat, QTextBlockFormat
+from pathlib import Path
+from PyQt6.QtCore import Qt, QSize
+from PyQt6.QtGui import QColor, QFont, QIcon, QTextBlockFormat, QTextCharFormat
 from PyQt6.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QTextEdit,
-    QSpinBox, QToolButton, QColorDialog, QDialogButtonBox, QFontComboBox
+    QColorDialog, QDialog, QDialogButtonBox, QFontComboBox,
+    QHBoxLayout, QSpinBox, QTextEdit, QToolButton, QVBoxLayout
 )
+
 # Set up gettext localization
 gettext.find("RichTextDlg")
 translate = gettext.translation('RichTextDlg', localedir='locale', languages=['fr'], fallback=True)
 translate.install()
 _ = translate.gettext
 
+
 class RichTextDlg(QDialog):
     """Dialog allowing full rich-text formatting for QGraphicsTextItem."""
 
     def __init__(self, text_item=None, parent=None):
         super().__init__(parent)
-        #self.setWindowTitle("Rich Text Editor")
         self.setWindowTitle(_("Rich Text Editor"))
         self.resize(600, 400)
         self.text_item = text_item
@@ -87,27 +90,31 @@ class RichTextDlg(QDialog):
         self.btn_color.clicked.connect(self._choose_color)
         toolbar.addWidget(self.btn_color)
 
-        # Paragraph alignment buttons
+        # Paragraph alignment buttons using custom PNG icons
         self.btn_align_left = QToolButton()
-        self.btn_align_left.setText(_("Left"))
+        self.btn_align_left.setIcon(QIcon("images/justify left.png"))
+        self.btn_align_left.setIconSize(QSize(18, 18))
         self.btn_align_left.setToolTip(_("Align Left"))
         self.btn_align_left.clicked.connect(lambda: self._set_alignment(Qt.AlignmentFlag.AlignLeft))
         toolbar.addWidget(self.btn_align_left)
 
         self.btn_align_center = QToolButton()
-        self.btn_align_center.setText(_("Center"))
+        self.btn_align_center.setIcon(QIcon("images/justify center.png"))
+        self.btn_align_center.setIconSize(QSize(18, 18))
         self.btn_align_center.setToolTip(_("Center"))
         self.btn_align_center.clicked.connect(lambda: self._set_alignment(Qt.AlignmentFlag.AlignCenter))
         toolbar.addWidget(self.btn_align_center)
 
         self.btn_align_right = QToolButton()
-        self.btn_align_right.setText(_("Right"))
+        self.btn_align_right.setIcon(QIcon("images/justify right.png"))
+        self.btn_align_right.setIconSize(QSize(18, 18))
         self.btn_align_right.setToolTip(_("Align Right"))
         self.btn_align_right.clicked.connect(lambda: self._set_alignment(Qt.AlignmentFlag.AlignRight))
         toolbar.addWidget(self.btn_align_right)
 
         self.btn_align_justify = QToolButton()
-        self.btn_align_justify.setText(_("Justify"))
+        self.btn_align_justify.setIcon(QIcon("images/justify.png"))
+        self.btn_align_justify.setIconSize(QSize(18, 18))
         self.btn_align_justify.setToolTip(_("Justify"))
         self.btn_align_justify.clicked.connect(lambda: self._set_alignment(Qt.AlignmentFlag.AlignJustify))
         toolbar.addWidget(self.btn_align_justify)

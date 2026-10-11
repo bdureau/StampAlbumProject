@@ -178,7 +178,7 @@ class Stamp:
 
     # Create stamp
     # this can be used for old version
-    def createStampPix_old(self, scene, nbr, value, desc, boxWidth, boxHeight, x, y, pixmap):
+    def createStampPixOldVersion(self, scene, nbr, value, desc, boxWidth, boxHeight, x, y, pixmap):
         print("createStampPix")
         stampDesc = QGraphicsTextItem(desc)
 
@@ -194,7 +194,6 @@ class Stamp:
         stampDesc.setTextCursor(cursor)
         stampDesc.setData(0, "stampDesc")
         stampDesc.setPos(0, 0)
-        #stampDesc.setPos(x, y)
 
         stampDesc.setFlags(QGraphicsTextItem.GraphicsItemFlag.ItemIsMovable | QGraphicsTextItem.GraphicsItemFlag.ItemIsSelectable)
         print("created desc")
@@ -262,8 +261,7 @@ class Stamp:
         group.setData(0, "stampGroup")
         group.setPos(x, y)
         scene.addItem(group)
-        #group.mapToScene(0, 0)
-        #group.setPos(x, y)
+
 
 
     def readStamp(self, stampItem):

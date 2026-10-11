@@ -211,7 +211,7 @@ class Page(QGraphicsScene):
         for item in items:
             self.removeItem(item)
 
-    def editObject(self):
+    def editObject_old(self):
         """Edit currently selected scene item safely."""
         items = self.selectedItems()
         if len(items) != 1:
@@ -238,6 +238,37 @@ class Page(QGraphicsScene):
 
             # 3. Stamp Group Item
             elif top_item.data(0) == "stampGroup" or top_item.type().real == 10:
+                self.editStamp(top_item)
+
+        except Exception as e:
+            print(f"Error during item editing: {e}")
+
+    def editObject(self):
+        items = self.selectedItems()
+        if len(items) != 1:
+            return
+
+        selected_item = items[0]
+
+        # Remonter au composant parent si nécessaire
+        top_item = selected_item
+        while top_item.parentItem() is not None:
+            top_item = top_item.parentItem()
+
+        try:
+            data_type = top_item.data(0)
+
+            # 1. Objets Rich Text
+            if data_type == "richTextLabel":
+                self.editRichText(top_item)
+
+            # 2. Labels standards (textLabel, labelPageNbr, labelCopyRight, labelYear)
+            elif isinstance(top_item, QGraphicsTextItem) or data_type in ["textLabel", "labelPageNbr", "labelCopyRight",
+                                                                          "labelYear"]:
+                self.editLabel(top_item)
+
+            # 3. Timbre (stampGroup)
+            elif data_type == "stampGroup" or top_item.type().real == 10:
                 self.editStamp(top_item)
 
         except Exception as e:
@@ -727,7 +758,6 @@ class Page(QGraphicsScene):
                                     centerItem = it.boundingRect().width() / 2
                                     it.setPos((centerPage - centerItem), it.y())
 
-
     # center all objects vertically
     def centerVertically(self):
         """Center selected items vertically on page."""
@@ -746,7 +776,6 @@ class Page(QGraphicsScene):
                 selected = selected+1
         return selected
 
-
     def addImage(self, fileName):
         """Add an image to the scene with interactive resize handles."""
         if fileName:
@@ -763,7 +792,10 @@ class Page(QGraphicsScene):
         item = self.itemAt(event.scenePos(), QtGui.QTransform())
         if item:
             # Resolve to top-level item if child item was clicked
-            top_item = item.topLevelItem() if item.topLevelItem() else item
+            #top_item = item.topLevelItem() if item.topLevelItem() else item
+            top_item = item
+            while top_item.parentItem() is not None:
+                top_item = top_item.parentItem()
 
             # Select target item explicitly
             self.clearSelection()
@@ -781,8 +813,6 @@ class Page(QGraphicsScene):
             item: item.pos() for item in self.selectedItems() if item.parentItem() is None
         }
         super().mousePressEvent(event)
-
-
 
     def mouseReleaseEvent(self, event):
         """Check for moved items on drag release and append to UndoStack."""

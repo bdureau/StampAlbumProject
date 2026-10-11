@@ -1,0 +1,85 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2026-10-09 21:12+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=cp1252\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+
+
+#: RichTextDlg.py:28
+msgid "Rich Text Editor"
+msgstr ""
+
+#: RichTextDlg.py:46
+msgid "Font Family"
+msgstr ""
+
+#: RichTextDlg.py:54
+msgid "Font Size"
+msgstr ""
+
+#: RichTextDlg.py:60
+msgid "B"
+msgstr ""
+
+#: RichTextDlg.py:61
+msgid "Bold"
+msgstr ""
+
+#: RichTextDlg.py:68
+msgid "I"
+msgstr ""
+
+#: RichTextDlg.py:69
+msgid "Italic"
+msgstr ""
+
+#: RichTextDlg.py:76
+msgid "U"
+msgstr ""
+
+#: RichTextDlg.py:77
+msgid "Underline"
+msgstr ""
+
+#: RichTextDlg.py:86
+msgid "Text Color"
+msgstr ""
+
+#: RichTextDlg.py:92
+msgid "Left"
+msgstr ""
+
+#: RichTextDlg.py:93
+msgid "Align Left"
+msgstr ""
+
+#: RichTextDlg.py:98 RichTextDlg.py:99
+msgid "Center"
+msgstr ""
+
+#: RichTextDlg.py:104
+msgid "Right"
+msgstr ""
+
+#: RichTextDlg.py:105
+msgid "Align Right"
+msgstr ""
+
+#: RichTextDlg.py:110 RichTextDlg.py:111
+msgid "Justify"
+msgstr ""
+
+#: RichTextDlg.py:154
+msgid "Select Text Color"
+msgstr ""
+

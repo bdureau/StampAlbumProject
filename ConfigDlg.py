@@ -52,11 +52,6 @@ class ConfigDlg(QDialog):
         self.selectedBorderCombo = QComboBox()
         self.selectedBorderCombo.setMaximumWidth(200)
 
-        #self.selectedBorderCombo.addItem("Triple (Classique)", PageBorder.STYLE_TRIPLE)
-        #self.selectedBorderCombo.addItem("Simple (Filet)", PageBorder.STYLE_SIMPLE)
-        #self.selectedBorderCombo.addItem("Grecque (Encoches)", PageBorder.STYLE_GREEK)
-        #self.selectedBorderCombo.addItem("Dentelle (Philatélie)", PageBorder.STYLE_DENTELLE)
-
         # addItem(Label Traduisible, UserData=CodeInterne)
         self.selectedBorderCombo.addItem(_("Triple (Classic)"), PageBorder.STYLE_TRIPLE)
         self.selectedBorderCombo.addItem(_("Simple (Frame)"), PageBorder.STYLE_SIMPLE)

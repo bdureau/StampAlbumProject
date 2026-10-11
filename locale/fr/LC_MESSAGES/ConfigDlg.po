@@ -38,16 +38,16 @@ msgstr "Base de Données par défaut:"
 
 #: ConfigDlg.py:61
 msgid "Triple (Classic)"
-msgstr ""
+msgstr "Triple (Classique)"
 
 #: ConfigDlg.py:62
 msgid "Simple (Frame)"
-msgstr ""
+msgstr "Simple (Filet)"
 
 #: ConfigDlg.py:63
 msgid "Greek (Notched)"
-msgstr ""
+msgstr "Grecque (Encoches)"
 
 #: ConfigDlg.py:64
 msgid "Dentelle (Philately)"
-msgstr ""
+msgstr "Dentelle (Philatélie)"

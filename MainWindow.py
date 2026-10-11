@@ -765,6 +765,183 @@ class Window(QMainWindow):
         file_version = myroot.attrib.get("version", "0.9")
         print(f"Loading album file format version: {file_version}")
 
+        # if file_version == "0.9":
+        #    self.openOldAlbumFileVersion(myroot)
+        #else:
+        self.openNewAlbumFileVersion(myroot)
+
+
+    def openOldAlbumFileVersion(self, myroot):
+        print("openOldAlbumFileVersion")
+        for it in myroot.findall('page'):
+            self.newPage(str(it.attrib.get("type")), False)
+            currentPage = self.getCurrentPageScene()
+
+            # --- Restore Standard Text Labels ---
+            textLabelsItems = it.findall('textLabel')
+            for textLabel in textLabelsItems:
+                label = textLabel.find('label').text
+                font = textLabel.find('font')
+                bold = font.find('bold').text
+                underline = font.find('underline').text
+                italic = font.find('italic').text
+                strikeOut = font.find('strikeOut').text
+                pointSize = font.find('pointSize').text
+
+                myFont = QFont()
+                myFont.setBold(self.str_to_bool(bold))
+                myFont.setUnderline(self.str_to_bool(underline))
+                myFont.setItalic(self.str_to_bool(italic))
+                myFont.setStrikeOut(self.str_to_bool(strikeOut))
+                myFont.setPointSize(int(pointSize))
+
+                pos = textLabel.find('labelPos')
+                x = pos.find('x').text
+                y = pos.find('y').text
+
+                currentPage.addTextLabel(label, float(x), float(y), myFont)
+
+            # --- Restore Rich Text Labels ---
+            richTextLabelsItems = it.findall('richTextLabel')
+            for richLabel in richTextLabelsItems:
+                html_element = richLabel.find('html_label')
+                html_content = html_element.text if html_element is not None else ""
+
+                pos = richLabel.find('labelPos')
+                x = pos.find('x').text if pos is not None and pos.find('x') is not None else 50.0
+                y = pos.find('y').text if pos is not None and pos.find('y') is not None else 50.0
+
+                currentPage.addRichText(html_content, float(x), float(y))
+
+            # --- Restore Standalone Images ---
+            imageItems = it.findall('imageItem')
+            for img_node in imageItems:
+                pixmap_data = img_node.find('pixmapData')
+                if pixmap_data is not None and pixmap_data.text:
+                    pixmap = self.bytesToPixmap(pixmap_data.text)
+
+                    if not pixmap.isNull():
+                        pos = img_node.find('imagePos')
+                        x = float(pos.find('x').text) if pos is not None and pos.find('x') is not None else 50.0
+                        y = float(pos.find('y').text) if pos is not None and pos.find('y') is not None else 50.0
+                        scale_val = float(img_node.find('scale').text) if img_node.find('scale') is not None else 1.0
+
+                        # Re-create ResizablePixmapItem with stored position and scale
+                        pixmap_item = ResizablePixmapItem(pixmap)
+                        pixmap_item.setPos(x, y)
+                        pixmap_item.setScale(scale_val)
+
+                        currentPage.addItem(pixmap_item)
+
+            # --- Restore Copyright Labels ---
+            copyrightLabelsItems = it.findall('labelCopyRight')
+            for copyrightLabel in copyrightLabelsItems:
+                label = copyrightLabel.find('label').text
+                font = copyrightLabel.find('font')
+                myFont = QFont()
+                myFont.setBold(self.str_to_bool(font.find('bold').text))
+                myFont.setUnderline(self.str_to_bool(font.find('underline').text))
+                myFont.setItalic(self.str_to_bool(font.find('italic').text))
+                myFont.setStrikeOut(self.str_to_bool(font.find('strikeOut').text))
+                myFont.setPointSize(int(font.find('pointSize').text))
+
+                pos = copyrightLabel.find('labelPos')
+                currentPage.addTextLabel(
+                    label, float(pos.find('x').text), float(pos.find('y').text),
+                    myFont, Qt.AlignmentFlag.AlignLeft, "labelCopyRight"
+                )
+
+            # --- Restore Page Number Labels ---
+            pageNbrLabelsItems = it.findall('labelPageNbr')
+            for pageNbrLabel in pageNbrLabelsItems:
+                label = pageNbrLabel.find('label').text
+                font = pageNbrLabel.find('font')
+                myFont = QFont()
+                myFont.setBold(self.str_to_bool(font.find('bold').text))
+                myFont.setUnderline(self.str_to_bool(font.find('underline').text))
+                myFont.setItalic(self.str_to_bool(font.find('italic').text))
+                myFont.setStrikeOut(self.str_to_bool(font.find('strikeOut').text))
+                myFont.setPointSize(int(font.find('pointSize').text))
+
+                pos = pageNbrLabel.find('labelPos')
+                currentPage.addTextLabel(
+                    label, float(pos.find('x').text), float(pos.find('y').text),
+                    myFont, Qt.AlignmentFlag.AlignLeft, "labelPageNbr"
+                )
+
+            # --- Restore Year Labels ---
+            yearLabelsItems = it.findall('labelYear')
+            for yearLabel in yearLabelsItems:
+                label = yearLabel.find('label').text
+                font = yearLabel.find('font')
+                myFont = QFont()
+                myFont.setBold(self.str_to_bool(font.find('bold').text))
+                myFont.setUnderline(self.str_to_bool(font.find('underline').text))
+                myFont.setItalic(self.str_to_bool(font.find('italic').text))
+                myFont.setStrikeOut(self.str_to_bool(font.find('strikeOut').text))
+                myFont.setPointSize(int(font.find('pointSize').text))
+
+                pos = yearLabel.find('labelPos')
+                currentPage.addTextLabel(
+                    label, float(pos.find('x').text), float(pos.find('y').text),
+                    myFont, Qt.AlignmentFlag.AlignCenter, "labelYear"
+                )
+
+            # --- Restore Page Borders ---
+            pageBorderItem = it.findall('borderGroup')
+            for border in pageBorderItem:
+                pos = border.find('borderPos')
+                x = pos.find('x').text
+                y = pos.find('y').text
+                width1 = border.find('width1').text
+                height1 = border.find('height1').text
+                border_style = border.attrib.get("style", PageBorder.STYLE_TRIPLE)
+
+                currentPage.addBorder(
+                    float(width1), float(height1),
+                    float(x), float(y), 0, 0, style=border_style
+                )
+
+            # --- Restore Stamp Groups ---
+            stampItems = it.findall('stampGroup')
+            for stamp in stampItems:
+                pos = stamp.find('stampPos')
+                x = pos.find('x').text
+                y = pos.find('y').text
+
+                sizeBox = stamp.find('stampBox')
+                width = sizeBox.find('width').text
+                height = sizeBox.find('height').text
+                try:
+                    stampBox_width = sizeBox.find('stampBox_width').text
+                    stampBox_height = sizeBox.find('stampBox_height').text
+                    use_new = 1
+                except:
+                    use_new = 0
+
+                stampDesc = stamp.find('stampDesc').text or ""
+                stampNbr = stamp.find('stampNbr').text
+                stampValue = stamp.find('stampValue').text
+                pixmapItem = stamp.find('pixmapItem').text
+
+                stamp_obj = Stamp()
+                pixmap = self.bytesToPixmap(pixmapItem)
+
+                if use_new == 1:
+                    stamp_obj.createStampPixOldVersion(
+                        currentPage, str(stampNbr), str(stampValue), str(stampDesc),
+                        float(stampBox_width), float(stampBox_height),
+                        float(x), float(y), pixmap
+                    )
+                else:
+                    stamp_obj.createStampPixOldVersion(
+                        currentPage, str(stampNbr), str(stampValue), str(stampDesc),
+                        float(width) * (25.4 / 96.0), float(height) * (25.4 / 96.0),
+                        float(x), float(y), pixmap
+                    )
+
+    def openNewAlbumFileVersion(self, myroot):
+        print("openNewAlbumFileVersion")
         for it in myroot.findall('page'):
             self.newPage(str(it.attrib.get("type")), False)
             currentPage = self.getCurrentPageScene()
@@ -1189,6 +1366,7 @@ class Window(QMainWindow):
         """Display custom scrollable 'About' dialog."""
         dlg = AboutDlg(self)
         dlg.exec()
+
     # application on line help
     def help(self):
         """Open user help PDF document in default system viewer."""
@@ -1275,7 +1453,6 @@ class Window(QMainWindow):
         ok = pixmap.loadFromData(ba, "PNG")
         assert ok
         return pixmap
-
 
     # get the current page content
     def getCurrentPageScene(self):
