@@ -26,22 +26,18 @@ class MoveCommand(QUndoCommand):
         for item, pos in zip(self.items, self.new_positions):
             item.setPos(pos)
 
-
 class AddItemCommand(QUndoCommand):
-    """Command to handle adding an item to the scene."""
-
-    def __init__(self, scene, item, text="Add Item"):
-        super().__init__(text)
+    def __init__(self, scene, item, text="Add Item", parent=None):
+        super().__init__(text, parent)
         self.scene = scene
-        self.item = item  # Conserve la référence Python
-
-    def undo(self):
-        # Utilise la méthode native super_add/removeItem sans déclencher d'événements
-        self.scene.removeItemNative(self.item)
+        self.item = item
 
     def redo(self):
+        # Always use addItemNative to prevent recursion loops
         self.scene.addItemNative(self.item)
 
+    def undo(self):
+        self.scene.removeItemNative(self.item)
 
 class DeleteItemsCommand(QUndoCommand):
     """Command to handle removing items from the scene."""

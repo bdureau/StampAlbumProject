@@ -6,15 +6,16 @@ tabbed page displays, actions, and file I/O operations (XML/gzip).
 
 Author: Boris du Reau
 """
+from PyQt6 import sip
 from ResizablePixmapItem import ResizablePixmapItem
 from PageBorder import PageBorder
-from AboutDlg import AboutDlg  # Import de la nouvelle boîte de dialogue
+from AboutDlg import AboutDlg
 from PyQt6.QtCore import QPointF, Qt, QPoint, QByteArray, QRectF
 from PyQt6 import QtCore, QtWidgets, QtGui
 from PyQt6.QtWidgets import (
     QMessageBox, QGraphicsPixmapItem,
     QGraphicsRectItem,
-    QGraphicsScene, QFileDialog,
+    QGraphicsScene, QFileDialog, QComboBox,
     QGraphicsView, QApplication, QLabel, QMainWindow, QMenuBar, QMenu,
     QToolBar,  QGraphicsTextItem, QGraphicsItemGroup, QDialog, QPushButton,
     QLineEdit, QFormLayout, QStatusBar, QTabWidget, QWidget, QVBoxLayout, QDialogButtonBox, QPlainTextEdit
@@ -47,6 +48,7 @@ _ = translate.gettext
 
 FILE_FORMAT_VERSION = "1.0"
 
+
 class Window(QMainWindow):
     """Main application window managing UI layout, actions, and user interactions."""
 
@@ -67,7 +69,6 @@ class Window(QMainWindow):
         self.lastStampObj['nbr'] = None
         self.lastStampObj['year'] = None
 
-
         # Central tab widget containing album pages
         self.tabs = QTabWidget()
         palette = self.tabs.palette()
@@ -75,9 +76,8 @@ class Window(QMainWindow):
         self.tabs.setPalette(palette)
         self.tabs.resize(300, 200)
 
-        # Create an initial default page
-        self.newPage(None, True)
-        self.setCentralWidget(self.tabs)
+        # Connect tab switching to update zoom display
+        self.tabs.currentChanged.connect(self.onTabChanged)
 
         self.currentAlbumName = ""
 
@@ -86,6 +86,12 @@ class Window(QMainWindow):
         self._createMenuBar()
         self._createToolBars()
         self._connectActions()
+
+        # Create an initial default page
+        print("before self.newPage(None, True)")
+        self.newPage(None, True)
+        print("after self.newPage(None, True)")
+        self.setCentralWidget(self.tabs)
 
     def _createMenuBar(self):
         """Construct the main menu bar."""
@@ -97,12 +103,10 @@ class Window(QMainWindow):
         fileMenu.addAction(self.newAction)
         fileMenu.addAction(self.openAction)
         fileMenu.addAction(self.saveAction)
-        # print
         fileMenu.addAction(self.printAction)
         fileMenu.addAction(self.printPreviewCurrentPageAction)
         fileMenu.addAction(self.printPreviewAllPagesAction)
         fileMenu.addAction(self.printPDFAction)
-        # exit
         fileMenu.addAction(self.exitAction)
 
         # Edit Menu
@@ -141,7 +145,7 @@ class Window(QMainWindow):
         # Objects Menu
         objectMenu = menuBar.addMenu(_("Objects"))
         objectMenu.addAction(self.newTextAction)
-        objectMenu.addAction(self.newRichTextAction)  # Add Rich Text to Objects menu
+        objectMenu.addAction(self.newRichTextAction)
         objectMenu.addAction(self.newImageAction)
         objectMenu.addAction(self.newBorderAction)
         objectMenu.addAction(self.newCopyRightAction)
@@ -160,37 +164,89 @@ class Window(QMainWindow):
         helpMenu.addAction(self.helpContentAction)
         helpMenu.addAction(self.aboutAction)
 
+        # Zoom selector combo box in menu bar
+        self.zoomCombo = QComboBox(self)
+        self.zoomCombo.addItems(["25%", "50%", "75%", "100%", "125%", "150%", "200%"])
+        self.zoomCombo.setCurrentText("100%")
+        self.zoomCombo.currentTextChanged.connect(self.onZoomComboChanged)
+
+        # Place zoom combo box at top right corner of menu bar
+        self.menuBar().setCornerWidget(self.zoomCombo, Qt.Corner.TopRightCorner)
+
+        # Status bar zoom display widget
+        self.statusZoomLabel = QLabel("Zoom: 100%", self.statusBar())
+        self.statusBar().addPermanentWidget(self.statusZoomLabel)
+
+    def onZoomComboChanged(self, text: str):
+        """Handle zoom dropdown selection change and apply to active viewport."""
+        if not text:
+            return
+        view = self.getCurrentPage()
+        if view and not sip.isdeleted(view):
+            val = int(text.replace("%", ""))
+            factor = val / 100.0
+            if abs(view.getZoomFactor() - factor) > 0.001:
+                if hasattr(self, 'zoomCombo') and not sip.isdeleted(self.zoomCombo):
+                    self.zoomCombo.blockSignals(True)
+                view.setZoomFactor(factor)
+                if hasattr(self, 'zoomCombo') and not sip.isdeleted(self.zoomCombo):
+                    self.zoomCombo.blockSignals(False)
+
+    def updateZoomStatus(self, percent_val: int):
+        """Update status bar label and align zoom combo box text safely."""
+        # Vérification si le QLabel C++ est toujours vivant
+        if hasattr(self, 'statusZoomLabel') and self.statusZoomLabel is not None:
+            if not sip.isdeleted(self.statusZoomLabel):
+                self.statusZoomLabel.setText(f"Zoom: {percent_val}%")
+
+        # Vérification si le QComboBox C++ est toujours vivant
+        if hasattr(self, 'zoomCombo') and self.zoomCombo is not None:
+            if not sip.isdeleted(self.zoomCombo):
+                self.zoomCombo.blockSignals(True)
+                self.zoomCombo.setCurrentText(f"{percent_val}%")
+                self.zoomCombo.blockSignals(False)
+
+    def onTabChanged(self, index: int):
+        """Synchronize status bar and combo box display when switching tabs."""
+        # QTimer.singleShot diffère la mise à jour pour laisser Qt stabiliser l'IHM
+        print("QtCore.QTimer.singleShot(10, self._syncZoomUI)")
+        QtCore.QTimer.singleShot(10, self._syncZoomUI)
+
+    def _syncZoomUI(self):
+        """Helper to synchronize zoom UI after layout is stabilized."""
+        view = self.getCurrentPage()
+        if view:
+            print("current_pct = int(view.getZoomFactor() * 100)")
+            current_pct = int(view.getZoomFactor() * 100)
+            print("self.updateZoomStatus(current_pct)")
+            self.updateZoomStatus(current_pct)
+
     def _createActions(self):
         """Define QAction instances for menus and toolbars."""
-        # File Actions
         self.newAction = QAction(self)
         self.newAction.setText(_("&New"))
         iconNew = QIcon()
         iconNew.addPixmap(QPixmap("images/new.png"), QIcon.Mode.Normal, QIcon.State.Off)
         self.newAction.setIcon(iconNew)
 
-        # Open
         self.openAction = QAction(_("&Open..."), self)
         iconOpen = QIcon()
         iconOpen.addPixmap(QPixmap("images/open.png"), QIcon.Mode.Normal, QIcon.State.Off)
         self.openAction.setIcon(iconOpen)
         self.openAction.setObjectName("actionOpen")
 
-        # Save
         self.saveAction = QAction(_("&Save"), self)
         iconSave = QIcon()
         iconSave.addPixmap(QPixmap("images/save.png"), QIcon.Mode.Normal, QIcon.State.Off)
         self.saveAction.setIcon(iconSave)
         self.saveAction.setObjectName("actionSave")
 
-        # print actions
         self.printAction = QAction(_("&Print all pages..."), self)
         iconPrint = QIcon()
         iconPrint.addPixmap(QPixmap("images/print.png"), QIcon.Mode.Normal, QIcon.State.Off)
         self.printAction.setIcon(iconPrint)
         self.printAction.setObjectName("printAction")
 
-        # print preview
         self.printPreviewAllPagesAction = QAction(_("&Print preview all pages..."), self)
         iconPrintPreviewAllPages = QIcon()
         iconPrintPreviewAllPages.addPixmap(QPixmap("images/printprev.png"), QIcon.Mode.Normal, QIcon.State.Off)
@@ -203,21 +259,18 @@ class Window(QMainWindow):
         self.printPreviewCurrentPageAction.setIcon(iconPrintPreviewCurrentPage)
         self.printPreviewCurrentPageAction.setObjectName("printPreviewCurrentPageAction")
 
-        # print PDF
         self.printPDFAction = QAction(_("&Print current to PDF..."), self)
         iconPrintPDF = QIcon()
         iconPrintPDF.addPixmap(QPixmap("images/pdf.png"), QIcon.Mode.Normal, QIcon.State.Off)
         self.printPDFAction.setIcon(iconPrintPDF)
         self.printPDFAction.setObjectName("printPDFAction")
 
-        # exit
         self.exitAction = QAction(_("&Exit"), self)
         iconExit = QIcon()
         iconExit.addPixmap(QPixmap("images/exit.png"), QIcon.Mode.Normal, QIcon.State.Off)
         self.exitAction.setIcon(iconExit)
         self.exitAction.setObjectName("exitAction")
 
-        # Edit Actions
         self.copyAction = QAction(_("&Copy"), self)
         iconCopy = QIcon()
         iconCopy.addPixmap(QPixmap("images/copy.png"), QIcon.Mode.Normal, QIcon.State.Off)
@@ -228,21 +281,17 @@ class Window(QMainWindow):
         iconPaste.addPixmap(QPixmap("images/paste.png"), QIcon.Mode.Normal, QIcon.State.Off)
         self.pasteAction.setIcon(iconPaste)
 
-
         self.cutAction = QAction(_("C&ut"), self)
         iconCut = QIcon()
         iconCut.addPixmap(QPixmap("images/cut.png"), QIcon.Mode.Normal, QIcon.State.Off)
         self.cutAction.setIcon(iconCut)
 
-        # Stamp Actions
         self.newStampAction = QAction(_("New Stamp ..."), self)
         self.editStampAction = QAction(_("Edit Current Stamp ..."), self)
         stampIcon = QIcon()
         stampIcon.addPixmap(QPixmap("images/stamp.png"), QIcon.Mode.Normal, QIcon.State.Off)
         self.newStampAction.setIcon(stampIcon)
 
-
-        # Page Actions
         self.newPageAction = QAction(_("New Page ..."), self)
         iconNewPage = QIcon()
         iconNewPage.addPixmap(QPixmap("images/page.png"), QIcon.Mode.Normal, QIcon.State.Off)
@@ -254,7 +303,6 @@ class Window(QMainWindow):
         self.deletePageAction.setIcon(iconDeletePage)
 
         self.deletePageObjectsAction = QAction(_("Delete Page Objects..."), self)
-
         iconDeletePageObjects = QIcon()
         iconDeletePageObjects.addPixmap(QPixmap("images/clear_page.png"), QIcon.Mode.Normal, QIcon.State.Off)
         self.deletePageObjectsAction.setIcon(iconDeletePageObjects)
@@ -269,14 +317,11 @@ class Window(QMainWindow):
         iconDelete.addPixmap(QPixmap("images/trash.png"), QIcon.Mode.Normal, QIcon.State.Off)
         self.deleteAlbumAction.setIcon(iconDelete)
 
-
-        # Object Actions
         self.newTextAction = QAction(_("New text ..."), self)
         iconNewText = QIcon()
         iconNewText.addPixmap(QPixmap("images/text.png"), QIcon.Mode.Normal, QIcon.State.Off)
         self.newTextAction.setIcon(iconNewText)
 
-        # Action for Rich Text
         self.newRichTextAction = QAction(_("New Rich Text ..."), self)
         iconRichText = QIcon()
         iconRichText.addPixmap(QPixmap("images/text.png"), QIcon.Mode.Normal, QIcon.State.Off)
@@ -319,7 +364,6 @@ class Window(QMainWindow):
 
         self.newYearToAllPagesAction = QAction(_("Add year to all pages"), self)
 
-        # Alignment Actions
         self.alignLeftAction = QAction(_("Align Left"), self)
         iconAlignLeft = QIcon()
         iconAlignLeft.addPixmap(QPixmap("images/align_left.png"), QIcon.Mode.Normal, QIcon.State.Off)
@@ -360,7 +404,6 @@ class Window(QMainWindow):
         iconCenterVertically.addPixmap(QPixmap("images/center_vertical.png"), QIcon.Mode.Normal, QIcon.State.Off)
         self.centerVerticallyAction.setIcon(iconCenterVertically)
 
-        # Config & Help Actions
         self.setupAppAction = QAction(_("Setup application"), self)
         iconSetup = QIcon()
         iconSetup.addPixmap(QPixmap("images/config.png"), QIcon.Mode.Normal, QIcon.State.Off)
@@ -376,13 +419,11 @@ class Window(QMainWindow):
         iconAbout.addPixmap(QPixmap("images/about.png"), QIcon.Mode.Normal, QIcon.State.Off)
         self.aboutAction.setIcon(iconAbout)
 
-        # Action Annuler (Ctrl+Z)
         self.undoAction = QAction(_("&Undo"), self)
         self.undoAction.setShortcut(QKeySequence.StandardKey.Undo)
-        self.undoAction.setIcon(QIcon("images/undo.png"))  # ou via qtawesome
+        self.undoAction.setIcon(QIcon("images/undo.png"))
         self.undoAction.triggered.connect(self.undo)
 
-        # Action Rétablir (Ctrl+Y / Shift+Ctrl+Z)
         self.redoAction = QAction(_("&Redo"), self)
         self.redoAction.setShortcut(QKeySequence.StandardKey.Redo)
         self.redoAction.setIcon(QIcon("images/redo.png"))
@@ -390,7 +431,6 @@ class Window(QMainWindow):
 
     def _createToolBars(self):
         """Construct application toolbars."""
-        # File Toolbar
         fileToolBar = self.addToolBar("File")
         fileToolBar.addAction(self.newAction)
         fileToolBar.addAction(self.openAction)
@@ -400,14 +440,12 @@ class Window(QMainWindow):
         fileToolBar.addAction(self.printPreviewCurrentPageAction)
         fileToolBar.addAction(self.exitAction)
 
-        # Edit Toolbar
         editToolBar = QToolBar("Edit", self)
         editToolBar.addAction(self.copyAction)
         editToolBar.addAction(self.pasteAction)
         editToolBar.addAction(self.cutAction)
         self.addToolBar(editToolBar)
 
-        # Page Toolbar
         pageToolBar = QToolBar("Page", self)
         pageToolBar.addAction(self.newPageAction)
         pageToolBar.addAction(self.deletePageAction)
@@ -416,7 +454,6 @@ class Window(QMainWindow):
         pageToolBar.addAction(self.deleteAlbumAction)
         self.addToolBar(pageToolBar)
 
-        # Alignment Toolbar
         alignToolBar = QToolBar("Align", self)
         alignToolBar.addAction(self.alignLeftAction)
         alignToolBar.addAction(self.alignRightAction)
@@ -429,32 +466,27 @@ class Window(QMainWindow):
         self.addToolBar(alignToolBar)
         self.addToolBarBreak()
 
-        # Stamp Toolbar
         stampToolBar = QToolBar("Stamp", self)
         stampToolBar.addAction(self.newStampAction)
         self.addToolBar(stampToolBar)
 
-        # Objects Toolbar
         objectToolBar = QToolBar("Objects", self)
         objectToolBar.addAction(self.newTextAction)
-        objectToolBar.addAction(self.newRichTextAction)  # Add Rich Text button to toolbar
+        objectToolBar.addAction(self.newRichTextAction)
         self.addToolBar(objectToolBar)
 
-        # Help Toolbar
         helpToolBar = QToolBar("Help", self)
         helpToolBar.addAction(self.helpContentAction)
         helpToolBar.addAction(self.aboutAction)
         helpToolBar.addAction(self.setupAppAction)
         self.addToolBar(helpToolBar)
 
-        # Status Bar
         statusBar = QStatusBar(self)
         statusBar.setObjectName("statusBar")
         self.setStatusBar(statusBar)
 
     def _connectActions(self):
         """Connect UI actions to their respective handler functions."""
-        # File signals
         self.newAction.triggered.connect(self.newFile)
         self.openAction.triggered.connect(self.openAlbumFile)
         self.saveAction.triggered.connect(self.saveAlbumToFile)
@@ -464,12 +496,10 @@ class Window(QMainWindow):
         self.printPreviewCurrentPageAction.triggered.connect(self.printPreviewCurrentPage)
         self.exitAction.triggered.connect(self.exitApp)
 
-        # Edit signals
         self.copyAction.triggered.connect(self.copy)
         self.cutAction.triggered.connect(self.cut)
         self.pasteAction.triggered.connect(self.paste)
 
-        # Alignment signals
         self.alignBottomAction.triggered.connect(self.alignBottom)
         self.alignTopAction.triggered.connect(self.alignTop)
         self.alignLeftAction.triggered.connect(self.alignLeft)
@@ -479,23 +509,19 @@ class Window(QMainWindow):
         self.centerVerticallyAction.triggered.connect(self.centerVertically)
         self.centerHorizontallyAction.triggered.connect(self.centerHorizontally)
 
-        # Config signal
         self.setupAppAction.triggered.connect(self.configApp)
 
-        # Stamp signals
         self.newStampAction.triggered.connect(self.createNewStamp)
         self.editStampAction.triggered.connect(self.editStamp)
 
-        # Page signals
         self.newPageAction.triggered.connect(self.newPage)
         self.deletePageAction.triggered.connect(self.deleteCurrentPage)
         self.deletePageObjectsAction.triggered.connect(self.clearPageObjects)
         self.drawGridAction.triggered.connect(self.gridOnOff)
         self.deleteAlbumAction.triggered.connect(self.deleteAlbum)
 
-        # Object signals
         self.newTextAction.triggered.connect(self.createText)
-        self.newRichTextAction.triggered.connect(self.createRichText)  # Connect to handler
+        self.newRichTextAction.triggered.connect(self.createRichText)
         self.newCopyRightAction.triggered.connect(self.newCopyRight)
         self.newCopyRightAllPagesAction.triggered.connect(self.newCopyRightAllPages)
         self.newImageAction.triggered.connect(self.newImage)
@@ -505,13 +531,11 @@ class Window(QMainWindow):
         self.newYearToPageAction.triggered.connect(self.addYearToPage)
         self.newYearToAllPagesAction.triggered.connect(self.addYearToAllPages)
 
-        # Help signals
         self.aboutAction.triggered.connect(self.about)
         self.helpContentAction.triggered.connect(self.help)
 
     def closeEvent(self, event):
         """Prompt user confirmation before closing the application window."""
-        print("User has clicked the red x on the main window")
         qm = QMessageBox()
         ret = qm.question(self, _('Exit'), _("Are you sure you want to exit the application?"),
                           qm.StandardButton.Yes | qm.StandardButton.No)
@@ -535,7 +559,6 @@ class Window(QMainWindow):
 
     def exitApp(self):
         """Close the main window."""
-        print("exit app")
         self.close()
 
     def newPage(self, _pageType=None, border=None):
@@ -547,17 +570,13 @@ class Window(QMainWindow):
             pDlg = PageDlg()
             res = pDlg.exec()
 
-            #accepted
             if res == 1:
                 if pDlg.pageType == "portrait":
-                    print("portrait")
                     self.pageType = "portrait"
                     border = True
                 else:
-                    print("landscape")
                     self.pageType = "landscape"
                     border = True
-            #rejected
             if res == 0:
                 return
 
@@ -565,37 +584,47 @@ class Window(QMainWindow):
         view = GraphicsView(page)
         view.scrollContentsBy(0, 0)
 
+        # Attachement direct du signal de zoom
+        view.zoomChanged.connect(self.updateZoomStatus)
+
         tab1 = QWidget()
-        tab1.layout = QVBoxLayout(self)
-        tab1.layout.addWidget(view)
-        tab1.setLayout(tab1.layout)
-        tab1.setAutoFillBackground(True)
+        tab1.view = view  # Clé : référence directe vers la vue
+
+        layout = QVBoxLayout(tab1)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(view)
+        tab1.setLayout(layout)
 
         palette = tab1.palette()
         palette.setColor(tab1.backgroundRole(), Qt.GlobalColor.lightGray)
         tab1.setPalette(palette)
 
         self.pageCount = self.pageCount + 1
-        currentPage = self.tabs.insertTab(self.tabs.currentIndex()+1, tab1, "Page " + str(self.tabs.count().real))
 
-        # Update tab labels in sequence
-        for x in range(0, self.tabs.count().real):
-            self.tabs.setCurrentIndex(x)
-            self.tabs.setTabText(self.tabs.currentIndex(), "Page " + str(x+1))
-
+        self.tabs.blockSignals(True)
+        tab_title = f"Page {self.tabs.count() + 1}"
+        currentPage = self.tabs.addTab(tab1, tab_title)
         self.tabs.setCurrentIndex(currentPage)
+        self.tabs.blockSignals(False)
+
+        # Initialise le zoom à 100% de façon isolée
+        self.zoomCombo.blockSignals(True)
+        view.setZoomFactor(1.0)
+        self.zoomCombo.setCurrentText("100%")
+        self.zoomCombo.blockSignals(False)
+
         return page
 
-    # clear objects on current page
     def clearPageObjects(self):
         """Clear all graphic items on the current active page."""
-        print("clear page")
         qm = QMessageBox()
         ret = qm.question(self, _('Delete all objects'), _("Are you sure you want clear the current page?"),
                           qm.StandardButton.Yes | qm.StandardButton.No)
 
         if ret == qm.StandardButton.Yes:
-            self.getCurrentPageScene().clearPage()
+            scene = self.getCurrentPageScene()
+            if scene:
+                scene.clearPage()
 
     def deleteCurrentPage(self):
         """Remove the active page tab from the album."""
@@ -605,7 +634,6 @@ class Window(QMainWindow):
 
         if ret == qm.StandardButton.No:
             return
-        # only allow delete if number of page is greater than one
         if self.tabs.count().real > 0:
             self.tabs.removeTab(self.tabs.currentIndex())
 
@@ -615,17 +643,13 @@ class Window(QMainWindow):
 
     def deleteAllPages(self):
         """Remove all pages from the tab widget."""
-        print("Delete all pages")
         for x in range(self.tabs.count()):
             self.tabs.removeTab(self.tabs.currentIndex())
         self.pageCount = 0
-
         self.currentAlbumName = ""
 
-    # delete entire album
     def deleteAlbum(self):
         """Delete the entire album and reset state."""
-        print("delete current album")
         qm = QMessageBox()
         ret = qm.question(self, _('Delete album'), _("Are you sure you want to delete the entire album?"),
                           qm.StandardButton.Yes | qm.StandardButton.No)
@@ -638,36 +662,33 @@ class Window(QMainWindow):
     def newBorder(self):
         """Add a new page border using the default style configured in settings."""
         scene = self.getCurrentPageScene()
-        if scene.pageType == "portrait":
-            scene.addBorder(
-                177 / (25.4 / 96.0),
-                272 / (25.4 / 96.0),
-                19 / (25.4 / 96.0),
-                0, 0, 0
-            )
-        else:
-            scene.addBorder(
-                272 / (25.4 / 96.0),
-                177 / (25.4 / 96.0),
-                ((297 - 272) / 2) / (25.4 / 96.0),
-                0, 19 / (25.4 / 96.0), 0
-            )
+        if scene:
+            if scene.pageType == "portrait":
+                scene.addBorder(
+                    177 / (25.4 / 96.0),
+                    272 / (25.4 / 96.0),
+                    19 / (25.4 / 96.0),
+                    0, 0, 0
+                )
+            else:
+                scene.addBorder(
+                    272 / (25.4 / 96.0),
+                    177 / (25.4 / 96.0),
+                    ((297 - 272) / 2) / (25.4 / 96.0),
+                    0, 19 / (25.4 / 96.0), 0
+                )
 
-    # file menu functions
     def newFile(self):
         """Clear existing pages and start a fresh album file."""
-        print("creating new File")
-        # Ask user about confirmation on deleting all pages
         qm = QMessageBox()
         ret = qm.question(self, _('Delete all pages'), _("Are you sure you want to delete all the pages?"),
                           qm.StandardButton.Yes | qm.StandardButton.No)
 
         if ret == qm.StandardButton.No:
             return
-        # Delete all pages
         self.deleteAllPages()
-        # Create one empty page
         self.newPage(None, True)
+
 
     def createRichText(self):
         """Create a new rich text block on the current active page."""
@@ -677,8 +698,9 @@ class Window(QMainWindow):
 
     def newPageNbr(self):
         """Add a page number to the current page."""
-        #print("newPageNbr")
-        self.getCurrentPageScene().newPageNbr()
+        scene = self.getCurrentPageScene()
+        if scene:
+            scene.newPageNbr()
 
     def newPageNbrAllPages(self):
         """Prompt user and apply page numbers across all album pages."""
@@ -689,7 +711,6 @@ class Window(QMainWindow):
 
         dlg = TextDlg(textLabel)
         res = dlg.exec()
-        #accepted
         if res == 1:
             text = dlg.eTXT.toPlainText()
             font = dlg.eTXT.font()
@@ -697,15 +718,15 @@ class Window(QMainWindow):
 
             for x in range(0, self.tabs.count().real):
                 self.tabs.setCurrentIndex(x)
-                self.getCurrentPageScene().addPageNbr(text + " " + str(self.tabs.currentIndex() + 1), font, align)
-
-        #rejected
-        if res == 0:
-            print("Clicked cancel")
+                scene = self.getCurrentPageScene()
+                if scene:
+                    scene.addPageNbr(text + " " + str(self.tabs.currentIndex() + 1), font, align)
 
     def addYearToPage(self):
         """Add a year header to the active page."""
-        self.getCurrentPageScene().addPageYear()
+        scene = self.getCurrentPageScene()
+        if scene:
+            scene.addPageYear()
 
     def addYearToAllPages(self):
         """Prompt user and apply a year header across all album pages."""
@@ -717,7 +738,6 @@ class Window(QMainWindow):
 
         dlg = TextDlg(textLabel)
         res = dlg.exec()
-        #accepted
         if res == 1:
             text = dlg.eTXT.toPlainText()
             font = dlg.eTXT.font()
@@ -725,11 +745,9 @@ class Window(QMainWindow):
 
             for x in range(0, self.tabs.count().real):
                 self.tabs.setCurrentIndex(x)
-                self.getCurrentPageScene().addYear(text, font, align)
-
-        #rejected
-        if res == 0:
-            print("Clicked cancel")
+                scene = self.getCurrentPageScene()
+                if scene:
+                    scene.addYear(text, font, align)
 
     def openAlbumFile(self):
         """Open and deserialize a compressed (.sta) album XML file."""
@@ -763,21 +781,15 @@ class Window(QMainWindow):
         myroot = mytree.getroot()
 
         file_version = myroot.attrib.get("version", "0.9")
-        print(f"Loading album file format version: {file_version}")
-
-        # if file_version == "0.9":
-        #    self.openOldAlbumFileVersion(myroot)
-        #else:
         self.openNewAlbumFileVersion(myroot)
 
-
     def openOldAlbumFileVersion(self, myroot):
-        print("openOldAlbumFileVersion")
         for it in myroot.findall('page'):
             self.newPage(str(it.attrib.get("type")), False)
             currentPage = self.getCurrentPageScene()
+            if not currentPage:
+                continue
 
-            # --- Restore Standard Text Labels ---
             textLabelsItems = it.findall('textLabel')
             for textLabel in textLabelsItems:
                 label = textLabel.find('label').text
@@ -801,7 +813,6 @@ class Window(QMainWindow):
 
                 currentPage.addTextLabel(label, float(x), float(y), myFont)
 
-            # --- Restore Rich Text Labels ---
             richTextLabelsItems = it.findall('richTextLabel')
             for richLabel in richTextLabelsItems:
                 html_element = richLabel.find('html_label')
@@ -813,7 +824,6 @@ class Window(QMainWindow):
 
                 currentPage.addRichText(html_content, float(x), float(y))
 
-            # --- Restore Standalone Images ---
             imageItems = it.findall('imageItem')
             for img_node in imageItems:
                 pixmap_data = img_node.find('pixmapData')
@@ -826,14 +836,12 @@ class Window(QMainWindow):
                         y = float(pos.find('y').text) if pos is not None and pos.find('y') is not None else 50.0
                         scale_val = float(img_node.find('scale').text) if img_node.find('scale') is not None else 1.0
 
-                        # Re-create ResizablePixmapItem with stored position and scale
                         pixmap_item = ResizablePixmapItem(pixmap)
                         pixmap_item.setPos(x, y)
                         pixmap_item.setScale(scale_val)
 
                         currentPage.addItem(pixmap_item)
 
-            # --- Restore Copyright Labels ---
             copyrightLabelsItems = it.findall('labelCopyRight')
             for copyrightLabel in copyrightLabelsItems:
                 label = copyrightLabel.find('label').text
@@ -851,7 +859,6 @@ class Window(QMainWindow):
                     myFont, Qt.AlignmentFlag.AlignLeft, "labelCopyRight"
                 )
 
-            # --- Restore Page Number Labels ---
             pageNbrLabelsItems = it.findall('labelPageNbr')
             for pageNbrLabel in pageNbrLabelsItems:
                 label = pageNbrLabel.find('label').text
@@ -869,7 +876,6 @@ class Window(QMainWindow):
                     myFont, Qt.AlignmentFlag.AlignLeft, "labelPageNbr"
                 )
 
-            # --- Restore Year Labels ---
             yearLabelsItems = it.findall('labelYear')
             for yearLabel in yearLabelsItems:
                 label = yearLabel.find('label').text
@@ -887,7 +893,6 @@ class Window(QMainWindow):
                     myFont, Qt.AlignmentFlag.AlignCenter, "labelYear"
                 )
 
-            # --- Restore Page Borders ---
             pageBorderItem = it.findall('borderGroup')
             for border in pageBorderItem:
                 pos = border.find('borderPos')
@@ -902,7 +907,6 @@ class Window(QMainWindow):
                     float(x), float(y), 0, 0, style=border_style
                 )
 
-            # --- Restore Stamp Groups ---
             stampItems = it.findall('stampGroup')
             for stamp in stampItems:
                 pos = stamp.find('stampPos')
@@ -941,12 +945,12 @@ class Window(QMainWindow):
                     )
 
     def openNewAlbumFileVersion(self, myroot):
-        print("openNewAlbumFileVersion")
         for it in myroot.findall('page'):
             self.newPage(str(it.attrib.get("type")), False)
             currentPage = self.getCurrentPageScene()
+            if not currentPage:
+                continue
 
-            # --- Restore Standard Text Labels ---
             textLabelsItems = it.findall('textLabel')
             for textLabel in textLabelsItems:
                 label = textLabel.find('label').text
@@ -970,7 +974,6 @@ class Window(QMainWindow):
 
                 currentPage.addTextLabel(label, float(x), float(y), myFont)
 
-            # --- Restore Rich Text Labels ---
             richTextLabelsItems = it.findall('richTextLabel')
             for richLabel in richTextLabelsItems:
                 html_element = richLabel.find('html_label')
@@ -982,7 +985,6 @@ class Window(QMainWindow):
 
                 currentPage.addRichText(html_content, float(x), float(y))
 
-            # --- Restore Standalone Images ---
             imageItems = it.findall('imageItem')
             for img_node in imageItems:
                 pixmap_data = img_node.find('pixmapData')
@@ -995,14 +997,12 @@ class Window(QMainWindow):
                         y = float(pos.find('y').text) if pos is not None and pos.find('y') is not None else 50.0
                         scale_val = float(img_node.find('scale').text) if img_node.find('scale') is not None else 1.0
 
-                        # Re-create ResizablePixmapItem with stored position and scale
                         pixmap_item = ResizablePixmapItem(pixmap)
                         pixmap_item.setPos(x, y)
                         pixmap_item.setScale(scale_val)
 
                         currentPage.addItem(pixmap_item)
 
-            # --- Restore Copyright Labels ---
             copyrightLabelsItems = it.findall('labelCopyRight')
             for copyrightLabel in copyrightLabelsItems:
                 label = copyrightLabel.find('label').text
@@ -1020,7 +1020,6 @@ class Window(QMainWindow):
                     myFont, Qt.AlignmentFlag.AlignLeft, "labelCopyRight"
                 )
 
-            # --- Restore Page Number Labels ---
             pageNbrLabelsItems = it.findall('labelPageNbr')
             for pageNbrLabel in pageNbrLabelsItems:
                 label = pageNbrLabel.find('label').text
@@ -1038,7 +1037,6 @@ class Window(QMainWindow):
                     myFont, Qt.AlignmentFlag.AlignLeft, "labelPageNbr"
                 )
 
-            # --- Restore Year Labels ---
             yearLabelsItems = it.findall('labelYear')
             for yearLabel in yearLabelsItems:
                 label = yearLabel.find('label').text
@@ -1056,7 +1054,6 @@ class Window(QMainWindow):
                     myFont, Qt.AlignmentFlag.AlignCenter, "labelYear"
                 )
 
-            # --- Restore Page Borders ---
             pageBorderItem = it.findall('borderGroup')
             for border in pageBorderItem:
                 pos = border.find('borderPos')
@@ -1071,7 +1068,6 @@ class Window(QMainWindow):
                     float(x), float(y), 0, 0, style=border_style
                 )
 
-            # --- Restore Stamp Groups ---
             stampItems = it.findall('stampGroup')
             for stamp in stampItems:
                 pos = stamp.find('stampPos')
@@ -1109,7 +1105,6 @@ class Window(QMainWindow):
                         float(x), float(y), pixmap
                     )
 
-    # save an album to a file
     def saveAlbumToFile(self):
         """Serialize album structure into a gzip-compressed XML file (.sta)."""
         options = QFileDialog.Option.DontUseNativeDialog
@@ -1125,20 +1120,21 @@ class Window(QMainWindow):
             return
 
         self.currentAlbumName = fileName
-        # Set file format version on root element
         root = ET.Element("album", version=FILE_FORMAT_VERSION)
 
         for x in range(self.tabs.count()):
             self.tabs.setCurrentIndex(x)
 
             currentScene = self.getCurrentPageScene()
+            if not currentScene:
+                continue
+
             page = ET.SubElement(
                 root, "page", name="%s" % x, type="%s" % currentScene.pageType
             )
             items = currentScene.items()
 
             for item in items:
-                # 1. Text Items (QGraphicsTextItem)
                 if item.type().real == 8:
                     par = item.parentItem()
                     if par is None:
@@ -1146,10 +1142,8 @@ class Window(QMainWindow):
                         textLbl = ET.SubElement(page, item_type)
 
                         if item_type == "richTextLabel":
-                            # Save complete HTML structure for rich text items
                             ET.SubElement(textLbl, "html_label").text = item.toHtml()
                         else:
-                            # Standard plaintext label serialization
                             ET.SubElement(textLbl, "label").text = item.toPlainText()
 
                             font = ET.SubElement(textLbl, "font")
@@ -1163,23 +1157,19 @@ class Window(QMainWindow):
                         ET.SubElement(pos, "x").text = str(item.x())
                         ET.SubElement(pos, "y").text = str(item.y())
 
-                # 2. Standalone Image Items (QGraphicsPixmapItem / ResizablePixmapItem)
                 elif item.type().real == 7:
                     par = item.parentItem()
                     if par is None:
                         img_node = ET.SubElement(page, "imageItem")
 
-                        # Serialize pixmap to Base64 PNG string
                         pix = item.pixmap()
                         ET.SubElement(img_node, "pixmapData").text = str(self.pixmapToBytes(pix))
 
-                        # Save position and scale factor
                         pos = ET.SubElement(img_node, "imagePos")
                         ET.SubElement(pos, "x").text = str(item.x())
                         ET.SubElement(pos, "y").text = str(item.y())
                         ET.SubElement(img_node, "scale").text = str(item.scale())
 
-                # 3. Page Border Group
                 elif item.type().real == 10 and item.data(0) == "borderGroup":
                     border = ET.SubElement(page, item.data(0))
                     border_style = item.data(4) or PageBorder.STYLE_TRIPLE
@@ -1196,7 +1186,6 @@ class Window(QMainWindow):
                             ET.SubElement(border, "width" + str(i)).text = str(borderItem.data(1))
                             ET.SubElement(border, "height" + str(i)).text = str(borderItem.data(2))
 
-                # 4. Stamp Group Item
                 elif item.type().real == 10 and item.data(0) == "stampGroup":
                     stamp = ET.SubElement(page, item.data(0))
                     stampItems = item.childItems()
@@ -1220,22 +1209,16 @@ class Window(QMainWindow):
         tree = ET.ElementTree(root)
         tree.write(fileName)
 
-        # Compress XML to Gzip file (.sta)
         f = gzip.open(fileName + '.sta', 'wb')
         ET.ElementTree(root).write(f)
         f.close()
 
-        # Remove temporary uncompressed XML file
         if os.path.isfile(fileName):
             os.remove(fileName)
 
-    # print all pages
     def printAllPagesPDF(self):
         """Export all album pages into a single PDF document."""
-        print("print all pages")
         printer = QPrinter(QPrinter.PrinterMode.HighResolution)
-        #printer.setPageSize(QtGui.QPagedPaintDevice.A4)
-
         printer.setOutputFormat(QPrinter.OutputFormat.PdfFormat)
 
         printer.setOutputFileName(self.currentAlbumName + ".pdf")
@@ -1246,17 +1229,17 @@ class Window(QMainWindow):
         for x in range(self.tabs.count()):
             self.tabs.setCurrentIndex(x)
             currentScene = self.getCurrentPageScene()
+            if not currentScene:
+                continue
 
-            # first unselect all objects
             for item in currentScene.items():
                 item.setSelected(False)
 
             if currentScene.pageType == "portrait":
                 printer.setPageOrientation(QPageLayout.Orientation.Portrait)
-                print("Portrait")
             else:
                 printer.setPageOrientation(QPageLayout.Orientation.Landscape)
-                print("Landscape")
+
             if x > 0:
                 printer.newPage()
 
@@ -1267,14 +1250,11 @@ class Window(QMainWindow):
 
         p.end()
 
-    # print all pages
     def printPreviewAllPages(self):
         """Open print preview dialog for all pages."""
-        print("printPreviewAllPages")
         previewDialog = QPrintPreviewDialog()
         previewDialog.printer().setResolution(QPrinter.PrinterMode.HighResolution.value)
         previewDialog.printer().setOutputFormat(QPrinter.OutputFormat.PdfFormat)
-        #previewDialog.printer().setPageSize(QtGui.QPagedPaintDevice.A4)
         previewDialog.paintRequested.connect(self.createPreview)
         previewDialog.exec()
 
@@ -1288,6 +1268,8 @@ class Window(QMainWindow):
             self.tabs.setCurrentIndex(x)
 
             currentScene = self.getCurrentPageScene()
+            if not currentScene:
+                continue
 
             if currentScene.pageType == "portrait":
                 printer.setPageOrientation(QPageLayout.Orientation.Portrait)
@@ -1297,7 +1279,6 @@ class Window(QMainWindow):
             if x > 0:
                 printer.newPage()
 
-            # first unselect all objects
             for item in currentScene.items():
                 item.setSelected(False)
 
@@ -1308,114 +1289,131 @@ class Window(QMainWindow):
 
         p.end()
 
-    # print current page and save it to PDF
     def printPagePDF(self):
         """Export active page to a PDF file."""
-        print("print to PDF")
         options = QFileDialog.Option.DontUseNativeDialog
         fileName2, _ = QFileDialog.getSaveFileName(self, "Save current page", "album.pdf",
                                                    "(*.pdf)", options=options)
-        if fileName2:
-            print(fileName2)
-        else:
+        if not fileName2:
             return
-        self.getCurrentPageScene().printPagePDF(fileName2)
+        scene = self.getCurrentPageScene()
+        if scene:
+            scene.printPagePDF(fileName2)
 
-    # print preview the current page
     def printPreviewCurrentPage(self):
         """Display print preview for the active page."""
-        print("Print preview page")
-        self.getCurrentPageScene().printPreview()
+        scene = self.getCurrentPageScene()
+        if scene:
+            scene.printPreview()
 
-    # need to be written !!!
     def importFileFromExcel(self):
-        print("import file from Excel")
+        pass
 
-    # edit menu functions
-    # copy selected object(s)
     def copy(self):
         """Copy selected scene items to clipboard."""
-        self.getCurrentPage().copy_items()
+        view = self.getCurrentPage()
+        if view:
+            view.copy_items()
 
     def cut(self):
         """Cut selected scene items to clipboard."""
-        self.getCurrentPage().copy_items()
-        self.getCurrentPageScene().removeItems()
+        view = self.getCurrentPage()
+        scene = self.getCurrentPageScene()
+        if view:
+            view.copy_items()
+        if scene:
+            scene.removeItems()
 
-    # paste objects that have been copied or cut to the current page
     def paste(self):
         """Paste scene items from clipboard."""
-        self.getCurrentPage().paste_items()
+        view = self.getCurrentPage()
+        if view:
+            view.paste_items()
 
-    # stamp menu functions
     def createNewStamp(self):
         """Open creation dialog to insert a new stamp item."""
-        stamp = self.getCurrentPageScene().newStamp(self.lastStampObj)
-        if stamp is not None:
-            self.lastStampObj['year'] = stamp['year']
-            self.lastStampObj['type'] = stamp['type']
-            self.lastStampObj['country'] = stamp['country']
-            self.lastStampObj['nbr'] = stamp['nbr']
+        scene = self.getCurrentPageScene()
+        if scene:
+            stamp = scene.newStamp(self.lastStampObj)
+            if stamp is not None:
+                self.lastStampObj['year'] = stamp['year']
+                self.lastStampObj['type'] = stamp['type']
+                self.lastStampObj['country'] = stamp['country']
+                self.lastStampObj['nbr'] = stamp['nbr']
 
-    # edit current selected stamp
     def editStamp(self):
         """Edit currently selected stamp item."""
-        self.getCurrentPageScene().editObject()
+        scene = self.getCurrentPageScene()
+        if scene:
+            scene.editObject()
 
     def about(self):
         """Display custom scrollable 'About' dialog."""
         dlg = AboutDlg(self)
         dlg.exec()
 
-    # application on line help
     def help(self):
         """Open user help PDF document in default system viewer."""
         if sys.platform.startswith('win32'):
             os.startfile("Help\\StampAlbum Manuel utilisateur 03-11-2024.pdf")
 
-    # align menu functions
     def alignBottom(self):
-        self.getCurrentPageScene().alignBottom()
+        scene = self.getCurrentPageScene()
+        if scene:
+            scene.alignBottom()
 
     def alignTop(self):
-        self.getCurrentPageScene().alignTop()
+        scene = self.getCurrentPageScene()
+        if scene:
+            scene.alignTop()
 
     def alignLeft(self):
-        self.getCurrentPageScene().alignLeft()
+        scene = self.getCurrentPageScene()
+        if scene:
+            scene.alignLeft()
 
     def alignRight(self):
-        self.getCurrentPageScene().alignRight()
+        scene = self.getCurrentPageScene()
+        if scene:
+            scene.alignRight()
 
     def distributeHorizontally(self):
-        self.getCurrentPageScene().distributeHorizontally()
+        scene = self.getCurrentPageScene()
+        if scene:
+            scene.distributeHorizontally()
 
     def distributeVertically(self):
-        self.getCurrentPageScene().distributeVertically()
+        scene = self.getCurrentPageScene()
+        if scene:
+            scene.distributeVertically()
 
     def centerHorizontally(self):
-        self.getCurrentPageScene().centerHorizontally()
+        scene = self.getCurrentPageScene()
+        if scene:
+            scene.centerHorizontally()
 
     def centerVertically(self):
-        self.getCurrentPageScene().centerVertically()
+        scene = self.getCurrentPageScene()
+        if scene:
+            scene.centerVertically()
 
-    # misc functions
     def createText(self):
         """Create a new floating text label."""
-        print("create text")
-        self.getCurrentPageScene().newLabel()
+        scene = self.getCurrentPageScene()
+        if scene:
+            scene.newLabel()
 
-    # turn the grid on and off
     def gridOnOff(self):
         """Toggle grid pattern background in active scene."""
         child = self.getCurrentPageScene()
-        if child.gridOn:
-            child.setBackgroundBrush(QBrush(self.deleteGrid()))
-            child.gridOn = False
-        else:
-            child.setBackgroundBrush(QBrush(self.drawGrid()))
-            child.gridOn = True
+        if child:
+            if child.gridOn:
+                child.setBackgroundBrush(QBrush(self.deleteGrid()))
+                child.gridOn = False
+            else:
+                child.setBackgroundBrush(QBrush(self.drawGrid()))
+                child.gridOn = True
 
-    # used to draw the grid
     def drawGrid(self):
         """Generate grid texture pixmap."""
         self.pixmap = QPixmap(10, 10)
@@ -1454,85 +1452,76 @@ class Window(QMainWindow):
         assert ok
         return pixmap
 
-    # get the current page content
+
     def getCurrentPageScene(self):
-        """Return QGraphicsScene instance from the active tab widget."""
-        for child in self.tabs.currentWidget().children():
-            if child.__class__.__name__ == "GraphicsView":
-                # return the current scene
-                return child.scene()
+        """Return QGraphicsScene instance from the active tab widget safely."""
+        view = self.getCurrentPage()
+        if view:
+            return view.scene()
+        return None
 
     def getCurrentPage(self):
-        """Return GraphicsView instance from the active tab widget."""
-        for child in self.tabs.currentWidget().children():
-            if child.__class__.__name__ == "GraphicsView":
-                return child
+        """Return GraphicsView instance from the active tab widget safely."""
+        curr_widget = self.tabs.currentWidget()
+        if curr_widget and hasattr(curr_widget, "view"):
+            return curr_widget.view
+        return None
 
-    # need to review
     def mousePressEvent(self, event):
-        # is it still in use?
         self._drawing = True
         self.last_point = event.pos()
-        print("mouse press")
-        # for child in self.tabs.currentWidget().children():
-        #     if child.__class__.__name__ == "QGraphicsView":
-        currentScene = self.getCurrentPageScene()
-        items = currentScene.items()
-        for item in items:
-            if item.type().real == 10:
-                stampItems = item.childItems()
 
-    # need to review is it still used?
     def mouseMoveEvent(self, event):
         if event.buttons() & Qt.MouseButton.LeftButton:
             self.last_point = event.pos()
-            print("mouse move and pressed")
-            print(self.last_point)
 
-    # need to review is it still used?
     def mouseDoubleClickEvent(self, event):
-        self.getCurrentPageScene().editObject()
+        scene = self.getCurrentPageScene()
+        if scene:
+            scene.editObject()
 
-    # Delete selected objects
-    # or edit object
     def keyPressEvent(self, event):
         """Handle main keyboard shortcuts for deleting or editing items."""
-        # esc
-        if event.key() == Qt.Key.Key_Escape:
-            print("escape")
-            self.getCurrentPageScene().printObjectDebugInfo()
+        scene = self.getCurrentPageScene()
+        if not scene:
+            return
 
-        # delete an object
-        if event.key() == Qt.Key.Key_Delete:
+        if event.key() == Qt.Key.Key_Escape:
+            scene.printObjectDebugInfo()
+        elif event.key() == Qt.Key.Key_Delete:
             qm = QMessageBox()
             ret = qm.question(self, _('Delete Object'), _("Are you sure you want to delete those objects?"),
                               qm.StandardButton.Yes | qm.StandardButton.No)
 
             if ret == qm.StandardButton.No:
                 return
-            self.getCurrentPageScene().removeItems()
-        #edit an object
+            scene.removeItems()
         elif event.key() == Qt.Key.Key_E:
-            self.getCurrentPageScene().editObject()
+            scene.editObject()
 
     def newCopyRight(self):
         """Add copyright text label to current page."""
-        self.getCurrentPageScene().newCopyRight()
+        scene = self.getCurrentPageScene()
+        if scene:
+            scene.newCopyRight()
 
     def newCopyRightAllPages(self):
         """Add copyright text label across all pages."""
-        print("newCopyRightAllPages")
         for x in range(0, self.tabs.count().real):
             self.tabs.setCurrentIndex(x)
-            self.getCurrentPageScene().newCopyRight()
+            scene = self.getCurrentPageScene()
+            if scene:
+                scene.newCopyRight()
 
     def newImage(self):
         """Prompt user for image file and add it to the scene."""
         options = QFileDialog.Option.DontUseNativeDialog
         fileName, _ = QFileDialog.getOpenFileName(self, "Select picture", "",
-                                                  ("all pictures (*.jpg *.jpeg *.png);;PNG (*.png)" ),
+                                                  ("all pictures (*.jpg *.jpeg *.png);;PNG (*.png)"),
                                                   options=options)
-        self.getCurrentPageScene().addImage(fileName)
+        scene = self.getCurrentPageScene()
+        if scene:
+            scene.addImage(fileName)
 
     def str_to_bool(self, s):
         """Convert string boolean representations to Python bool."""
@@ -1545,11 +1534,5 @@ class Window(QMainWindow):
 
     def configApp(self):
         """Open application configuration dialog."""
-        print("config")
         dlg = ConfigDlg()
         res = dlg.exec()
-
-        #Accepted
-        if res == 1:
-            print("Clicked ok")
-

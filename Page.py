@@ -46,6 +46,9 @@ class Page(QGraphicsScene):
         super(Page, self).__init__(parent)
         self.pageType = pageType
 
+        # Set page background color to plain white
+        self.setBackgroundBrush(QBrush(Qt.GlobalColor.white))
+
         # Undo/Redo history stack for the current page scene
         self.undoStack = QUndoStack(self)
         self.mouse_press_positions = {}
@@ -82,22 +85,23 @@ class Page(QGraphicsScene):
         if item.scene() == self:
             super().removeItem(item)
 
+
     def addItemWithUndo(self, item, text="Add Item"):
-        """Remove item directly from scene without pushing an Undo command."""
+        """Add item to scene and record in Undo stack."""
         if item.parentItem() is None:
+            # Check if item is already added to avoid double adding
+            if item.scene() != self:
+                super().addItem(item)
             cmd = AddItemCommand(self, item, text)
-            self.undoStack.push(cmd)  # Push appelle automatiquement cmd.redo() une fois !
+            self.undoStack.push(cmd)
         else:
             self.addItemNative(item)
 
+
     def addItem(self, item):
-        """Override addItem to automatically register undo history."""
-        super().addItem(item)
-        # N'enregistre que les objets principaux (pas les enfants de groupes)
-        if item.parentItem() is None:
-            #cmd = AddItemCommand(self, item)
-            cmd = AddItemCommand(self, item, _("Add Item"))
-            self.undoStack.push(cmd)
+        """Override addItem to add item natively without triggering infinite recursion during setup."""
+        if item.scene() != self:
+            super().addItem(item)
 
     def removeItems(self):
         """Remove selected top-level items and record operation in Undo stack."""
@@ -211,7 +215,8 @@ class Page(QGraphicsScene):
         for item in items:
             self.removeItem(item)
 
-    def editObject_old(self):
+
+    def editObject(self):
         """Edit currently selected scene item safely."""
         items = self.selectedItems()
         if len(items) != 1:
@@ -220,37 +225,6 @@ class Page(QGraphicsScene):
         selected_item = items[0]
 
         # Resolve to top-level parent item if a child item within a group was clicked
-        if selected_item.parentItem() is not None:
-            top_item = selected_item.parentItem()
-            while top_item.parentItem() is not None:
-                top_item = top_item.parentItem()
-        else:
-            top_item = selected_item
-
-        try:
-            # 1. Rich Text Item
-            if top_item.data(0) == "richTextLabel":
-                self.editRichText(top_item)
-
-            # 2. Standard Text Item (using direct class check)
-            elif isinstance(top_item, QGraphicsTextItem) or top_item.type().real == 8:
-                self.editLabel(top_item)
-
-            # 3. Stamp Group Item
-            elif top_item.data(0) == "stampGroup" or top_item.type().real == 10:
-                self.editStamp(top_item)
-
-        except Exception as e:
-            print(f"Error during item editing: {e}")
-
-    def editObject(self):
-        items = self.selectedItems()
-        if len(items) != 1:
-            return
-
-        selected_item = items[0]
-
-        # Remonter au composant parent si nécessaire
         top_item = selected_item
         while top_item.parentItem() is not None:
             top_item = top_item.parentItem()
