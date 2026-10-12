@@ -1,27 +1,27 @@
-from PageBorder import PageBorder  # Import de la classe de bordures
+from PageBorder import PageBorder
 from os import walk
-#from PyQt6.QtCore import QPointF, Qt, QPoint, QByteArray, QRectF
-#from PyQt6 import QtCore, QtGui
 from pathlib import Path
 from PyQt6.QtWidgets import (
     QMessageBox, QGraphicsRectItem,
     QGraphicsScene, QComboBox, QRadioButton, QButtonGroup, QGroupBox, QListWidgetItem,
     QGraphicsView, QApplication, QLabel, QMainWindow, QMenuBar, QMenu, QHBoxLayout, QListView,
-    QToolBar,  QGraphicsTextItem, QGraphicsItemGroup, QDialog, QPushButton, QListWidget,
+    QToolBar, QGraphicsTextItem, QGraphicsItemGroup, QDialog, QPushButton, QListWidget,
     QLineEdit, QFormLayout, QStatusBar, QTabWidget, QWidget, QVBoxLayout, QDialogButtonBox, QPlainTextEdit
 )
-#from PyQt6.QtGui import QFont, QBrush, QPainter, QPen, QPixmap, QPolygonF, QImage, QIcon, QAction, QStandardItem, QColor
-#from PyQt6.QtPrintSupport import QPrintPreviewDialog, QPrinter, QPrintDialog
-
 import configparser
 import sys
 import gettext
+
 gettext.find("ConfigDlg")
 translate = gettext.translation('ConfigDlg', localedir='locale', languages=['fr'])
 translate.install()
 _ = translate.gettext
 
+
 class ConfigDlg(QDialog):
+    PAPER_A4 = "A4"
+    PAPER_LETTER = "Letter"
+
     def __init__(self, parent=None):
         super(ConfigDlg, self).__init__(parent)
         self.setWindowTitle(_("Application configuration"))
@@ -36,136 +36,78 @@ class ConfigDlg(QDialog):
     def get_app_dir(self) -> Path:
         """Return the base directory path, compatible with PyInstaller frozen executables."""
         if getattr(sys, 'frozen', False):
-            # Executable congelé (PyInstaller / CX_Freeze)
-            # sys.executable pointe vers le dossier où se trouve le .exe
             return Path(sys.executable).resolve().parent
         else:
-            # Script Python normal (.py)
             return Path(__file__).resolve().parent
 
     def createDlg(self):
-
-        # default Copyright
+        # Default Copyright
         self.eCopyRight = QLineEdit()
         self.eCopyRight.setFixedWidth(400)
-        # default border type
+
+        # Default Paper Size
+        self.selectedPaperCombo = QComboBox()
+        self.selectedPaperCombo.setMaximumWidth(200)
+        self.selectedPaperCombo.addItem("A4 (210 x 297 mm)", self.PAPER_A4)
+        self.selectedPaperCombo.addItem("US Letter (215.9 x 279.4 mm)", self.PAPER_LETTER)
+
+        # Default Border Type
         self.selectedBorderCombo = QComboBox()
         self.selectedBorderCombo.setMaximumWidth(200)
-
-        # addItem(Label Traduisible, UserData=CodeInterne)
         self.selectedBorderCombo.addItem(_("Triple (Classic)"), PageBorder.STYLE_TRIPLE)
         self.selectedBorderCombo.addItem(_("Simple (Frame)"), PageBorder.STYLE_SIMPLE)
         self.selectedBorderCombo.addItem(_("Greek (Notched)"), PageBorder.STYLE_GREEK)
         self.selectedBorderCombo.addItem(_("Dentelle (Philately)"), PageBorder.STYLE_DENTELLE)
 
-        # default country
+        # Default Country
         self.selectedCountryCombo = QComboBox()
         self.selectedCountryCombo.setMaximumWidth(100)
-        # default database
+
+        # Default Database
         self.selectedDatabaseCombo = QComboBox()
         self.selectedDatabaseCombo.setMaximumWidth(100)
-        # default text label font
 
-        # default stamp desc font
-
-        # default stamp nbr font
-
-        # ok /cancel button
+        # OK / Cancel Buttons
         bb = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         bb.accepted.connect(self.accept)
         bb.rejected.connect(self.reject)
 
         flo = QFormLayout()
         flo.addRow(_("Default Copyright:"), self.eCopyRight)
+        flo.addRow(_("Paper format:"), self.selectedPaperCombo)
         flo.addRow(_("Border type:"), self.selectedBorderCombo)
         flo.addRow(_("Default Country:"), self.selectedCountryCombo)
         flo.addRow(_("Default Database:"), self.selectedDatabaseCombo)
-
         flo.addRow(bb)
 
         self.setLayout(flo)
         self.readConfig()
 
-
-    # def readConfig_old(self):
-    #     print("read")
-    #
-    #     # get the list of countries from the databases available
-    #     self.retCountryCombo = []
-    #     filenames = next(walk("databases"), (None, None, []))[2]  # [] if no file
-    #
-    #     # create an array of file name first the open the db with the first one
-    #     self.stampCountries = []
-    #     for file in filenames:
-    #         shortFile = file.rsplit(".")
-    #         if shortFile[0] != "master":
-    #             if shortFile[1] == "mdb":
-    #                 self.stampCountries.append(shortFile[0])
-    #
-    #     for country in self.stampCountries:
-    #         self.retCountryCombo.append(country)
-    #     # select the first country available
-    #     self.selectedCountryCombo.addItems(self.retCountryCombo)
-    #
-    #     self.selectedDatabaseCombo.addItem("Access")
-    #     self.selectedDatabaseCombo.addItem("sqlite")
-    #
-    #     if self.configParser.has_section('CONF'):
-    #         conf = self.configParser['CONF']
-    #         if self.configParser.has_option('CONF', 'copyright'):
-    #             self.eCopyRight.setText(conf['copyright'])
-    #         if self.configParser.has_option('CONF', 'default country'):
-    #             self.selectedCountryCombo.setCurrentText(str(conf['default country']))
-    #         if self.configParser.has_option('CONF', 'type encadrement'):
-    #             self.selectedBorderCombo.setCurrentText(str(conf['type encadrement']))
-    #         if self.configParser.has_option('CONF', 'database type'):
-    #             self.selectedDatabaseCombo.setCurrentText(str(conf['database type']))
-    #     else:
-    #         self.configParser["CONF"] = {
-    #             "copyright": "CopyRight © Boris du Reau 2003-2023",
-    #             "default country": "France",
-    #             "type encadrement": "type 1",
-    #             "database type": "sqlite"
-    #         }
-    #
-    #         # Write the above sections to stamp_album.cfg file
-    #         with open(self.configFilePath, 'w') as config:
-    #             self.configParser.write(config)
-
     def readConfig(self):
-        # get the list of countries from the databases available
-        self.retCountryCombo = []
-
-        filenames = next(walk("databases"), (None, None, []))[2]  # [] if no file
-
-        # create an array of file name first the open the db with the first one
+        filenames = next(walk("databases"), (None, None, []))[2]
         self.stampCountries = []
         for file in filenames:
             shortFile = file.rsplit(".")
-            if shortFile[0] != "master":
-                if shortFile[1] == "mdb":
-                    self.stampCountries.append(shortFile[0])
+            if shortFile[0] != "master" and shortFile[1] == "mdb":
+                self.stampCountries.append(shortFile[0])
 
-        for country in self.stampCountries:
-            self.retCountryCombo.append(country)
-        # select the first country available
-        self.selectedCountryCombo.addItems(self.retCountryCombo)
-
-        #self.selectedBorderCombo.addItem("type 1")
-
+        self.selectedCountryCombo.addItems(self.stampCountries)
         self.selectedDatabaseCombo.addItem("Access")
         self.selectedDatabaseCombo.addItem("sqlite")
-
 
         if self.configParser.has_section('CONF'):
             conf = self.configParser['CONF']
             if self.configParser.has_option('CONF', 'copyright'):
                 self.eCopyRight.setText(conf['copyright'])
+            if self.configParser.has_option('CONF', 'paper format'):
+                paper_fmt = conf['paper format']
+                idx = self.selectedPaperCombo.findData(paper_fmt)
+                if idx != -1:
+                    self.selectedPaperCombo.setCurrentIndex(idx)
             if self.configParser.has_option('CONF', 'default country'):
                 self.selectedCountryCombo.setCurrentText(str(conf['default country']))
             if self.configParser.has_option('CONF', 'type encadrement'):
                 border_type = conf['type encadrement']
-                # Sélectionne l'élément par sa valeur d'action (userData ou texte)
                 index = self.selectedBorderCombo.findData(border_type)
                 if index != -1:
                     self.selectedBorderCombo.setCurrentIndex(index)
@@ -176,6 +118,7 @@ class ConfigDlg(QDialog):
         else:
             self.configParser["CONF"] = {
                 "copyright": "CopyRight © Boris du Reau 2003-2026",
+                "paper format": self.PAPER_A4,
                 "default country": "France",
                 "type encadrement": PageBorder.STYLE_TRIPLE,
                 "database type": "sqlite"
@@ -184,15 +127,16 @@ class ConfigDlg(QDialog):
                 self.configParser.write(config)
 
     def saveConfig(self):
-        # On sauvegarde le code interne du style de bordure (ex: 'triple', 'greek', etc.)
+        selected_paper = self.selectedPaperCombo.currentData() or self.PAPER_A4
         selected_border = self.selectedBorderCombo.currentData() or self.selectedBorderCombo.currentText()
+
         self.configParser["CONF"] = {
             "copyright": self.eCopyRight.text(),
+            "paper format": selected_paper,
             "default country": self.selectedCountryCombo.currentText(),
             "type encadrement": selected_border,
             "database type": self.selectedDatabaseCombo.currentText()
         }
-        # Write the above sections to stamp_album.cfg file
         with open(self.configFilePath, 'w') as config:
             self.configParser.write(config)
 

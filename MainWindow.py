@@ -659,7 +659,7 @@ class Window(QMainWindow):
         self.deleteAllPages()
         self.currentAlbumName = ""
 
-    def newBorder(self):
+    def newBorder_old(self):
         """Add a new page border using the default style configured in settings."""
         scene = self.getCurrentPageScene()
         if scene:
@@ -675,6 +675,31 @@ class Window(QMainWindow):
                     272 / (25.4 / 96.0),
                     177 / (25.4 / 96.0),
                     ((297 - 272) / 2) / (25.4 / 96.0),
+                    0, 19 / (25.4 / 96.0), 0
+                )
+
+    def newBorder(self):
+        """Add a new page border using the paper size and style configured in settings."""
+        scene = self.getCurrentPageScene()
+        if scene:
+            paper_format = scene.get_configured_paper_format()
+            if paper_format == "Letter":
+                w_mm, h_mm = 215.9, 279.4
+            else:
+                w_mm, h_mm = 210.0, 297.0
+
+            if scene.pageType == "portrait":
+                scene.addBorder(
+                    (w_mm - 33.0) / (25.4 / 96.0),
+                    (h_mm - 25.0) / (25.4 / 96.0),
+                    19 / (25.4 / 96.0),
+                    0, 0, 0
+                )
+            else:
+                scene.addBorder(
+                    (h_mm - 25.0) / (25.4 / 96.0),
+                    (w_mm - 33.0) / (25.4 / 96.0),
+                    (((h_mm / (25.4 / 96.0)) - ((h_mm - 25.0) / (25.4 / 96.0))) / 2),
                     0, 19 / (25.4 / 96.0), 0
                 )
 

@@ -53,27 +53,50 @@ class Page(QGraphicsScene):
         self.undoStack = QUndoStack(self)
         self.mouse_press_positions = {}
 
-        style = self.get_configured_border_style()
-        if self.pageType == "portrait":
-            self.setSceneRect(0, 0, 210 / (25.4 / 96), 297 / (25.4 / 96))
-            if border is not None and border:
-                self.addBorder(177 / (25.4 / 96.0),
-                           272 / (25.4 / 96.0),
-                           19 / (25.4 / 96.0),
-                           0,
-                           0,
-                           0,style)
+        # Read paper format configuration (A4 vs Letter)
+        paper_format = self.get_configured_paper_format()
+        if paper_format == "Letter":
+            self.page_width_mm = 215.9
+            self.page_height_mm = 279.4
         else:
-            self.setSceneRect(0, 0, 297 / (25.4 / 96), 210 / (25.4 / 96))
-            if border is not None and border:
-                self.addBorder(272 / (25.4 / 96.0),
-                           177 / (25.4 / 96.0),
-                           ((297-272) / 2) / (25.4 / 96.0),
-                           0,
-                           19 / (25.4 / 96.0),
-                           0,style)
+            self.page_width_mm = 210.0
+            self.page_height_mm = 297.0
+
+        # Convert mm to pixels (dpi = 96)
+        px_w = self.page_width_mm / (25.4 / 96.0)
+        px_h = self.page_height_mm / (25.4 / 96.0)
+
+        style = self.get_configured_border_style()
+
+
+        if self.pageType == "portrait":
+            self.setSceneRect(0, 0, px_w, px_h)
+            if border:
+                border_w = (self.page_width_mm - 33.0) / (25.4 / 96.0)
+                border_h = (self.page_height_mm - 25.0) / (25.4 / 96.0)
+                margin_l = 19.0 / (25.4 / 96.0)
+                self.addBorder(border_w, border_h, margin_l, 0, 0, 0, style)
+        else:
+            self.setSceneRect(0, 0, px_h, px_w)
+            if border:
+                border_w = (self.page_height_mm - 25.0) / (25.4 / 96.0)
+                border_h = (self.page_width_mm - 33.0) / (25.4 / 96.0)
+                margin_l = ((px_h - border_w) / 2.0)
+                margin_t = 19.0 / (25.4 / 96.0)
+                self.addBorder(border_w, border_h, margin_l, 0, margin_t, 0, style)
 
         self.gridOn = False
+
+
+    def get_configured_paper_format(self) -> str:
+        """Read default paper format from configuration file."""
+        config_path = Path(__file__).resolve().parent / 'stamp_album.cfg'
+        if config_path.exists():
+            parser = configparser.RawConfigParser()
+            parser.read(config_path)
+            if parser.has_option('CONF', 'paper format'):
+                return parser.get('CONF', 'paper format')
+        return "A4"
 
     def addItemNative(self, item):
         """Add item directly to scene without pushing an Undo command."""
