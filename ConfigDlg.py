@@ -45,6 +45,12 @@ class ConfigDlg(QDialog):
         self.eCopyRight = QLineEdit()
         self.eCopyRight.setFixedWidth(400)
 
+        # Language Selection
+        self.selectedLanguageCombo = QComboBox()
+        self.selectedLanguageCombo.setMaximumWidth(200)
+        self.selectedLanguageCombo.addItem("Français", "fr")
+        self.selectedLanguageCombo.addItem("English", "en")
+
         # Default Paper Size
         self.selectedPaperCombo = QComboBox()
         self.selectedPaperCombo.setMaximumWidth(200)
@@ -74,6 +80,7 @@ class ConfigDlg(QDialog):
 
         flo = QFormLayout()
         flo.addRow(_("Default Copyright:"), self.eCopyRight)
+        flo.addRow(_("Language:"), self.selectedLanguageCombo)
         flo.addRow(_("Paper format:"), self.selectedPaperCombo)
         flo.addRow(_("Border type:"), self.selectedBorderCombo)
         flo.addRow(_("Default Country:"), self.selectedCountryCombo)
@@ -99,6 +106,11 @@ class ConfigDlg(QDialog):
             conf = self.configParser['CONF']
             if self.configParser.has_option('CONF', 'copyright'):
                 self.eCopyRight.setText(conf['copyright'])
+            if self.configParser.has_option('CONF', 'language'):
+                lang = conf['language']
+                idx = self.selectedLanguageCombo.findData(lang)
+                if idx != -1:
+                    self.selectedLanguageCombo.setCurrentIndex(idx)
             if self.configParser.has_option('CONF', 'paper format'):
                 paper_fmt = conf['paper format']
                 idx = self.selectedPaperCombo.findData(paper_fmt)
@@ -118,6 +130,7 @@ class ConfigDlg(QDialog):
         else:
             self.configParser["CONF"] = {
                 "copyright": "CopyRight © Boris du Reau 2003-2026",
+                "language": "fr",
                 "paper format": self.PAPER_A4,
                 "default country": "France",
                 "type encadrement": PageBorder.STYLE_TRIPLE,
@@ -127,11 +140,13 @@ class ConfigDlg(QDialog):
                 self.configParser.write(config)
 
     def saveConfig(self):
+        selected_lang = self.selectedLanguageCombo.currentData() or "fr"
         selected_paper = self.selectedPaperCombo.currentData() or self.PAPER_A4
         selected_border = self.selectedBorderCombo.currentData() or self.selectedBorderCombo.currentText()
 
         self.configParser["CONF"] = {
             "copyright": self.eCopyRight.text(),
+            "language": selected_lang,
             "paper format": selected_paper,
             "default country": self.selectedCountryCombo.currentText(),
             "type encadrement": selected_border,

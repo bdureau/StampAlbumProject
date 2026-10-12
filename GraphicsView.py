@@ -345,3 +345,38 @@ class GraphicsView(QtWidgets.QGraphicsView):
             while not ds.atEnd():
                 it = ds_to_item(ds)
                 self.scene().addItem(it)
+
+    def mouseDoubleClickEvent(self, event: QtGui.QMouseEvent):
+        """Intercept double clicks at the viewport level before Qt unselects text items."""
+        scene_pos = self.mapToScene(event.pos())
+
+        # Récupérer TOUS les items sous le curseur pour éviter de choper la bordure par erreur
+        items_under_cursor = self.scene().items(scene_pos)
+
+        target_item = None
+        for item in items_under_cursor:
+            # On ignore les bordures de page et le fond si on cherche un objet cliquable
+            top_item = item
+            while top_item.parentItem() is not None:
+                top_item = top_item.parentItem()
+
+            data_type = str(top_item.data(0)) if top_item.data(0) is not None else ""
+            if data_type != "borderGroup":
+                target_item = top_item
+                break  # On a trouvé un élément prioritaire (texte, timbre, image...)
+
+        # Si aucun élément prioritaire n'est trouvé, on prend le premier s'il y en a un
+        if not target_item and items_under_cursor:
+            target_item = items_under_cursor[0]
+            while target_item.parentItem() is not None:
+                target_item = target_item.parentItem()
+
+        if target_item:
+            data_type = str(target_item.data(0)) if target_item.data(0) is not None else ""
+            if data_type != "borderGroup":
+                if hasattr(self.scene(), "editObject"):
+                    self.scene().editObject(target_item)
+                    event.accept()
+                    return
+
+        super().mouseDoubleClickEvent(event)

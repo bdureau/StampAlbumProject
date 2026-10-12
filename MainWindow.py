@@ -1,7 +1,7 @@
 """
 Main Window Module
 ------------------
-Contains the main application window ('Window') managing menus, toolbars,
+Contains the main application window ('Window') maddRichText(anaging menus, toolbars,
 tabbed page displays, actions, and file I/O operations (XML/gzip).
 
 Author: Boris du Reau
@@ -20,7 +20,8 @@ from PyQt6.QtWidgets import (
     QToolBar,  QGraphicsTextItem, QGraphicsItemGroup, QDialog, QPushButton,
     QLineEdit, QFormLayout, QStatusBar, QTabWidget, QWidget, QVBoxLayout, QDialogButtonBox, QPlainTextEdit
 )
-from PyQt6.QtGui import QBrush, QPainter, QPen, QPixmap, QPolygonF, QImage, QIcon, QColor, QFont, QAction, QPageLayout
+from PyQt6.QtGui import QBrush, QPainter, QPen, QPixmap, QPolygonF, QImage, QIcon, QColor, QFont, QAction, QPageLayout, \
+    QTextCursor, QTextBlockFormat
 from PyQt6.QtPrintSupport import QPrintPreviewDialog, QPrinter, QPrintDialog
 from Stamp import Stamp
 
@@ -561,7 +562,7 @@ class Window(QMainWindow):
         """Close the main window."""
         self.close()
 
-    def newPage(self, _pageType=None, border=None):
+    def newPage_old(self, _pageType=None, border=None):
         """Create and append a new album page tab."""
         if _pageType is not None and (_pageType == 'portrait' or _pageType == 'landscape'):
             self.pageType = _pageType
@@ -608,6 +609,58 @@ class Window(QMainWindow):
         self.tabs.blockSignals(False)
 
         # Initialise le zoom à 100% de façon isolée
+        self.zoomCombo.blockSignals(True)
+        view.setZoomFactor(1.0)
+        self.zoomCombo.setCurrentText("100%")
+        self.zoomCombo.blockSignals(False)
+
+        return page
+
+    def newPage(self, _pageType=None, border=None, paper_format=None):
+        """Create and append a new album page tab."""
+        if _pageType is not None and (_pageType == 'portrait' or _pageType == 'landscape'):
+            self.pageType = _pageType
+        else:
+            self.pageType = "portrait"
+            pDlg = PageDlg()
+            res = pDlg.exec()
+
+            if res == 1:
+                if pDlg.pageType == "portrait":
+                    self.pageType = "portrait"
+                    border = True
+                else:
+                    self.pageType = "landscape"
+                    border = True
+            if res == 0:
+                return
+
+        page = Page(self.pageType, border, paper_format=paper_format)
+        view = GraphicsView(page)
+        view.scrollContentsBy(0, 0)
+
+        view.zoomChanged.connect(self.updateZoomStatus)
+
+        tab1 = QWidget()
+        tab1.view = view
+
+        layout = QVBoxLayout(tab1)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(view)
+        tab1.setLayout(layout)
+
+        palette = tab1.palette()
+        palette.setColor(tab1.backgroundRole(), Qt.GlobalColor.lightGray)
+        tab1.setPalette(palette)
+
+        self.pageCount = self.pageCount + 1
+
+        self.tabs.blockSignals(True)
+        tab_title = f"Page {self.tabs.count() + 1}"
+        currentPage = self.tabs.addTab(tab1, tab_title)
+        self.tabs.setCurrentIndex(currentPage)
+        self.tabs.blockSignals(False)
+
         self.zoomCombo.blockSignals(True)
         view.setZoomFactor(1.0)
         self.zoomCombo.setCurrentText("100%")
@@ -806,7 +859,9 @@ class Window(QMainWindow):
         myroot = mytree.getroot()
 
         file_version = myroot.attrib.get("version", "0.9")
+        print(file_version)
         self.openNewAlbumFileVersion(myroot)
+        #self.openOldAlbumFileVersion(myroot)
 
     def openOldAlbumFileVersion(self, myroot):
         for it in myroot.findall('page'):
@@ -969,47 +1024,66 @@ class Window(QMainWindow):
                         float(x), float(y), pixmap
                     )
 
-    def openNewAlbumFileVersion(self, myroot):
+    def openNewAlbumFileVersion_old(self, myroot):
+        """Deserialize and reconstruct a complete album structure from XML root element."""
         for it in myroot.findall('page'):
-            self.newPage(str(it.attrib.get("type")), False)
+            page_type = str(it.attrib.get("type", "portrait"))
+            paper_format = str(it.attrib.get("paper_format", "A4"))
+
+            self.newPage(page_type, False, paper_format=paper_format)
             currentPage = self.getCurrentPageScene()
             if not currentPage:
                 continue
 
+            # --- Restore Standard Text Labels ---
             textLabelsItems = it.findall('textLabel')
             for textLabel in textLabelsItems:
-                label = textLabel.find('label').text
+                label = textLabel.find('label').text or ""
                 font = textLabel.find('font')
-                bold = font.find('bold').text
-                underline = font.find('underline').text
-                italic = font.find('italic').text
-                strikeOut = font.find('strikeOut').text
-                pointSize = font.find('pointSize').text
 
                 myFont = QFont()
-                myFont.setBold(self.str_to_bool(bold))
-                myFont.setUnderline(self.str_to_bool(underline))
-                myFont.setItalic(self.str_to_bool(italic))
-                myFont.setStrikeOut(self.str_to_bool(strikeOut))
-                myFont.setPointSize(int(pointSize))
+                if font is not None:
+                    myFont.setBold(self.str_to_bool(font.find('bold').text))
+                    myFont.setUnderline(self.str_to_bool(font.find('underline').text))
+                    myFont.setItalic(self.str_to_bool(font.find('italic').text))
+                    myFont.setStrikeOut(self.str_to_bool(font.find('strikeOut').text))
+                    myFont.setPointSize(int(font.find('pointSize').text))
 
                 pos = textLabel.find('labelPos')
-                x = pos.find('x').text
-                y = pos.find('y').text
+                x = float(pos.find('x').text) if pos is not None and pos.find('x') is not None else 20.0
+                y = float(pos.find('y').text) if pos is not None and pos.find('y') is not None else 20.0
 
-                currentPage.addTextLabel(label, float(x), float(y), myFont)
+                # item = QGraphicsTextItem(label)
+                # item.setFont(myFont)
+                # item.setPos(x, y)
+                # item.setData(0, "textLabel")
+                # item.setTextInteractionFlags(Qt.TextInteractionFlag.NoTextInteraction)
+                # item.setFlags(
+                #     QGraphicsTextItem.GraphicsItemFlag.ItemIsMovable | QGraphicsTextItem.GraphicsItemFlag.ItemIsSelectable)
+                # currentPage.addItem(item)
+                currentPage.addTextLabel(label, x, y, myFont, Qt.AlignmentFlag.AlignCenter,"textLabel")
 
+            # --- Restore Rich Text Labels ---
             richTextLabelsItems = it.findall('richTextLabel')
             for richLabel in richTextLabelsItems:
                 html_element = richLabel.find('html_label')
                 html_content = html_element.text if html_element is not None else ""
 
                 pos = richLabel.find('labelPos')
-                x = pos.find('x').text if pos is not None and pos.find('x') is not None else 50.0
-                y = pos.find('y').text if pos is not None and pos.find('y') is not None else 50.0
+                x = float(pos.find('x').text) if pos is not None and pos.find('x') is not None else 50.0
+                y = float(pos.find('y').text) if pos is not None and pos.find('y') is not None else 50.0
 
-                currentPage.addRichText(html_content, float(x), float(y))
+                item = QGraphicsTextItem()
+                item.setHtml(html_content)
+                item.setTextWidth(200)
+                item.setPos(x, y)
+                item.setData(0, "richTextLabel")
+                item.setTextInteractionFlags(Qt.TextInteractionFlag.NoTextInteraction)
+                item.setFlags(
+                    QGraphicsTextItem.GraphicsItemFlag.ItemIsMovable | QGraphicsTextItem.GraphicsItemFlag.ItemIsSelectable)
+                currentPage.addItem(item)
 
+            # --- Restore Standalone Images ---
             imageItems = it.findall('imageItem')
             for img_node in imageItems:
                 pixmap_data = img_node.find('pixmapData')
@@ -1028,76 +1102,105 @@ class Window(QMainWindow):
 
                         currentPage.addItem(pixmap_item)
 
+            # --- Restore Copyright Labels ---
             copyrightLabelsItems = it.findall('labelCopyRight')
             for copyrightLabel in copyrightLabelsItems:
-                label = copyrightLabel.find('label').text
+                label = copyrightLabel.find('label').text or ""
                 font = copyrightLabel.find('font')
                 myFont = QFont()
-                myFont.setBold(self.str_to_bool(font.find('bold').text))
-                myFont.setUnderline(self.str_to_bool(font.find('underline').text))
-                myFont.setItalic(self.str_to_bool(font.find('italic').text))
-                myFont.setStrikeOut(self.str_to_bool(font.find('strikeOut').text))
-                myFont.setPointSize(int(font.find('pointSize').text))
+                if font is not None:
+                    myFont.setBold(self.str_to_bool(font.find('bold').text))
+                    myFont.setUnderline(self.str_to_bool(font.find('underline').text))
+                    myFont.setItalic(self.str_to_bool(font.find('italic').text))
+                    myFont.setStrikeOut(self.str_to_bool(font.find('strikeOut').text))
+                    myFont.setPointSize(int(font.find('pointSize').text))
 
                 pos = copyrightLabel.find('labelPos')
-                currentPage.addTextLabel(
-                    label, float(pos.find('x').text), float(pos.find('y').text),
-                    myFont, Qt.AlignmentFlag.AlignLeft, "labelCopyRight"
-                )
+                x = float(pos.find('x').text) if pos is not None and pos.find('x') is not None else 80.0
+                y = float(pos.find('y').text) if pos is not None and pos.find('y') is not None else 1045.0
 
+                item = QGraphicsTextItem(label)
+                item.setFont(myFont)
+                item.setPos(x, y)
+                item.setData(0, "labelCopyRight")
+                item.setTextInteractionFlags(Qt.TextInteractionFlag.NoTextInteraction)
+                item.setFlags(
+                    QGraphicsTextItem.GraphicsItemFlag.ItemIsMovable | QGraphicsTextItem.GraphicsItemFlag.ItemIsSelectable)
+                currentPage.addItem(item)
+
+            # --- Restore Page Number Labels ---
             pageNbrLabelsItems = it.findall('labelPageNbr')
             for pageNbrLabel in pageNbrLabelsItems:
-                label = pageNbrLabel.find('label').text
+                label = pageNbrLabel.find('label').text or ""
                 font = pageNbrLabel.find('font')
                 myFont = QFont()
-                myFont.setBold(self.str_to_bool(font.find('bold').text))
-                myFont.setUnderline(self.str_to_bool(font.find('underline').text))
-                myFont.setItalic(self.str_to_bool(font.find('italic').text))
-                myFont.setStrikeOut(self.str_to_bool(font.find('strikeOut').text))
-                myFont.setPointSize(int(font.find('pointSize').text))
+                if font is not None:
+                    myFont.setBold(self.str_to_bool(font.find('bold').text))
+                    myFont.setUnderline(self.str_to_bool(font.find('underline').text))
+                    myFont.setItalic(self.str_to_bool(font.find('italic').text))
+                    myFont.setStrikeOut(self.str_to_bool(font.find('strikeOut').text))
+                    myFont.setPointSize(int(font.find('pointSize').text))
 
                 pos = pageNbrLabel.find('labelPos')
-                currentPage.addTextLabel(
-                    label, float(pos.find('x').text), float(pos.find('y').text),
-                    myFont, Qt.AlignmentFlag.AlignLeft, "labelPageNbr"
-                )
+                x = float(pos.find('x').text) if pos is not None and pos.find('x') is not None else 600.0
+                y = float(pos.find('y').text) if pos is not None and pos.find('y') is not None else 1045.0
 
+                item = QGraphicsTextItem(label)
+                item.setFont(myFont)
+                item.setPos(x, y)
+                item.setData(0, "labelPageNbr")
+                item.setTextInteractionFlags(Qt.TextInteractionFlag.NoTextInteraction)
+                item.setFlags(
+                    QGraphicsTextItem.GraphicsItemFlag.ItemIsMovable | QGraphicsTextItem.GraphicsItemFlag.ItemIsSelectable)
+                currentPage.addItem(item)
+
+            # --- Restore Year Labels ---
             yearLabelsItems = it.findall('labelYear')
             for yearLabel in yearLabelsItems:
-                label = yearLabel.find('label').text
+                label = yearLabel.find('label').text or ""
                 font = yearLabel.find('font')
                 myFont = QFont()
-                myFont.setBold(self.str_to_bool(font.find('bold').text))
-                myFont.setUnderline(self.str_to_bool(font.find('underline').text))
-                myFont.setItalic(self.str_to_bool(font.find('italic').text))
-                myFont.setStrikeOut(self.str_to_bool(font.find('strikeOut').text))
-                myFont.setPointSize(int(font.find('pointSize').text))
+                if font is not None:
+                    myFont.setBold(self.str_to_bool(font.find('bold').text))
+                    myFont.setUnderline(self.str_to_bool(font.find('underline').text))
+                    myFont.setItalic(self.str_to_bool(font.find('italic').text))
+                    myFont.setStrikeOut(self.str_to_bool(font.find('strikeOut').text))
+                    myFont.setPointSize(int(font.find('pointSize').text))
 
                 pos = yearLabel.find('labelPos')
-                currentPage.addTextLabel(
-                    label, float(pos.find('x').text), float(pos.find('y').text),
-                    myFont, Qt.AlignmentFlag.AlignCenter, "labelYear"
-                )
+                x = float(pos.find('x').text) if pos is not None and pos.find('x') is not None else 350.0
+                y = float(pos.find('y').text) if pos is not None and pos.find('y') is not None else 80.0
 
+                item = QGraphicsTextItem(label)
+                item.setFont(myFont)
+                item.setPos(x, y)
+                item.setData(0, "labelYear")
+                item.setTextInteractionFlags(Qt.TextInteractionFlag.NoTextInteraction)
+                item.setFlags(
+                    QGraphicsTextItem.GraphicsItemFlag.ItemIsMovable | QGraphicsTextItem.GraphicsItemFlag.ItemIsSelectable)
+                currentPage.addItem(item)
+
+            # --- Restore Page Borders ---
             pageBorderItem = it.findall('borderGroup')
             for border in pageBorderItem:
                 pos = border.find('borderPos')
-                x = pos.find('x').text
-                y = pos.find('y').text
+                x = float(pos.find('x').text) if pos is not None and pos.find('x') is not None else 0.0
+                y = float(pos.find('y').text) if pos is not None and pos.find('y') is not None else 0.0
                 width1 = border.find('width1').text
                 height1 = border.find('height1').text
                 border_style = border.attrib.get("style", PageBorder.STYLE_TRIPLE)
 
                 currentPage.addBorder(
                     float(width1), float(height1),
-                    float(x), float(y), 0, 0, style=border_style
+                    x, y, 0, 0, style=border_style
                 )
 
+            # --- Restore Stamp Groups ---
             stampItems = it.findall('stampGroup')
             for stamp in stampItems:
                 pos = stamp.find('stampPos')
-                x = pos.find('x').text
-                y = pos.find('y').text
+                x = float(pos.find('x').text) if pos is not None and pos.find('x') is not None else 0.0
+                y = float(pos.find('y').text) if pos is not None and pos.find('y') is not None else 0.0
 
                 sizeBox = stamp.find('stampBox')
                 width = sizeBox.find('width').text
@@ -1110,8 +1213,8 @@ class Window(QMainWindow):
                     use_new = 0
 
                 stampDesc = stamp.find('stampDesc').text or ""
-                stampNbr = stamp.find('stampNbr').text
-                stampValue = stamp.find('stampValue').text
+                stampNbr = stamp.find('stampNbr').text or ""
+                stampValue = stamp.find('stampValue').text or ""
                 pixmapItem = stamp.find('pixmapItem').text
 
                 stamp_obj = Stamp()
@@ -1121,13 +1224,167 @@ class Window(QMainWindow):
                     stamp_obj.createStampPix(
                         currentPage, str(stampNbr), str(stampValue), str(stampDesc),
                         float(stampBox_width), float(stampBox_height),
-                        float(x), float(y), pixmap
+                        x, y, pixmap
                     )
                 else:
                     stamp_obj.createStampPix(
                         currentPage, str(stampNbr), str(stampValue), str(stampDesc),
                         float(width) * (25.4 / 96.0), float(height) * (25.4 / 96.0),
-                        float(x), float(y), pixmap
+                        x, y, pixmap
+                    )
+
+    def openNewAlbumFileVersion(self, myroot):
+        """Deserialize and reconstruct a complete album structure from XML root element."""
+        for it in myroot.findall('page'):
+            page_type = str(it.attrib.get("type", "portrait"))
+            paper_format = str(it.attrib.get("paper_format", "A4"))
+
+            # Create new page tab without initial default border
+            self.newPage(page_type, False, paper_format=paper_format)
+            currentPage = self.getCurrentPageScene()
+            if not currentPage:
+                continue
+
+            # --- Fonction interne pour recréer un label texte propre ---
+            def restore_text_item(label_nodes, label_type, default_x, default_y, default_align, default_pt=10):
+                for node in label_nodes:
+                    text_str = node.find('label').text or ""
+                    font_node = node.find('font')
+
+                    myFont = QFont()
+                    if font_node is not None:
+                        myFont.setBold(self.str_to_bool(font_node.find('bold').text))
+                        myFont.setUnderline(self.str_to_bool(font_node.find('underline').text))
+                        myFont.setItalic(self.str_to_bool(font_node.find('italic').text))
+                        myFont.setStrikeOut(self.str_to_bool(font_node.find('strikeOut').text))
+                        myFont.setPointSize(int(font_node.find('pointSize').text))
+                    else:
+                        myFont.setPointSize(default_pt)
+
+                    pos_node = node.find('labelPos')
+                    x = float(pos_node.find('x').text) if pos_node is not None and pos_node.find(
+                        'x') is not None else default_x
+                    y = float(pos_node.find('y').text) if pos_node is not None and pos_node.find(
+                        'y') is not None else default_y
+
+                    item = QGraphicsTextItem(text_str)
+                    item.setFont(myFont)
+                    item.setData(0, label_type)
+
+                    # Configuration indispensable pour l'interaction et le double-clic
+                    item.setTextInteractionFlags(Qt.TextInteractionFlag.NoTextInteraction)
+                    item.setFlags(
+                        QGraphicsTextItem.GraphicsItemFlag.ItemIsMovable |
+                        QGraphicsTextItem.GraphicsItemFlag.ItemIsSelectable
+                    )
+
+                    item.setTextWidth(item.boundingRect().size().width())
+
+                    # Alignement du texte
+                    cursor = item.textCursor()
+                    cursor.select(QTextCursor.SelectionType.Document)
+                    format = QTextBlockFormat()
+                    format.setAlignment(default_align)
+                    cursor.mergeBlockFormat(format)
+                    cursor.clearSelection()
+                    item.setTextCursor(cursor)
+
+                    item.setPos(x, y)
+                    currentPage.addItem(item)  # Ajout direct sans passer par addItemWithUndo
+
+            # --- Restauration via la fonction helper ---
+            restore_text_item(it.findall('textLabel'), "textLabel", 20.0, 20.0, Qt.AlignmentFlag.AlignCenter)
+            restore_text_item(it.findall('labelCopyRight'), "labelCopyRight", 80.0, 1045.0, Qt.AlignmentFlag.AlignLeft,
+                              6)
+            restore_text_item(it.findall('labelPageNbr'), "labelPageNbr", 600.0, 1045.0, Qt.AlignmentFlag.AlignLeft, 8)
+            restore_text_item(it.findall('labelYear'), "labelYear", 350.0, 80.0, Qt.AlignmentFlag.AlignCenter, 10)
+
+            # --- Restore Rich Text Labels ---
+            for richLabel in it.findall('richTextLabel'):
+                html_element = richLabel.find('html_label')
+                html_content = html_element.text if html_element is not None else ""
+
+                pos = richLabel.find('labelPos')
+                x = float(pos.find('x').text) if pos is not None and pos.find('x') is not None else 50.0
+                y = float(pos.find('y').text) if pos is not None and pos.find('y') is not None else 50.0
+
+                item = QGraphicsTextItem()
+                item.setHtml(html_content)
+                item.setTextWidth(200)
+                item.setPos(x, y)
+                item.setData(0, "richTextLabel")
+                item.setTextInteractionFlags(Qt.TextInteractionFlag.NoTextInteraction)
+                item.setFlags(
+                    QGraphicsTextItem.GraphicsItemFlag.ItemIsMovable |
+                    QGraphicsTextItem.GraphicsItemFlag.ItemIsSelectable
+                )
+                currentPage.addItem(item)
+
+            # --- Restore Standalone Images ---
+            for img_node in it.findall('imageItem'):
+                pixmap_data = img_node.find('pixmapData')
+                if pixmap_data is not None and pixmap_data.text:
+                    pixmap = self.bytesToPixmap(pixmap_data.text)
+                    if not pixmap.isNull():
+                        pos = img_node.find('imagePos')
+                        x = float(pos.find('x').text) if pos is not None and pos.find('x') is not None else 50.0
+                        y = float(pos.find('y').text) if pos is not None and pos.find('y') is not None else 50.0
+                        scale_val = float(img_node.find('scale').text) if img_node.find('scale') is not None else 1.0
+
+                        pixmap_item = ResizablePixmapItem(pixmap)
+                        pixmap_item.setPos(x, y)
+                        pixmap_item.setScale(scale_val)
+                        currentPage.addItem(pixmap_item)
+
+            # --- Restore Page Borders ---
+            for border in it.findall('borderGroup'):
+                pos = border.find('borderPos')
+                x = float(pos.find('x').text) if pos is not None and pos.find('x') is not None else 0.0
+                y = float(pos.find('y').text) if pos is not None and pos.find('y') is not None else 0.0
+                width1 = border.find('width1').text
+                height1 = border.find('height1').text
+                border_style = border.attrib.get("style", PageBorder.STYLE_TRIPLE)
+
+                currentPage.addBorder(
+                    float(width1), float(height1),
+                    x, y, 0, 0, style=border_style
+                )
+
+            # --- Restore Stamp Groups ---
+            for stamp in it.findall('stampGroup'):
+                pos = stamp.find('stampPos')
+                x = float(pos.find('x').text) if pos is not None and pos.find('x') is not None else 0.0
+                y = float(pos.find('y').text) if pos is not None and pos.find('y') is not None else 0.0
+
+                sizeBox = stamp.find('stampBox')
+                width = sizeBox.find('width').text
+                height = sizeBox.find('height').text
+                try:
+                    stampBox_width = sizeBox.find('stampBox_width').text
+                    stampBox_height = sizeBox.find('stampBox_height').text
+                    use_new = 1
+                except:
+                    use_new = 0
+
+                stampDesc = stamp.find('stampDesc').text or ""
+                stampNbr = stamp.find('stampNbr').text or ""
+                stampValue = stamp.find('stampValue').text or ""
+                pixmapItem = stamp.find('pixmapItem').text
+
+                stamp_obj = Stamp()
+                pixmap = self.bytesToPixmap(pixmapItem)
+
+                if use_new == 1:
+                    stamp_obj.createStampPix(
+                        currentPage, str(stampNbr), str(stampValue), str(stampDesc),
+                        float(stampBox_width), float(stampBox_height),
+                        x, y, pixmap
+                    )
+                else:
+                    stamp_obj.createStampPix(
+                        currentPage, str(stampNbr), str(stampValue), str(stampDesc),
+                        float(width) * (25.4 / 96.0), float(height) * (25.4 / 96.0),
+                        x, y, pixmap
                     )
 
     def saveAlbumToFile(self):
@@ -1154,8 +1411,10 @@ class Window(QMainWindow):
             if not currentScene:
                 continue
 
+            # Save pageType and paper_format on page element
+            paper_fmt = getattr(currentScene, "paper_format", "A4")
             page = ET.SubElement(
-                root, "page", name="%s" % x, type="%s" % currentScene.pageType
+                root, "page", name="%s" % x, type="%s" % currentScene.pageType, paper_format="%s" % paper_fmt
             )
             items = currentScene.items()
 
