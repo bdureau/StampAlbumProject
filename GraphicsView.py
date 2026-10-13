@@ -283,7 +283,7 @@ class GraphicsView(QtWidgets.QGraphicsView):
              activated=self.paste_items,
         )
 
-    def drawBackground(self, painter: QtGui.QPainter, rect: QtCore.QRectF):
+    def drawBackground_old(self, painter: QtGui.QPainter, rect: QtCore.QRectF):
         """Draw a white page rectangle over a dark grey workspace background."""
         # 1. Fill the viewport background with dark grey
         painter.fillRect(rect, QtGui.QColor("#808080"))
@@ -298,6 +298,27 @@ class GraphicsView(QtWidgets.QGraphicsView):
 
             # 3. Draw the main white page canvas
             painter.fillRect(scene_rect, Qt.GlobalColor.white)
+
+            # 4. Draw a fine grey border around the white page
+            painter.setPen(QtGui.QPen(QtGui.QColor("#b0b0b0"), 1))
+            painter.drawRect(scene_rect)
+
+    def drawBackground(self, painter: QtGui.QPainter, rect: QtCore.QRectF):
+        """Draw a white page rectangle over a dark grey workspace background."""
+        # 1. Fill the viewport background with dark grey
+        painter.fillRect(rect, QtGui.QColor("#808080"))
+
+        scene = self.scene()
+        if scene:
+            scene_rect = scene.sceneRect()
+
+            # 2. Draw a subtle drop shadow under the page
+            shadow_rect = scene_rect.translated(4, 4)
+            painter.fillRect(shadow_rect, QtGui.QColor("#404040"))
+
+            # 3. Utiliser le backgroundBrush de la scène (blanc ou grille) au lieu d'un blanc fixe
+            painter.fillRect(scene_rect, scene.backgroundBrush())
+            #painter.fillRect(scene_rect, Qt.GlobalColor.white)
 
             # 4. Draw a fine grey border around the white page
             painter.setPen(QtGui.QPen(QtGui.QColor("#b0b0b0"), 1))

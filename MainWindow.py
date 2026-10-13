@@ -1689,7 +1689,7 @@ class Window(QMainWindow):
         if scene:
             scene.newLabel()
 
-    def gridOnOff(self):
+    def gridOnOff_old(self):
         """Toggle grid pattern background in active scene."""
         child = self.getCurrentPageScene()
         if child:
@@ -1700,13 +1700,25 @@ class Window(QMainWindow):
                 child.setBackgroundBrush(QBrush(self.drawGrid()))
                 child.gridOn = True
 
+    def gridOnOff(self):
+        """Toggle grid pattern background in active scene."""
+        print("gridOnOff")
+        child = self.getCurrentPageScene()
+        if child:
+            if child.gridOn:
+                # Restaure le fond blanc de la page lorsque l'on désactive la grille
+                child.setBackgroundBrush(QBrush(Qt.GlobalColor.white))
+                child.gridOn = False
+            else:
+                print("drawGrid")
+                child.setBackgroundBrush(QBrush(self.drawGrid()))
+                child.gridOn = True
     def drawGrid(self):
         """Generate grid texture pixmap."""
         self.pixmap = QPixmap(10, 10)
         pixmapWidth = self.pixmap.width() - 1
         painter = QPainter()
-
-        self.pixmap.fill(Qt.GlobalColor.transparent)
+        self.pixmap.fill(Qt.GlobalColor.white)
 
         painter.begin(self.pixmap)
         painter.setPen(Qt.GlobalColor.gray)
@@ -1714,6 +1726,22 @@ class Window(QMainWindow):
         painter.drawLine(0, 0, 0, pixmapWidth)
         painter.end()
         return self.pixmap
+
+    def drawGrid_old(self):
+        """Generate grid texture pixmap."""
+        pixmap = QPixmap(10, 10)
+        pixmap.fill(Qt.GlobalColor.transparent)
+
+        painter = QPainter(pixmap)
+        painter.setPen(QPen(Qt.GlobalColor.gray, 1))
+        painter.drawLine(0, 0, 9, 0)
+        painter.drawLine(0, 0, 0, 9)
+        painter.end()
+
+        # Crée un pinceau texturé explicitement pour la grille
+        brush = QBrush(pixmap)
+        brush.setStyle(Qt.BrushStyle.TexturePattern)
+        return brush
 
     def deleteGrid(self):
         """Generate transparent texture pixmap to disable grid."""
