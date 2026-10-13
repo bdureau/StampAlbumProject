@@ -57,16 +57,24 @@ class StampDlg(QDialog):
                 return parser.get('CONF', 'default country')
         return "France"
 
-    def keyPressEvent(self, e):
-        """Handle keyboard arrow navigation for stamp list selection."""
-        print(e.key())
+    def onStampCurrentChanged(self, current, previous):
+        """Met à jour l'affichage du timbre lors d'un changement de sélection (souris ou clavier)."""
+        if current.isValid():
+            self.stampClicked(current)
 
-        if e.key() == Qt.Key.Key_Down:
-            #print("down")
-            self.stampClicked(self.stampNbrList.currentIndex())
-        if e.key() == Qt.Key.Key_Up:
-            #print("up")
-            self.stampClicked(self.stampNbrList.currentIndex())
+    def keyPressEvent(self, e):
+        """Laisse Qt gérer nativement la navigation au clavier via le selectionModel."""
+        super().keyPressEvent(e)
+    # def keyPressEvent(self, e):
+    #     """Handle keyboard arrow navigation for stamp list selection."""
+    #     print(e.key())
+    #
+    #     if e.key() == Qt.Key.Key_Down:
+    #         #print("down")
+    #         self.stampClicked(self.stampNbrList.currentIndex())
+    #     if e.key() == Qt.Key.Key_Up:
+    #         #print("up")
+    #         self.stampClicked(self.stampNbrList.currentIndex())
 
     def createDlg(self, lastStampObj):
         """Initialize dialog layout, widgets, and form controls."""
@@ -106,7 +114,7 @@ class StampDlg(QDialog):
         vLayoutStampNbr.addWidget(self.stampNbrList)
 
         # where to go if the stamp is clicked
-        self.stampNbrList.clicked.connect(self.stampClicked)
+        #self.stampNbrList.clicked.connect(self.stampClicked)
 
         # hlayout to group them
         hLayout2 = QHBoxLayout()
@@ -298,6 +306,8 @@ class StampDlg(QDialog):
                     myIndex = i
             i = i + 1
         self.stampNbrList.setModel(model)
+        # Connexion du modèle de sélection pour gérer le clavier et la souris
+        self.stampNbrList.selectionModel().currentChanged.connect(self.onStampCurrentChanged)
 
         if len(self.stampNbrList.selectedIndexes()) < 1:
             self.stampNbrList.setCurrentIndex(self.stampNbrList.model().index(myIndex, 0))
@@ -345,6 +355,8 @@ class StampDlg(QDialog):
                     model.appendRow(myitem)
 
                 self.stampNbrList.setModel(model)
+                # Connexion du modèle de sélection pour gérer le clavier et la souris
+                self.stampNbrList.selectionModel().currentChanged.connect(self.onStampCurrentChanged)
 
                 if len(self.stampNbrList.selectedIndexes()) < 1:
                     self.stampNbrList.setCurrentIndex(self.stampNbrList.model().index(0, 0))

@@ -22,9 +22,16 @@ _ = translate.gettext
 class TextDlg(QDialog):
     def __init__(self,  txtObj=None, parent=None):
         super(TextDlg, self).__init__(parent)
-        self.setWindowTitle(_("Add new text"))
+
+        # Détermine s'il s'agit d'une mise à jour (édition) ou d'un ajout
+        is_editing = txtObj is not None and txtObj.toPlainText().strip() != ""
+
+        if is_editing:
+            self.setWindowTitle(_("Update text"))
+        else:
+            self.setWindowTitle(_("Add new text"))
+        #self.setWindowTitle(_("Add new text"))
         self.createDlg(txtObj)
-        #self.myfontSize = font_size
 
 
     def createDlg(self,  txtObj=None):
@@ -182,15 +189,12 @@ class TextDlg(QDialog):
         self.eTXT.setFont(myFont)
 
     def justifyLeftPushed(self):
-        print("")
         # set text alignment to AlignLeft
         self.eTXT.setAlignment(Qt.AlignmentFlag.AlignLeft)
 
 
     def centerPushed(self):
-        print("")
         self.eTXT.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
     def justifyRightPushed(self):
-        print("")
         self.eTXT.setAlignment(Qt.AlignmentFlag.AlignRight)

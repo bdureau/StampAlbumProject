@@ -562,61 +562,8 @@ class Window(QMainWindow):
         """Close the main window."""
         self.close()
 
-    def newPage_old(self, _pageType=None, border=None):
-        """Create and append a new album page tab."""
-        if _pageType is not None and (_pageType == 'portrait' or _pageType == 'landscape'):
-            self.pageType = _pageType
-        else:
-            self.pageType = "portrait"
-            pDlg = PageDlg()
-            res = pDlg.exec()
 
-            if res == 1:
-                if pDlg.pageType == "portrait":
-                    self.pageType = "portrait"
-                    border = True
-                else:
-                    self.pageType = "landscape"
-                    border = True
-            if res == 0:
-                return
-
-        page = Page(self.pageType, border)
-        view = GraphicsView(page)
-        view.scrollContentsBy(0, 0)
-
-        # Attachement direct du signal de zoom
-        view.zoomChanged.connect(self.updateZoomStatus)
-
-        tab1 = QWidget()
-        tab1.view = view  # Clé : référence directe vers la vue
-
-        layout = QVBoxLayout(tab1)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.addWidget(view)
-        tab1.setLayout(layout)
-
-        palette = tab1.palette()
-        palette.setColor(tab1.backgroundRole(), Qt.GlobalColor.lightGray)
-        tab1.setPalette(palette)
-
-        self.pageCount = self.pageCount + 1
-
-        self.tabs.blockSignals(True)
-        tab_title = f"Page {self.tabs.count() + 1}"
-        currentPage = self.tabs.addTab(tab1, tab_title)
-        self.tabs.setCurrentIndex(currentPage)
-        self.tabs.blockSignals(False)
-
-        # Initialise le zoom à 100% de façon isolée
-        self.zoomCombo.blockSignals(True)
-        view.setZoomFactor(1.0)
-        self.zoomCombo.setCurrentText("100%")
-        self.zoomCombo.blockSignals(False)
-
-        return page
-
-    def newPage(self, _pageType=None, border=None, paper_format=None):
+    def newPage_old(self, _pageType=None, border=None, paper_format=None):
         """Create and append a new album page tab."""
         if _pageType is not None and (_pageType == 'portrait' or _pageType == 'landscape'):
             self.pageType = _pageType
@@ -636,6 +583,61 @@ class Window(QMainWindow):
                 return
 
         page = Page(self.pageType, border, paper_format=paper_format)
+        view = GraphicsView(page)
+        view.scrollContentsBy(0, 0)
+
+        view.zoomChanged.connect(self.updateZoomStatus)
+
+        tab1 = QWidget()
+        tab1.view = view
+
+        layout = QVBoxLayout(tab1)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(view)
+        tab1.setLayout(layout)
+
+        palette = tab1.palette()
+        palette.setColor(tab1.backgroundRole(), Qt.GlobalColor.lightGray)
+        tab1.setPalette(palette)
+
+        self.pageCount = self.pageCount + 1
+
+        self.tabs.blockSignals(True)
+        tab_title = f"Page {self.tabs.count() + 1}"
+        currentPage = self.tabs.addTab(tab1, tab_title)
+        self.tabs.setCurrentIndex(currentPage)
+        self.tabs.blockSignals(False)
+
+        self.zoomCombo.blockSignals(True)
+        view.setZoomFactor(1.0)
+        self.zoomCombo.setCurrentText("100%")
+        self.zoomCombo.blockSignals(False)
+
+        return page
+
+    def newPage(self, _pageType=None, border=None, paper_format=None):
+        """Create and append a new album page tab."""
+        border_style = None
+        if _pageType is not None and (_pageType == 'portrait' or _pageType == 'landscape'):
+            self.pageType = _pageType
+        else:
+            self.pageType = "portrait"
+            pDlg = PageDlg()
+            res = pDlg.exec()
+
+            if res == 1:
+                if pDlg.pageType == "portrait":
+                    self.pageType = "portrait"
+                    border = True
+                else:
+                    self.pageType = "landscape"
+                    border = True
+                # Récupère le style de bordure choisi dans le dialogue
+                border_style = pDlg.borderStyle
+            if res == 0:
+                return
+
+        page = Page(self.pageType, border, paper_format=paper_format, border_style=border_style)
         view = GraphicsView(page)
         view.scrollContentsBy(0, 0)
 

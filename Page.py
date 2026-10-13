@@ -38,7 +38,7 @@ _ = translate.gettext
 class Page(QGraphicsScene):
     """Custom QGraphicsScene representing a single stamp album page."""
 
-    def __init__(self, pageType="portrait", border=None, paper_format=None, parent=None):
+    def __init__(self, pageType="portrait", border=None, paper_format=None, border_style=None, parent=None):
         super(Page, self).__init__(parent)
         self.pageType = pageType
 
@@ -66,7 +66,8 @@ class Page(QGraphicsScene):
         px_w = self.page_width_mm / (25.4 / 96.0)
         px_h = self.page_height_mm / (25.4 / 96.0)
 
-        style = self.get_configured_border_style()
+        # Utilise le style passé en paramètre ou celui de la configuration
+        style = border_style if border_style else self.get_configured_border_style()
 
         if self.pageType == "portrait":
             self.setSceneRect(0, 0, px_w, px_h)
@@ -576,7 +577,7 @@ class Page(QGraphicsScene):
                 if it2.isSelected() and it2.parentItem() is None:
                     it2.setPos(topX - it2.boundingRect().size().width(), it2.y())
 
-    def distributeHorizontally(self):
+    def distributeHorizontally_old(self):
         itemLength = 0
         minX = 0
         maxX = 0
@@ -632,13 +633,74 @@ class Page(QGraphicsScene):
                                 if stampItem.type().real == 3:
                                     nextX += i.boundingRect().size().width() + space
 
-    def distributeVertically(self):
+    def distributeHorizontally(self):
+        # Sécurité : nécessite au moins 3 objets pour distribuer horizontalement
+        if self.countSelectedItems() < 3:
+            return
+
+        itemLength = 0
+        minX = 0
+        maxX = 0
+        nbrItems = 0
+        posX = []
+
+        for it in self.items():
+            if it.isSelected() and it.parentItem() is None:
+                nbrItems += 1
+                if it.type().real == 8:
+                    if minX == 0:
+                        minX = it.x()
+                    if it.x() < minX:
+                        minX = it.x()
+                    if (it.x() + it.boundingRect().size().width()) > maxX:
+                        maxX = it.x() + it.boundingRect().size().width()
+                elif it.type().real == 10 and it.data(0) == "stampGroup":
+                    stampIts = it.childItems()
+                    for stampIt in stampIts:
+                        if stampIt.type().real == 3:
+                            if stampIt.x() < 0:
+                                if minX == 0:
+                                    minX = it.x() + stampIt.x()
+                                if (it.x() - stampIt.x()) < minX:
+                                    minX = it.x() + stampIt.x()
+                                if (it.x() + stampIt.x() + it.boundingRect().size().width()) > maxX:
+                                    maxX = it.x() + it.boundingRect().size().width()
+                            else:
+                                if minX == 0:
+                                    minX = it.x()
+                                if it.x() < minX:
+                                    minX = it.x()
+                                if (it.x() + it.boundingRect().size().width()) > maxX:
+                                    maxX = it.x() + it.boundingRect().size().width()
+
+                posX.append(it.x())
+                itemLength += it.boundingRect().size().width()
+
+        if nbrItems > 2 and (nbrItems - 1) > 0:
+            space = (maxX - minX - itemLength) / (nbrItems - 1)
+            posX.sort()
+
+            nextX = minX
+            for px in posX:
+                for i in self.items():
+                    if i.isSelected() and i.parentItem() is None and px == i.x():
+                        i.setPos(nextX, i.y())
+                        if i.type().real == 8:
+                            nextX += i.boundingRect().size().width() + space
+                        elif i.type().real == 10 and i.data(0) == "stampGroup":
+                            stampItems = i.childItems()
+                            for stampItem in stampItems:
+                                if stampItem.type().real == 3:
+                                    nextX += i.boundingRect().size().width() + space
+
+    def distributeVertically_old(self):
         itemLength = 0
         minY = 0
         maxY = 0
         nbrItems = 0
         posY = []
         if self.countSelectedItems() > 2:
+            print(self.countSelectedItems())
             for it in self.items():
                 if it.isSelected() and it.parentItem() is None:
                     nbrItems += 1
@@ -652,6 +714,40 @@ class Page(QGraphicsScene):
                     posY.append(it.y())
                     itemLength += it.boundingRect().size().height()
 
+            space = (maxY - minY - itemLength) / (nbrItems - 1)
+            posY.sort()
+            nextY = minY
+            for py in posY:
+                for i in self.items():
+                    if i.isSelected() and i.parentItem() is None and py == i.y():
+                        i.setPos(i.x(), nextY)
+                        nextY += i.boundingRect().size().height() + space
+
+    def distributeVertically(self):
+        # Sécurité : nécessite au moins 3 objets pour distribuer verticalement
+        if self.countSelectedItems() < 3:
+            return
+
+        itemLength = 0
+        minY = 0
+        maxY = 0
+        nbrItems = 0
+        posY = []
+
+        for it in self.items():
+            if it.isSelected() and it.parentItem() is None:
+                nbrItems += 1
+                if minY == 0:
+                    minY = it.y()
+                if it.y() < minY:
+                    minY = it.y()
+                if (it.y() + it.boundingRect().size().height()) > maxY:
+                    maxY = it.y() + it.boundingRect().size().height()
+
+                posY.append(it.y())
+                itemLength += it.boundingRect().size().height()
+
+        if nbrItems > 2 and (nbrItems - 1) > 0:
             space = (maxY - minY - itemLength) / (nbrItems - 1)
             posY.sort()
             nextY = minY

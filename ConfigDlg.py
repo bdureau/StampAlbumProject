@@ -6,8 +6,10 @@ from PyQt6.QtWidgets import (
     QGraphicsScene, QComboBox, QRadioButton, QButtonGroup, QGroupBox, QListWidgetItem,
     QGraphicsView, QApplication, QLabel, QMainWindow, QMenuBar, QMenu, QHBoxLayout, QListView,
     QToolBar, QGraphicsTextItem, QGraphicsItemGroup, QDialog, QPushButton, QListWidget,
-    QLineEdit, QFormLayout, QStatusBar, QTabWidget, QWidget, QVBoxLayout, QDialogButtonBox, QPlainTextEdit
+    QLineEdit, QFormLayout, QStatusBar, QTabWidget, QWidget, QVBoxLayout, QDialogButtonBox, QPlainTextEdit,
+    QFontComboBox
 )
+from PyQt6.QtGui import QFont
 import configparser
 import sys
 import gettext
@@ -65,9 +67,13 @@ class ConfigDlg(QDialog):
         self.selectedBorderCombo.addItem(_("Greek (Notched)"), PageBorder.STYLE_GREEK)
         self.selectedBorderCombo.addItem(_("Dentelle (Philately)"), PageBorder.STYLE_DENTELLE)
 
+        # Default Font Selection (QFontComboBox liste les polices système)
+        self.selectedFontCombo = QFontComboBox()
+        self.selectedFontCombo.setMaximumWidth(250)
+
         # Default Country
         self.selectedCountryCombo = QComboBox()
-        self.selectedCountryCombo.setMaximumWidth(100)
+        self.selectedCountryCombo.setMaximumWidth(200)
 
         # Default Database
         self.selectedDatabaseCombo = QComboBox()
@@ -83,6 +89,7 @@ class ConfigDlg(QDialog):
         flo.addRow(_("Language:"), self.selectedLanguageCombo)
         flo.addRow(_("Paper format:"), self.selectedPaperCombo)
         flo.addRow(_("Border type:"), self.selectedBorderCombo)
+        flo.addRow(_("Default Font:"), self.selectedFontCombo)
         flo.addRow(_("Default Country:"), self.selectedCountryCombo)
         flo.addRow(_("Default Database:"), self.selectedDatabaseCombo)
         flo.addRow(bb)
@@ -125,6 +132,9 @@ class ConfigDlg(QDialog):
                     self.selectedBorderCombo.setCurrentIndex(index)
                 else:
                     self.selectedBorderCombo.setCurrentText(border_type)
+            if self.configParser.has_option('CONF', 'default font'):
+                font_name = conf['default font']
+                self.selectedFontCombo.setCurrentFont(QFont(font_name))
             if self.configParser.has_option('CONF', 'database type'):
                 self.selectedDatabaseCombo.setCurrentText(str(conf['database type']))
         else:
@@ -134,6 +144,7 @@ class ConfigDlg(QDialog):
                 "paper format": self.PAPER_A4,
                 "default country": "France",
                 "type encadrement": PageBorder.STYLE_TRIPLE,
+                "default font": "Arial",
                 "database type": "sqlite"
             }
             with open(self.configFilePath, 'w') as config:
@@ -143,6 +154,7 @@ class ConfigDlg(QDialog):
         selected_lang = self.selectedLanguageCombo.currentData() or "fr"
         selected_paper = self.selectedPaperCombo.currentData() or self.PAPER_A4
         selected_border = self.selectedBorderCombo.currentData() or self.selectedBorderCombo.currentText()
+        selected_font = self.selectedFontCombo.currentText()
 
         self.configParser["CONF"] = {
             "copyright": self.eCopyRight.text(),
@@ -150,6 +162,7 @@ class ConfigDlg(QDialog):
             "paper format": selected_paper,
             "default country": self.selectedCountryCombo.currentText(),
             "type encadrement": selected_border,
+            "default font": selected_font,
             "database type": self.selectedDatabaseCombo.currentText()
         }
         with open(self.configFilePath, 'w') as config:
