@@ -25,7 +25,6 @@ class AboutDlg(QDialog):
 
     def __init__(self, parent=None):
         super(AboutDlg, self).__init__(parent)
-        #elf.setWindowTitle("À propos de Stamp Album / About Stamp Album")
         self.setWindowTitle(_("About Stamp Album"))
         self.resize(550, 450)
         self.createDlg()
@@ -42,7 +41,6 @@ class AboutDlg(QDialog):
             logo.setPixmap(pixmap.scaledToWidth(64, Qt.TransformationMode.SmoothTransformation))
         header_layout.addWidget(logo)
 
-        #title_label = QLabel("Stamp Album")
         title_label = QLabel(_("Stamp Album"))
         title_font = QFont()
         title_font.setPointSize(16)

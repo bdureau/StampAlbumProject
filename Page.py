@@ -812,7 +812,7 @@ class Page(QGraphicsScene):
         else:
             super().mouseDoubleClickEvent(event)
 
-    def mousePressEvent(self, event):
+    def mousePressEvent_old(self, event):
         """Record initial positions for items before drag operations and preserve text item selection."""
         scene_pos = event.scenePos()
         items_under_cursor = self.items(scene_pos)
@@ -832,9 +832,94 @@ class Page(QGraphicsScene):
         }
         super().mousePressEvent(event)
 
+    def mousePressEvent(self, event):
+        """Gère la sélection unitaire ou multiple par Ctrl+Clic et le déplacement."""
+        scene_pos = event.scenePos()
+        self._press_scene_pos = scene_pos
+        items_under_cursor = self.items(scene_pos)
+
+        # 1. Identifier le premier objet sous le curseur (en ignorant la bordure)
+        target_item = None
+        for item in items_under_cursor:
+            top_item = item
+            while top_item.parentItem() is not None:
+                top_item = top_item.parentItem()
+            data_type = str(top_item.data(0)) if top_item.data(0) is not None else ""
+            if data_type != "borderGroup":
+                target_item = top_item
+                break
+
+        is_ctrl = bool(event.modifiers() & Qt.KeyboardModifier.ControlModifier)
+        self._single_click_item = None
+
+        if event.button() == Qt.MouseButton.LeftButton:
+            if is_ctrl:
+                # Mode Ctrl maintenu : bascule l'état (sélectionne ou désélectionne)
+                if target_item is not None:
+                    target_item.setSelected(not target_item.isSelected())
+
+                self.mouse_press_positions = {
+                    it: it.pos() for it in self.selectedItems() if it.parentItem() is None
+                }
+                event.accept()
+                return  # On sort pour empêcher Qt d'interférer avec les sous-éléments
+
+            else:
+                # Clic simple sans Ctrl
+                if target_item is not None:
+                    if not target_item.isSelected():
+                        # Si l'objet n'était pas sélectionné, il devient le seul sélectionné
+                        self.clearSelection()
+                        target_item.setSelected(True)
+                    else:
+                        # S'il était déjà sélectionné parmi d'autres, on garde la sélection
+                        # en prévision d'un déplacement groupé, mais on note l'item
+                        if len(self.selectedItems()) > 1:
+                            self._single_click_item = target_item
+                else:
+                    # Clic dans le vide ou sur la bordure : tout désélectionner
+                    self.clearSelection()
+
+        # Enregistrement des positions initiales pour l'Undo (MoveCommand)
+        self.mouse_press_positions = {
+            item: item.pos() for item in self.selectedItems() if item.parentItem() is None
+        }
+        super().mousePressEvent(event)
+
+    def mouseReleaseEvent_old(self, event):
+        super().mouseReleaseEvent(event)
+
+        moved_items = []
+        old_positions = []
+
+        for item, old_pos in self.mouse_press_positions.items():
+            if hasattr(item, 'is_resizing') and item.is_resizing:
+                continue
+
+            if item.pos() != old_pos:
+                moved_items.append(item)
+                old_positions.append(old_pos)
+
+        if moved_items:
+            cmd = MoveCommand(moved_items, old_positions)
+            self.undoStack.push(cmd)
+
+        self.mouse_press_positions.clear()
+
     def mouseReleaseEvent(self, event):
         super().mouseReleaseEvent(event)
 
+        # Si on a cliqué sans Ctrl sur un objet déjà dans un groupe sans le déplacer,
+        # on réduit la sélection à ce seul objet
+        if hasattr(self, '_single_click_item') and self._single_click_item is not None:
+            if hasattr(self, '_press_scene_pos'):
+                drag_distance = (event.scenePos() - self._press_scene_pos).manhattanLength()
+                if drag_distance < 4:
+                    self.clearSelection()
+                    self._single_click_item.setSelected(True)
+            self._single_click_item = None
+
+        # Gestion de l'historique d'annulation (Undo)
         moved_items = []
         old_positions = []
 

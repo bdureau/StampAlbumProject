@@ -115,6 +115,7 @@ class Window(QMainWindow):
         editMenu.addAction(self.undoAction)
         editMenu.addAction(self.redoAction)
         editMenu.addSeparator()
+        editMenu.addAction(self.selectAllAction)
         editMenu.addAction(self.copyAction)
         editMenu.addAction(self.pasteAction)
         editMenu.addAction(self.cutAction)
@@ -173,12 +174,18 @@ class Window(QMainWindow):
         self.zoomCombo.setCurrentText("100%")
         self.zoomCombo.currentTextChanged.connect(self.onZoomComboChanged)
 
-        # Place zoom combo box at top right corner of menu bar
-        #self.menuBar().setCornerWidget(self.zoomCombo, Qt.Corner.TopRightCorner)
 
         # Status bar zoom display widget
         self.statusZoomLabel = QLabel("Zoom: 100%", self.statusBar())
         self.statusBar().addPermanentWidget(self.statusZoomLabel)
+
+    def selectAll(self):
+        """Sélectionne tous les éléments mobiles de la page active."""
+        scene = self.getCurrentPageScene()
+        if scene:
+            for item in scene.items():
+                if item.parentItem() is None and str(item.data(0)) != "borderGroup":
+                    item.setSelected(True)
 
     def onZoomComboChanged(self, text: str):
         """Handle zoom dropdown selection change and apply to active viewport."""
@@ -437,6 +444,10 @@ class Window(QMainWindow):
         iconAutoArrange.addPixmap(QPixmap("images/auto_arrange.png"), QIcon.Mode.Normal, QIcon.State.Off)
         self.autoArrangeAction.setIcon(iconAutoArrange)
 
+        self.selectAllAction = QAction(_("Select &All"), self)
+        self.selectAllAction.setShortcut(QKeySequence.StandardKey.SelectAll)
+        self.selectAllAction.triggered.connect(self.selectAll)
+
     def _createToolBars(self):
         """Construct application toolbars."""
         fileToolBar = self.addToolBar("File")
@@ -575,59 +586,6 @@ class Window(QMainWindow):
         """Close the main window."""
         self.close()
 
-
-    def newPage_old(self, _pageType=None, border=None, paper_format=None):
-        """Create and append a new album page tab."""
-        if _pageType is not None and (_pageType == 'portrait' or _pageType == 'landscape'):
-            self.pageType = _pageType
-        else:
-            self.pageType = "portrait"
-            pDlg = PageDlg()
-            res = pDlg.exec()
-
-            if res == 1:
-                if pDlg.pageType == "portrait":
-                    self.pageType = "portrait"
-                    border = True
-                else:
-                    self.pageType = "landscape"
-                    border = True
-            if res == 0:
-                return
-
-        page = Page(self.pageType, border, paper_format=paper_format)
-        view = GraphicsView(page)
-        view.scrollContentsBy(0, 0)
-
-        view.zoomChanged.connect(self.updateZoomStatus)
-
-        tab1 = QWidget()
-        tab1.view = view
-
-        layout = QVBoxLayout(tab1)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.addWidget(view)
-        tab1.setLayout(layout)
-
-        palette = tab1.palette()
-        palette.setColor(tab1.backgroundRole(), Qt.GlobalColor.lightGray)
-        tab1.setPalette(palette)
-
-        self.pageCount = self.pageCount + 1
-
-        self.tabs.blockSignals(True)
-        tab_title = f"Page {self.tabs.count() + 1}"
-        currentPage = self.tabs.addTab(tab1, tab_title)
-        self.tabs.setCurrentIndex(currentPage)
-        self.tabs.blockSignals(False)
-
-        self.zoomCombo.blockSignals(True)
-        view.setZoomFactor(1.0)
-        self.zoomCombo.setCurrentText("100%")
-        self.zoomCombo.blockSignals(False)
-
-        return page
-
     def newPage(self, _pageType=None, border=None, paper_format=None):
         """Create and append a new album page tab."""
         border_style = None
@@ -727,25 +685,6 @@ class Window(QMainWindow):
         self.deleteAllPages()
         self.currentAlbumName = ""
 
-    def newBorder_old(self):
-        """Add a new page border using the default style configured in settings."""
-        scene = self.getCurrentPageScene()
-        if scene:
-            if scene.pageType == "portrait":
-                scene.addBorder(
-                    177 / (25.4 / 96.0),
-                    272 / (25.4 / 96.0),
-                    19 / (25.4 / 96.0),
-                    0, 0, 0
-                )
-            else:
-                scene.addBorder(
-                    272 / (25.4 / 96.0),
-                    177 / (25.4 / 96.0),
-                    ((297 - 272) / 2) / (25.4 / 96.0),
-                    0, 19 / (25.4 / 96.0), 0
-                )
-
     def newBorder(self):
         """Add a new page border using the paper size and style configured in settings."""
         scene = self.getCurrentPageScene()
@@ -781,7 +720,6 @@ class Window(QMainWindow):
             return
         self.deleteAllPages()
         self.newPage(None, True)
-
 
     def createRichText(self):
         """Create a new rich text block on the current active page."""
@@ -1037,215 +975,6 @@ class Window(QMainWindow):
                         currentPage, str(stampNbr), str(stampValue), str(stampDesc),
                         float(width) * (25.4 / 96.0), float(height) * (25.4 / 96.0),
                         float(x), float(y), pixmap
-                    )
-
-    def openNewAlbumFileVersion_old(self, myroot):
-        """Deserialize and reconstruct a complete album structure from XML root element."""
-        for it in myroot.findall('page'):
-            page_type = str(it.attrib.get("type", "portrait"))
-            paper_format = str(it.attrib.get("paper_format", "A4"))
-
-            self.newPage(page_type, False, paper_format=paper_format)
-            currentPage = self.getCurrentPageScene()
-            if not currentPage:
-                continue
-
-            # --- Restore Standard Text Labels ---
-            textLabelsItems = it.findall('textLabel')
-            for textLabel in textLabelsItems:
-                label = textLabel.find('label').text or ""
-                font = textLabel.find('font')
-
-                myFont = QFont()
-                if font is not None:
-                    myFont.setBold(self.str_to_bool(font.find('bold').text))
-                    myFont.setUnderline(self.str_to_bool(font.find('underline').text))
-                    myFont.setItalic(self.str_to_bool(font.find('italic').text))
-                    myFont.setStrikeOut(self.str_to_bool(font.find('strikeOut').text))
-                    myFont.setPointSize(int(font.find('pointSize').text))
-
-                pos = textLabel.find('labelPos')
-                x = float(pos.find('x').text) if pos is not None and pos.find('x') is not None else 20.0
-                y = float(pos.find('y').text) if pos is not None and pos.find('y') is not None else 20.0
-
-                # item = QGraphicsTextItem(label)
-                # item.setFont(myFont)
-                # item.setPos(x, y)
-                # item.setData(0, "textLabel")
-                # item.setTextInteractionFlags(Qt.TextInteractionFlag.NoTextInteraction)
-                # item.setFlags(
-                #     QGraphicsTextItem.GraphicsItemFlag.ItemIsMovable | QGraphicsTextItem.GraphicsItemFlag.ItemIsSelectable)
-                # currentPage.addItem(item)
-                currentPage.addTextLabel(label, x, y, myFont, Qt.AlignmentFlag.AlignCenter,"textLabel")
-
-            # --- Restore Rich Text Labels ---
-            richTextLabelsItems = it.findall('richTextLabel')
-            for richLabel in richTextLabelsItems:
-                html_element = richLabel.find('html_label')
-                html_content = html_element.text if html_element is not None else ""
-
-                pos = richLabel.find('labelPos')
-                x = float(pos.find('x').text) if pos is not None and pos.find('x') is not None else 50.0
-                y = float(pos.find('y').text) if pos is not None and pos.find('y') is not None else 50.0
-
-                item = QGraphicsTextItem()
-                item.setHtml(html_content)
-                item.setTextWidth(200)
-                item.setPos(x, y)
-                item.setData(0, "richTextLabel")
-                item.setTextInteractionFlags(Qt.TextInteractionFlag.NoTextInteraction)
-                item.setFlags(
-                    QGraphicsTextItem.GraphicsItemFlag.ItemIsMovable | QGraphicsTextItem.GraphicsItemFlag.ItemIsSelectable)
-                currentPage.addItem(item)
-
-            # --- Restore Standalone Images ---
-            imageItems = it.findall('imageItem')
-            for img_node in imageItems:
-                pixmap_data = img_node.find('pixmapData')
-                if pixmap_data is not None and pixmap_data.text:
-                    pixmap = self.bytesToPixmap(pixmap_data.text)
-
-                    if not pixmap.isNull():
-                        pos = img_node.find('imagePos')
-                        x = float(pos.find('x').text) if pos is not None and pos.find('x') is not None else 50.0
-                        y = float(pos.find('y').text) if pos is not None and pos.find('y') is not None else 50.0
-                        scale_val = float(img_node.find('scale').text) if img_node.find('scale') is not None else 1.0
-
-                        pixmap_item = ResizablePixmapItem(pixmap)
-                        pixmap_item.setPos(x, y)
-                        pixmap_item.setScale(scale_val)
-
-                        currentPage.addItem(pixmap_item)
-
-            # --- Restore Copyright Labels ---
-            copyrightLabelsItems = it.findall('labelCopyRight')
-            for copyrightLabel in copyrightLabelsItems:
-                label = copyrightLabel.find('label').text or ""
-                font = copyrightLabel.find('font')
-                myFont = QFont()
-                if font is not None:
-                    myFont.setBold(self.str_to_bool(font.find('bold').text))
-                    myFont.setUnderline(self.str_to_bool(font.find('underline').text))
-                    myFont.setItalic(self.str_to_bool(font.find('italic').text))
-                    myFont.setStrikeOut(self.str_to_bool(font.find('strikeOut').text))
-                    myFont.setPointSize(int(font.find('pointSize').text))
-
-                pos = copyrightLabel.find('labelPos')
-                x = float(pos.find('x').text) if pos is not None and pos.find('x') is not None else 80.0
-                y = float(pos.find('y').text) if pos is not None and pos.find('y') is not None else 1045.0
-
-                item = QGraphicsTextItem(label)
-                item.setFont(myFont)
-                item.setPos(x, y)
-                item.setData(0, "labelCopyRight")
-                item.setTextInteractionFlags(Qt.TextInteractionFlag.NoTextInteraction)
-                item.setFlags(
-                    QGraphicsTextItem.GraphicsItemFlag.ItemIsMovable | QGraphicsTextItem.GraphicsItemFlag.ItemIsSelectable)
-                currentPage.addItem(item)
-
-            # --- Restore Page Number Labels ---
-            pageNbrLabelsItems = it.findall('labelPageNbr')
-            for pageNbrLabel in pageNbrLabelsItems:
-                label = pageNbrLabel.find('label').text or ""
-                font = pageNbrLabel.find('font')
-                myFont = QFont()
-                if font is not None:
-                    myFont.setBold(self.str_to_bool(font.find('bold').text))
-                    myFont.setUnderline(self.str_to_bool(font.find('underline').text))
-                    myFont.setItalic(self.str_to_bool(font.find('italic').text))
-                    myFont.setStrikeOut(self.str_to_bool(font.find('strikeOut').text))
-                    myFont.setPointSize(int(font.find('pointSize').text))
-
-                pos = pageNbrLabel.find('labelPos')
-                x = float(pos.find('x').text) if pos is not None and pos.find('x') is not None else 600.0
-                y = float(pos.find('y').text) if pos is not None and pos.find('y') is not None else 1045.0
-
-                item = QGraphicsTextItem(label)
-                item.setFont(myFont)
-                item.setPos(x, y)
-                item.setData(0, "labelPageNbr")
-                item.setTextInteractionFlags(Qt.TextInteractionFlag.NoTextInteraction)
-                item.setFlags(
-                    QGraphicsTextItem.GraphicsItemFlag.ItemIsMovable | QGraphicsTextItem.GraphicsItemFlag.ItemIsSelectable)
-                currentPage.addItem(item)
-
-            # --- Restore Year Labels ---
-            yearLabelsItems = it.findall('labelYear')
-            for yearLabel in yearLabelsItems:
-                label = yearLabel.find('label').text or ""
-                font = yearLabel.find('font')
-                myFont = QFont()
-                if font is not None:
-                    myFont.setBold(self.str_to_bool(font.find('bold').text))
-                    myFont.setUnderline(self.str_to_bool(font.find('underline').text))
-                    myFont.setItalic(self.str_to_bool(font.find('italic').text))
-                    myFont.setStrikeOut(self.str_to_bool(font.find('strikeOut').text))
-                    myFont.setPointSize(int(font.find('pointSize').text))
-
-                pos = yearLabel.find('labelPos')
-                x = float(pos.find('x').text) if pos is not None and pos.find('x') is not None else 350.0
-                y = float(pos.find('y').text) if pos is not None and pos.find('y') is not None else 80.0
-
-                item = QGraphicsTextItem(label)
-                item.setFont(myFont)
-                item.setPos(x, y)
-                item.setData(0, "labelYear")
-                item.setTextInteractionFlags(Qt.TextInteractionFlag.NoTextInteraction)
-                item.setFlags(
-                    QGraphicsTextItem.GraphicsItemFlag.ItemIsMovable | QGraphicsTextItem.GraphicsItemFlag.ItemIsSelectable)
-                currentPage.addItem(item)
-
-            # --- Restore Page Borders ---
-            pageBorderItem = it.findall('borderGroup')
-            for border in pageBorderItem:
-                pos = border.find('borderPos')
-                x = float(pos.find('x').text) if pos is not None and pos.find('x') is not None else 0.0
-                y = float(pos.find('y').text) if pos is not None and pos.find('y') is not None else 0.0
-                width1 = border.find('width1').text
-                height1 = border.find('height1').text
-                border_style = border.attrib.get("style", PageBorder.STYLE_TRIPLE)
-
-                currentPage.addBorder(
-                    float(width1), float(height1),
-                    x, y, 0, 0, style=border_style
-                )
-
-            # --- Restore Stamp Groups ---
-            stampItems = it.findall('stampGroup')
-            for stamp in stampItems:
-                pos = stamp.find('stampPos')
-                x = float(pos.find('x').text) if pos is not None and pos.find('x') is not None else 0.0
-                y = float(pos.find('y').text) if pos is not None and pos.find('y') is not None else 0.0
-
-                sizeBox = stamp.find('stampBox')
-                width = sizeBox.find('width').text
-                height = sizeBox.find('height').text
-                try:
-                    stampBox_width = sizeBox.find('stampBox_width').text
-                    stampBox_height = sizeBox.find('stampBox_height').text
-                    use_new = 1
-                except:
-                    use_new = 0
-
-                stampDesc = stamp.find('stampDesc').text or ""
-                stampNbr = stamp.find('stampNbr').text or ""
-                stampValue = stamp.find('stampValue').text or ""
-                pixmapItem = stamp.find('pixmapItem').text
-
-                stamp_obj = Stamp()
-                pixmap = self.bytesToPixmap(pixmapItem)
-
-                if use_new == 1:
-                    stamp_obj.createStampPix(
-                        currentPage, str(stampNbr), str(stampValue), str(stampDesc),
-                        float(stampBox_width), float(stampBox_height),
-                        x, y, pixmap
-                    )
-                else:
-                    stamp_obj.createStampPix(
-                        currentPage, str(stampNbr), str(stampValue), str(stampDesc),
-                        float(width) * (25.4 / 96.0), float(height) * (25.4 / 96.0),
-                        x, y, pixmap
                     )
 
     def openNewAlbumFileVersion(self, myroot):
@@ -1702,17 +1431,6 @@ class Window(QMainWindow):
         if scene:
             scene.newLabel()
 
-    def gridOnOff_old(self):
-        """Toggle grid pattern background in active scene."""
-        child = self.getCurrentPageScene()
-        if child:
-            if child.gridOn:
-                child.setBackgroundBrush(QBrush(self.deleteGrid()))
-                child.gridOn = False
-            else:
-                child.setBackgroundBrush(QBrush(self.drawGrid()))
-                child.gridOn = True
-
     def gridOnOff(self):
         """Toggle grid pattern background in active scene."""
         print("gridOnOff")
@@ -1726,6 +1444,7 @@ class Window(QMainWindow):
                 print("drawGrid")
                 child.setBackgroundBrush(QBrush(self.drawGrid()))
                 child.gridOn = True
+
     def drawGrid(self):
         """Generate grid texture pixmap."""
         self.pixmap = QPixmap(10, 10)
@@ -1739,22 +1458,6 @@ class Window(QMainWindow):
         painter.drawLine(0, 0, 0, pixmapWidth)
         painter.end()
         return self.pixmap
-
-    def drawGrid_old(self):
-        """Generate grid texture pixmap."""
-        pixmap = QPixmap(10, 10)
-        pixmap.fill(Qt.GlobalColor.transparent)
-
-        painter = QPainter(pixmap)
-        painter.setPen(QPen(Qt.GlobalColor.gray, 1))
-        painter.drawLine(0, 0, 9, 0)
-        painter.drawLine(0, 0, 0, 9)
-        painter.end()
-
-        # Crée un pinceau texturé explicitement pour la grille
-        brush = QBrush(pixmap)
-        brush.setStyle(Qt.BrushStyle.TexturePattern)
-        return brush
 
     def deleteGrid(self):
         """Generate transparent texture pixmap to disable grid."""
@@ -1778,7 +1481,6 @@ class Window(QMainWindow):
         ok = pixmap.loadFromData(ba, "PNG")
         assert ok
         return pixmap
-
 
     def getCurrentPageScene(self):
         """Return QGraphicsScene instance from the active tab widget safely."""
