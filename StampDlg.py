@@ -25,9 +25,10 @@ from Stamp import Stamp
 import configparser
 
 import gettext
+from AppLanguage import get_language
 # Set up gettext localization
 gettext.find("StampDlg")
-translate = gettext.translation('StampDlg', localedir='locale', languages=['fr'])
+translate = gettext.translation('StampDlg', localedir='locale', languages=[get_language()], fallback=True)
 translate.install()
 _ = translate.gettext
 

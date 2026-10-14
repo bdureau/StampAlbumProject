@@ -14,8 +14,9 @@ from PyQt6.QtPrintSupport import QPrintPreviewDialog, QPrinter, QPrintDialog
 from Databases import DB
 
 import gettext
+from AppLanguage import get_language
 gettext.find("EditStampDlg")
-translate = gettext.translation('EditStampDlg', localedir='locale', languages=['fr'])
+translate = gettext.translation('EditStampDlg', localedir='locale', languages=[get_language()], fallback=True)
 translate.install()
 _ = translate.gettext
 

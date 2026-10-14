@@ -17,9 +17,9 @@ msgstr ""
 
 #: MainWindow.py:128
 msgid "&File"
-msgstr "&Fichier"
+msgstr "&File"
 
 #: MainWindow.py:138
 msgid "&Edit"
-msgstr "&Editer"
+msgstr "&Edit"
 

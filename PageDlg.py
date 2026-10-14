@@ -10,8 +10,9 @@ import configparser
 from pathlib import Path
 
 import gettext
+from AppLanguage import get_language
 gettext.find("PageDlg")
-translate = gettext.translation('PageDlg', localedir='locale', languages=['fr'])
+translate = gettext.translation('PageDlg', localedir='locale', languages=[get_language()], fallback=True)
 translate.install()
 _ = translate.gettext
 

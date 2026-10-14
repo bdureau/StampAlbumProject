@@ -14,8 +14,9 @@ from PyQt6.QtGui import QFont, QBrush, QPainter, QPen, QPixmap, QPolygonF, QImag
 from PyQt6.QtPrintSupport import QPrintPreviewDialog, QPrinter, QPrintDialog
 
 import gettext
+from AppLanguage import get_language
 gettext.find("TextDlg")
-translate = gettext.translation('TextDlg', localedir='locale', languages=['fr'])
+translate = gettext.translation('TextDlg', localedir='locale', languages=[get_language()], fallback=True)
 translate.install()
 _ = translate.gettext
 

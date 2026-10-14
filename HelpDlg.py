@@ -16,18 +16,16 @@ from PyQt6.QtWidgets import (
     QToolBar, QGraphicsTextItem, QGraphicsItemGroup, QDialog, QPushButton, QListWidget,QTextBrowser,
     QLineEdit, QFormLayout, QStatusBar, QTabWidget, QWidget, QVBoxLayout, QDialogButtonBox, QPlainTextEdit
 )
-#from PyQt6.QtGui import QFont, QBrush, QPainter, QPen, QPixmap, QPolygonF, QImage, QIcon, QStandardItem, QAction, QColor
-#from PyQt6.QtPrintSupport import QPrintPreviewDialog, QPrinter, QPrintDialog
 
+from AppLanguage import get_language
 gettext.find("HelpDlg")
-translate = gettext.translation('HelpDlg', localedir='locale', languages=['fr'], fallback=True)
+translate = gettext.translation('HelpDlg', localedir='locale', languages=[get_language()], fallback=True)
 translate.install()
 _ = translate.gettext
 
 class HelpDlg(QDialog):
     def __init__(self, parent=None):
         super(HelpDlg, self).__init__(parent)
-        #self.setWindowTitle("Application Help")
         self.setWindowTitle(_("Application Help"))
         self.createDlg()
 

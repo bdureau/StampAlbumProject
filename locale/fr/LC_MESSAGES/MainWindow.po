@@ -54,7 +54,7 @@ msgstr "&Nouveau"
 
 #: MainWindow.py:194
 msgid "&Open..."
-msgstr "&Ouvrir"
+msgstr "&Ouvrir..."
 
 #: MainWindow.py:201
 msgid "&Save"
@@ -74,7 +74,7 @@ msgstr "Apperçu impression page courante..."
 
 #: MainWindow.py:222
 msgid "&Print current to PDF..."
-msgstr "Convertir page courrante en PDF ..."
+msgstr "Convertir page courante en PDF ..."
 
 #: MainWindow.py:229
 msgid "&Exit"
@@ -94,7 +94,7 @@ msgstr "Couper"
 
 #: MainWindow.py:252
 msgid "New Stamp ..."
-msgstr "Nouveau timbre..."
+msgstr "Nouveau timbre ..."
 
 #: MainWindow.py:253
 msgid "Edit Current Stamp ..."
@@ -102,7 +102,7 @@ msgstr "Modifier timbre ..."
 
 #: MainWindow.py:256
 msgid "New Page ..."
-msgstr "Nouvelle Page..."
+msgstr "Nouvelle Page ..."
 
 #: MainWindow.py:261
 msgid "Delete Page ..."
@@ -142,7 +142,7 @@ msgstr "Encadrement page"
 
 #: MainWindow.py:278
 msgid "New page nbr"
-msgstr "Numero de page"
+msgstr "Numéro de page"
 
 #: MainWindow.py:283
 msgid "New page nbr all pages"
@@ -208,6 +208,14 @@ msgstr "A&nnuler"
 msgid "&Redo"
 msgstr "&Rétablir"
 
+#: MainWindow.py:443
+msgid "Auto-arrange Stamps"
+msgstr "Mise en page auto"
+
+#: MainWindow.py:448
+msgid "Select &All"
+msgstr "Selectionner tout"
+
 #: MainWindow.py:472
 msgid "Are you sure you want to exit the application?"
 msgstr "Etes vous certains de vouloir quitter l'application?"
@@ -218,7 +226,7 @@ msgstr "Quitter"
 
 #: MainWindow.py:550
 msgid "Are you sure you want clear the current page?"
-msgstr "Etes vous certain de vouloir effacer la page courrante?"
+msgstr "Etes vous certain de vouloir effacer la page courante?"
 
 #: MainWindow.py:550
 msgid "Delete all objects"
@@ -226,11 +234,11 @@ msgstr "Effacer tous les objets"
 
 #: MainWindow.py:560
 msgid "Are you sure you want to delete the current page?"
-msgstr "Etes vous certain de vouloir supprimer la page courrante?"
+msgstr "Etes vous certain de vouloir supprimer la page courante?"
 
 #: MainWindow.py:560
 msgid "Delete current page"
-msgstr "Supprimer page courrante"
+msgstr "Supprimer page courante"
 
 #: MainWindow.py:586
 msgid "Are you sure you want to delete the entire album?"
@@ -238,11 +246,11 @@ msgstr "Etes vous certain de vouloir effacer l'album?"
 
 #: MainWindow.py:586
 msgid "Delete album"
-msgstr "Affacer album"
+msgstr "Effacer album"
 
 #: MainWindow.py:452
 msgid "Are you sure you want to delete all the pages?"
-msgstr "Etes vous certain d effacer toutes les pages?"
+msgstr "Etes vous certain d'effacer toutes les pages?"
 
 #: MainWindow.py:618 MainWindow.py:677
 msgid "Delete all pages"
@@ -258,7 +266,7 @@ msgstr "Sauvegarder album"
 
 #: MainWindow.py:1070
 msgid "Save current page"
-msgstr "Sauvegarder page courrante"
+msgstr "Sauvegarder page courante"
 
 #: MainWindow.py:890
 msgid "About Stamp Album"

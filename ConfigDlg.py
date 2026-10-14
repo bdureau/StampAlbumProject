@@ -13,9 +13,10 @@ from PyQt6.QtGui import QFont
 import configparser
 import sys
 import gettext
+from AppLanguage import get_language
 
 gettext.find("ConfigDlg")
-translate = gettext.translation('ConfigDlg', localedir='locale', languages=['fr'])
+translate = gettext.translation('ConfigDlg', localedir='locale', languages=[get_language()], fallback=True)
 translate.install()
 _ = translate.gettext
 

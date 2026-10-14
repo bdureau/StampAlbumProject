@@ -38,11 +38,12 @@ import os, gzip
 from TextDlg import TextDlg
 
 import gettext
+from AppLanguage import get_language
 from PyQt6.QtGui import QAction, QIcon, QKeySequence
 
 # Set up gettext localization
 gettext.find("MainWindow")
-translate = gettext.translation('MainWindow', localedir='locale', languages=['fr'])
+translate = gettext.translation('MainWindow', localedir='locale', languages=[get_language()])
 
 translate.install()
 _ = translate.gettext
