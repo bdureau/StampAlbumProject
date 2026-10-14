@@ -851,3 +851,113 @@ class Page(QGraphicsScene):
             self.undoStack.push(cmd)
 
         self.mouse_press_positions.clear()
+
+    def autoArrangeStamps(self):
+        """Organise et aligne harmonieusement les timbres sélectionnés ou tous les timbres."""
+        # 1. Sélectionner les timbres à organiser
+        selected_stamps = [
+            it for it in self.selectedItems()
+            if it.parentItem() is None and it.data(0) == "stampGroup"
+        ]
+        # Si moins de 2 timbres sont sélectionnés, on organise tous les timbres de la page
+        stamps = selected_stamps if len(selected_stamps) > 1 else [
+            it for it in self.items()
+            if it.parentItem() is None and it.data(0) == "stampGroup"
+        ]
+
+        if not stamps:
+            return
+
+        # Sauvegarder les positions pour le "Undo"
+        old_positions = [it.pos() for it in stamps]
+
+        # 2. Regrouper les timbres en rangées (clustering basé sur la position Y)
+        stamps_by_y = sorted(stamps, key=lambda s: s.y())
+        rows = []
+        y_threshold = 100.0  # Tolérance pour considérer que des timbres sont sur la même ligne
+
+        for stamp in stamps_by_y:
+            placed = False
+            for row in rows:
+                # Si le timbre est proche de la ligne actuelle en Y
+                avg_y = sum(s.y() for s in row) / len(row)
+                if abs(stamp.y() - avg_y) < y_threshold:
+                    row.append(stamp)
+                    placed = True
+                    break
+            if not placed:
+                rows.append([stamp])
+
+        # Trier les timbres de gauche à droite dans chaque rangée
+        for row in rows:
+            row.sort(key=lambda s: s.x())
+
+        # Trier les rangées de haut en bas
+        rows.sort(key=lambda r: sum(s.y() for s in r) / len(r))
+
+        # 3. Paramètres de mise en page
+        page_w = self.sceneRect().width()
+        page_h = self.sceneRect().height()
+
+        # Marges estimées d'après les images (laissant de la place pour le titre/année et le copyright)
+        margin_top = 200.0
+        margin_bottom = page_h - 150.0
+        available_h = max(200.0, margin_bottom - margin_top)
+
+        # Calculer la hauteur de chaque rangée
+        row_heights = [max(s.boundingRect().height() for s in row) for row in rows]
+        total_rows_h = sum(row_heights)
+
+        # Calculer l'espacement vertical (v_gap) entre les rangées
+        if len(rows) > 1:
+            v_gap = (available_h - total_rows_h) / (len(rows) - 1)
+            # Limiter l'espacement vertical pour que ce ne soit ni trop collé ni trop étiré
+            v_gap = max(20.0, min(v_gap, 100.0))
+        else:
+            v_gap = 50.0
+
+        # Recalculer le point de départ Y pour centrer verticalement le bloc entier
+        total_block_h = total_rows_h + (len(rows) - 1) * v_gap
+        current_y = margin_top + max(0.0, (available_h - total_block_h) / 2.0)
+
+        # Espacement horizontal fixe entre les timbres (peut être ajusté)
+        h_spacing = 40.0
+
+        # 4. Appliquer les nouvelles positions
+        for i, row in enumerate(rows):
+            # Calculer la largeur totale de la rangée pour la centrer horizontalement
+            row_width = sum(s.boundingRect().width() for s in row) + (len(row) - 1) * h_spacing
+            start_x = (page_w - row_width) / 2.0
+
+            # Aligner les cadres (stampBox) plutôt que le haut du groupe (qui inclut le titre s'il y en a)
+            box_offsets = []
+            for stamp in row:
+                box = next((c for c in stamp.childItems() if c.data(0) == "stampBox"), None)
+                box_offsets.append(box.y() if box else 0.0)
+
+            target_box_offset = max(box_offsets) if box_offsets else 0.0
+
+            current_x = start_x
+            for j, stamp in enumerate(row):
+                # Ajuster le Y pour que les stampBox soient alignées sur la ligne
+                y_adjust = target_box_offset - box_offsets[j]
+
+                new_x = current_x - stamp.boundingRect().x()
+                new_y = current_y + y_adjust - stamp.boundingRect().y()
+
+                stamp.setPos(new_x, new_y)
+                current_x += stamp.boundingRect().width() + h_spacing
+
+            current_y += row_heights[i] + v_gap
+
+        # 5. Enregistrer le déplacement pour la fonction "Undo" (Annuler)
+        moved_items = []
+        old_moved_positions = []
+        for it, old_pos in zip(stamps, old_positions):
+            if it.pos() != old_pos:
+                moved_items.append(it)
+                old_moved_positions.append(old_pos)
+
+        if moved_items:
+            cmd = MoveCommand(moved_items, old_moved_positions)
+            self.undoStack.push(cmd)

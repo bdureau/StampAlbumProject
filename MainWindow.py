@@ -134,6 +134,8 @@ class Window(QMainWindow):
         alignMenu.addAction(self.centerVerticallyAction)
         alignMenu.addAction(self.distributeVerticallyAction)
         alignMenu.addAction(self.distributeHorizontallyAction)
+        alignMenu.addSeparator()
+        alignMenu.addAction(self.autoArrangeAction)
 
         # Page Menu
         pageMenu = menuBar.addMenu(_("Page"))
@@ -172,7 +174,7 @@ class Window(QMainWindow):
         self.zoomCombo.currentTextChanged.connect(self.onZoomComboChanged)
 
         # Place zoom combo box at top right corner of menu bar
-        self.menuBar().setCornerWidget(self.zoomCombo, Qt.Corner.TopRightCorner)
+        #self.menuBar().setCornerWidget(self.zoomCombo, Qt.Corner.TopRightCorner)
 
         # Status bar zoom display widget
         self.statusZoomLabel = QLabel("Zoom: 100%", self.statusBar())
@@ -430,6 +432,11 @@ class Window(QMainWindow):
         self.redoAction.setIcon(QIcon("images/redo.png"))
         self.redoAction.triggered.connect(self.redo)
 
+        self.autoArrangeAction = QAction(_("Auto-arrange Stamps"), self)
+        iconAutoArrange = QIcon()
+        iconAutoArrange.addPixmap(QPixmap("images/auto_arrange.png"), QIcon.Mode.Normal, QIcon.State.Off)
+        self.autoArrangeAction.setIcon(iconAutoArrange)
+
     def _createToolBars(self):
         """Construct application toolbars."""
         fileToolBar = self.addToolBar("File")
@@ -464,6 +471,7 @@ class Window(QMainWindow):
         alignToolBar.addAction(self.distributeHorizontallyAction)
         alignToolBar.addAction(self.centerHorizontallyAction)
         alignToolBar.addAction(self.centerVerticallyAction)
+        alignToolBar.addAction(self.autoArrangeAction)
         self.addToolBar(alignToolBar)
         self.addToolBarBreak()
 
@@ -481,6 +489,10 @@ class Window(QMainWindow):
         helpToolBar.addAction(self.aboutAction)
         helpToolBar.addAction(self.setupAppAction)
         self.addToolBar(helpToolBar)
+
+        zoomToolBar = QToolBar("Zoom", self)
+        zoomToolBar.addWidget(self.zoomCombo)
+        self.addToolBar(zoomToolBar)
 
         statusBar = QStatusBar(self)
         statusBar.setObjectName("statusBar")
@@ -534,6 +546,7 @@ class Window(QMainWindow):
 
         self.aboutAction.triggered.connect(self.about)
         self.helpContentAction.triggered.connect(self.help)
+        self.autoArrangeAction.triggered.connect(self.autoArrangeStamps)
 
     def closeEvent(self, event):
         """Prompt user confirmation before closing the application window."""
@@ -1850,3 +1863,9 @@ class Window(QMainWindow):
         """Open application configuration dialog."""
         dlg = ConfigDlg()
         res = dlg.exec()
+
+    def autoArrangeStamps(self):
+        """Déclenche la mise en page harmonieuse sur la page courante."""
+        scene = self.getCurrentPageScene()
+        if scene and hasattr(scene, "autoArrangeStamps"):
+            scene.autoArrangeStamps()
