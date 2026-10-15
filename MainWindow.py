@@ -6,6 +6,8 @@ tabbed page displays, actions, and file I/O operations (XML/gzip).
 
 Author: Boris du Reau
 """
+import re
+import shlex
 from PyQt6 import sip
 from ResizablePixmapItem import ResizablePixmapItem
 from PageBorder import PageBorder
@@ -61,7 +63,8 @@ class Window(QMainWindow):
         self.setWindowIcon(QtGui.QIcon('stamp_book1170.png'))
 
         # Set initial main window dimensions
-        self.resize(int(222 / (25.4 / 96)), 800)
+        #self.resize(int(222 / (25.4 / 96)), 800)
+        self.resize(900, 850)
 
         # Track page count and recent stamp dialog selections
         self.pageCount = 0
@@ -107,6 +110,7 @@ class Window(QMainWindow):
         menuBar.addMenu(fileMenu)
         fileMenu.addAction(self.newAction)
         fileMenu.addAction(self.openAction)
+        fileMenu.addAction(self.importAlbumEasyAction)
         fileMenu.addAction(self.saveAction)
         fileMenu.addAction(self.printAction)
         fileMenu.addAction(self.printPreviewCurrentPageAction)
@@ -186,8 +190,6 @@ class Window(QMainWindow):
         # Status bar zoom display widget
         self.statusZoomLabel = QLabel("Zoom: 100%", self.statusBar())
         self.statusBar().addPermanentWidget(self.statusZoomLabel)
-
-
 
     def selectAll(self):
         """Sélectionne tous les éléments mobiles de la page active."""
@@ -344,7 +346,7 @@ class Window(QMainWindow):
 
         self.newRichTextAction = QAction(_("New Rich Text ..."), self)
         iconRichText = QIcon()
-        iconRichText.addPixmap(QPixmap("images/text.png"), QIcon.Mode.Normal, QIcon.State.Off)
+        iconRichText.addPixmap(QPixmap("images/rich_text.png"), QIcon.Mode.Normal, QIcon.State.Off)
         self.newRichTextAction.setIcon(iconRichText)
 
         self.newImageAction = QAction(_("New Image ..."), self)
@@ -458,21 +460,28 @@ class Window(QMainWindow):
         self.selectAllAction.setShortcut(QKeySequence.StandardKey.SelectAll)
         self.selectAllAction.triggered.connect(self.selectAll)
 
-        self.reorderPagesAction = QAction(_("Planche contact..."), self)
+        self.reorderPagesAction = QAction(_("Thundnails..."), self)
         iconReorder = QIcon()
         # Tu peux utiliser l'icône de la grille ou en créer une spécifique
-        iconReorder.addPixmap(QPixmap("images/grid.png"), QIcon.Mode.Normal, QIcon.State.Off)
+        iconReorder.addPixmap(QPixmap("images/thumbnails.png"), QIcon.Mode.Normal, QIcon.State.Off)
         self.reorderPagesAction.setIcon(iconReorder)
         self.reorderPagesAction.triggered.connect(self.openThumbnails)
 
-        self.changeBorderCurrentAction = QAction(_("Changer la bordure (Page courante)"), self)
+        self.changeBorderCurrentAction = QAction(_("Change current page border"), self)
         iconBorder = QIcon()
         iconBorder.addPixmap(QPixmap("images/border.png"), QIcon.Mode.Normal, QIcon.State.Off)
         self.changeBorderCurrentAction.setIcon(iconBorder)
 
-        self.changeBorderAllAction = QAction(_("Changer la bordure (Toutes les pages)"), self)
-        self.changeBorderAllAction.setIcon(iconBorder)
+        self.changeBorderAllAction = QAction(_("Change page bordure (all pages)"), self)
+        #self.changeBorderAllAction.setIcon(iconBorder)
+        iconBorderAll = QIcon()
+        iconBorderAll.addPixmap(QPixmap("images/border_all.png"), QIcon.Mode.Normal, QIcon.State.Off)
+        self.changeBorderAllAction.setIcon(iconBorderAll)
 
+        self.importAlbumEasyAction = QAction(_("Import AlbumEasy..."), self)
+        iconImport = QIcon()
+        iconImport.addPixmap(QPixmap("images/open.png"), QIcon.Mode.Normal, QIcon.State.Off)
+        self.importAlbumEasyAction.setIcon(iconImport)
 
     def _createToolBars(self):
         """Construct application toolbars."""
@@ -591,6 +600,7 @@ class Window(QMainWindow):
 
         self.changeBorderCurrentAction.triggered.connect(self.changeBorderCurrentPage)
         self.changeBorderAllAction.triggered.connect(self.changeBorderAllPages)
+        self.importAlbumEasyAction.triggered.connect(self.importAlbumEasy)
 
     def closeEvent(self, event):
         """Prompt user confirmation before closing the application window."""
@@ -619,61 +629,6 @@ class Window(QMainWindow):
         """Close the main window."""
         self.close()
 
-    def newPage_old(self, _pageType=None, border=None, paper_format=None):
-        """Create and append a new album page tab."""
-        border_style = None
-        if _pageType is not None and (_pageType == 'portrait' or _pageType == 'landscape'):
-            self.pageType = _pageType
-        else:
-            self.pageType = "portrait"
-            pDlg = PageDlg()
-            res = pDlg.exec()
-
-            if res == 1:
-                if pDlg.pageType == "portrait":
-                    self.pageType = "portrait"
-                    border = True
-                else:
-                    self.pageType = "landscape"
-                    border = True
-                # Récupère le style de bordure choisi dans le dialogue
-                border_style = pDlg.borderStyle
-            if res == 0:
-                return
-
-        page = Page(self.pageType, border, paper_format=paper_format, border_style=border_style)
-        view = GraphicsView(page)
-        view.scrollContentsBy(0, 0)
-
-        view.zoomChanged.connect(self.updateZoomStatus)
-
-        tab1 = QWidget()
-        tab1.view = view
-
-        layout = QVBoxLayout(tab1)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.addWidget(view)
-        tab1.setLayout(layout)
-
-        palette = tab1.palette()
-        palette.setColor(tab1.backgroundRole(), Qt.GlobalColor.lightGray)
-        tab1.setPalette(palette)
-
-        self.pageCount = self.pageCount + 1
-
-        self.tabs.blockSignals(True)
-        tab_title = f"Page {self.tabs.count() + 1}"
-        currentPage = self.tabs.addTab(tab1, tab_title)
-        self.tabs.setCurrentIndex(currentPage)
-        self.tabs.blockSignals(False)
-
-        self.zoomCombo.blockSignals(True)
-        view.setZoomFactor(1.0)
-        self.zoomCombo.setCurrentText("100%")
-        self.zoomCombo.blockSignals(False)
-
-        return page
-
     def newPage(self, _pageType=None, border=None, paper_format=None):
         """Create and append a new album page tab."""
         border_style = None
@@ -695,6 +650,8 @@ class Window(QMainWindow):
                 return
 
         page = Page(self.pageType, border, paper_format=paper_format, border_style=border_style)
+        # Connecter le signal d'historique pour afficher/masquer l'étoile dynamiquement
+        page.undoStack.cleanChanged.connect(self.renameTabs)
         view = GraphicsView(page)
         view.scrollContentsBy(0, 0)
         view.zoomChanged.connect(self.updateZoomStatus)
@@ -1350,6 +1307,14 @@ class Window(QMainWindow):
         if os.path.isfile(fileName):
             os.remove(fileName)
 
+        # --- NOUVEAU : Marquer toutes les pages comme "propres" (sauvegardées) ---
+        for x in range(self.tabs.count()):
+            widget = self.tabs.widget(x)
+            if hasattr(widget, 'view') and widget.view and widget.view.scene():
+                widget.view.scene().undoStack.setClean()
+
+        self.renameTabs()
+
     def printAllPagesPDF(self):
         """Export all album pages into a single PDF document."""
         printer = QPrinter(QPrinter.PrinterMode.HighResolution)
@@ -1763,3 +1728,209 @@ class Window(QMainWindow):
 
             # Restaurer l'affichage de l'onglet de départ
             self.tabs.setCurrentIndex(current_index)
+
+    def importAlbumEasy(self):
+        """Lit un fichier texte AlbumEasy et génère les pages correspondantes."""
+        options = QFileDialog.Option.DontUseNativeDialog
+        fileName, _filter = QFileDialog.getOpenFileName(
+            self, _("Import from AlbumEasy"), "", "AlbumEasy Files (*.txt);;All Files (*)", options=options
+        )
+        if not fileName:
+            return
+
+        # Demander s'il faut nettoyer l'album existant
+        qm = QMessageBox()
+        ret = qm.question(self, _('Import AlbumEasy'),
+                          _("Do you want to replace the actual album ?\n(Choose 'No' to append it)"),
+                          qm.StandardButton.Yes | qm.StandardButton.No)
+        if ret == qm.StandardButton.Yes:
+            self.deleteAllPages()
+
+        # --- Variables d'état pour simuler le comportement d'AlbumEasy ---
+        current_page = None
+
+        page_width_mm = 210.0  # Par défaut A4, sera mis à jour par ALBUM_PAGES_SIZE
+        page_margin_top = 15.0
+
+        current_row_y_mm = page_margin_top
+        current_x_mm = 20.0
+        row_spacing_mm = 5.0
+
+        global_page_title = ""
+
+        def mm_to_px(mm):
+            """Convertit les millimètres d'AlbumEasy en pixels d'écran pour PyQt."""
+            return float(mm) / (25.4 / 96.0)
+
+        # Expression régulière pour extraire le texte entre guillemets OU les mots sans espace
+        arg_pattern = re.compile(r'"([^"]*)"|(\S+)')
+
+        # Expression régulière pour extraire uniquement les nombres flottants/entiers d'une chaîne
+        def extract_floats(args_list):
+            floats = []
+            for arg in args_list:
+                # Cherche les motifs qui ressemblent à des nombres (ex: 25.0, 15, -6.0)
+                matches = re.findall(r'-?\d+\.?\d*', str(arg))
+                for m in matches:
+                    try:
+                        floats.append(float(m))
+                    except ValueError:
+                        pass
+            return floats
+
+        multiline_buffer = ""
+
+        try:
+            with open(fileName, 'r', encoding='utf-8', errors='ignore') as f:
+                for line in f:
+                    line = line.strip()
+
+                    # Ignorer les commentaires complets ou les parties après le '#'
+                    if '#' in line:
+                        line = line.split('#')[0].strip()
+
+                    if not line:
+                        continue
+
+                    # Gestion des lignes qui se terminent par \ (multilignes)
+                    if line.endswith('\\'):
+                        multiline_buffer += line[:-1]
+                        continue
+                    else:
+                        line = multiline_buffer + line
+                        multiline_buffer = ""
+
+                    # Extraction de la commande principale ex: PAGE_START () ou COLOUR_PAGE_TEXT(red)
+                    match = re.match(r'^([A-Z_0-9]+)\s*(?:\((.*)\))?', line)
+                    if match:
+                        cmd = match.group(1)
+                        args_str = match.group(2) if match.group(2) else ""
+
+                        # Extraction des arguments via regex
+                        args = []
+                        for arg_match in arg_pattern.finditer(args_str):
+                            val = arg_match.group(1) if arg_match.group(1) is not None else arg_match.group(2)
+                            val = val.replace('\\n', '\n')
+                            args.append(val)
+
+                        # --- TRAITEMENT DES COMMANDES ---
+
+                        # 1. PARAMÈTRES GLOBAUX
+                        if cmd == "ALBUM_PAGES_SIZE":
+                            nums = extract_floats(args)
+                            if len(nums) >= 1:
+                                page_width_mm = nums[0]
+
+                        elif cmd == "ALBUM_PAGES_TITLE":
+                            # Le dernier argument texte est généralement le titre
+                            text_args = [a for a in args if not re.match(r'^-?\d+\.?\d*$', a)]
+                            if text_args:
+                                global_page_title = text_args[-1]
+
+                        # 2. NOUVELLE PAGE
+                        elif cmd == "PAGE_START":
+                            self.newPage("portrait", True)
+                            current_page = self.getCurrentPageScene()
+                            current_row_y_mm = page_margin_top
+
+                            if global_page_title and current_page:
+                                font = QFont("Arial", 16, QFont.Weight.Bold)
+                                x_px = mm_to_px(page_width_mm / 2.0)
+                                current_page.addTextLabel(global_page_title, x_px - 50, mm_to_px(current_row_y_mm),
+                                                          font, Qt.AlignmentFlag.AlignCenter)
+                                current_row_y_mm += 15.0
+
+                        # 3. TEXTES FLOTTANTS
+                        elif cmd in ["PAGE_TEXT", "PAGE_TEXT_CENTRE"] and current_page:
+                            nums = extract_floats(args)
+                            font_size = int(nums[0]) if nums else 10
+
+                            # Le texte est généralement le seul argument non-numérique ou le dernier
+                            text = ""
+                            for a in reversed(args):
+                                if not re.match(r'^[A-Z0-9_\.]+$', a):
+                                    text = a
+                                    break
+
+                            if text:
+                                font = QFont("Arial", font_size)
+                                x_px = mm_to_px(page_width_mm / 2.0)
+                                y_px = mm_to_px(current_row_y_mm)
+
+                                current_page.addTextLabel(text, x_px - 50, y_px, font, Qt.AlignmentFlag.AlignCenter)
+                                text_lines = text.count('\n') + 1
+                                current_row_y_mm += (font_size * 0.35 * text_lines) + 5.0
+
+                        # 3b. ESPACEMENT VERTICAL EXPLICITE
+                        elif cmd == "PAGE_VSPACE" and current_page:
+                            nums = extract_floats(args)
+                            if nums:
+                                current_row_y_mm += nums[0]
+
+                        # 4. PRÉPARATION D'UNE RANGÉE DE TIMBRES
+                        elif cmd in ["ROW_START_FS", "ROW_START_JS", "ROW_START"] and current_page:
+                            nums = extract_floats(args)
+                            if len(nums) >= 3:
+                                espacement_y = nums[-3]
+                                row_spacing_mm = nums[-2]
+                                current_x_mm = nums[-1]
+                                current_row_y_mm += espacement_y
+                            elif len(nums) == 2:
+                                row_spacing_mm = nums[0]
+                                current_x_mm = nums[1]
+
+                        # 5. AJOUT D'UN TIMBRE OU IMAGE
+                        elif cmd in ["STAMP_ADD", "STAMP_ADD_IMG"] and current_page:
+                            nums = extract_floats(args)
+                            if len(nums) >= 2:
+                                w_mm = nums[0]
+                                h_mm = nums[1]
+
+                                # Filtrer les arguments purement textuels pour remplir les cases
+                                text_args = [a for a in args[2:] if not a.replace('.', '', 1).isdigit()]
+
+                                text_center = text_args[0] if len(text_args) > 0 else ""
+                                text_top = text_args[1] if len(text_args) > 1 else ""
+                                text_bot = text_args[2] if len(text_args) > 2 else ""
+                                value = text_args[3] if len(text_args) > 3 else ""
+
+                                if not text_top:
+                                    text_top = text_center
+
+                                pixmap = QPixmap(int(mm_to_px(w_mm)), int(mm_to_px(h_mm)))
+                                pixmap.fill(Qt.GlobalColor.transparent)
+
+                                stamp_obj = Stamp()
+                                stamp_obj.createStampPix(
+                                    current_page,
+                                    text_top,
+                                    value,
+                                    text_bot,
+                                    mm_to_px(w_mm),
+                                    mm_to_px(h_mm),
+                                    mm_to_px(current_x_mm),
+                                    mm_to_px(current_row_y_mm),
+                                    pixmap
+                                )
+
+                                current_x_mm += w_mm + row_spacing_mm
+
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            QMessageBox.critical(self, _("Erreur d'importation"), f"Une erreur est survenue :\n{str(e)}")
+
+    def renameTabs(self, *args):
+        """Renomme séquentiellement tous les onglets, avec une étoile si modifiés."""
+        self.tabs.blockSignals(True)
+        for i in range(self.tabs.count()):
+            widget = self.tabs.widget(i)
+            prefix = ""
+
+            # Vérifier si la page a des modifications non sauvegardées
+            if hasattr(widget, 'view') and widget.view and widget.view.scene():
+                if not widget.view.scene().undoStack.isClean():
+                    prefix = "*"
+
+            self.tabs.setTabText(i, f"{prefix}Page {i + 1}")
+        self.tabs.blockSignals(False)

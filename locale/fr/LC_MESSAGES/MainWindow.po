@@ -220,6 +220,22 @@ msgstr "Mise en page auto"
 msgid "Select &All"
 msgstr "Selectionner tout"
 
+#: MainWindow.py:463
+msgid "Thundnails..."
+msgstr ""
+
+#: MainWindow.py:470
+msgid "Change current page border"
+msgstr "Changer la bordure courante"
+
+#: MainWindow.py:475
+msgid "Change page bordure (all pages)"
+msgstr "Changer la bordure sur toutes les pages"
+
+#: MainWindow.py:481
+msgid "Import AlbumEasy..."
+msgstr "Importer AlbumEasy..."
+
 #: MainWindow.py:472
 msgid "Are you sure you want to exit the application?"
 msgstr "Etes vous certains de vouloir quitter l'application?"
@@ -259,6 +275,25 @@ msgstr "Etes vous certain d'effacer toutes les pages?"
 #: MainWindow.py:618 MainWindow.py:677
 msgid "Delete all pages"
 msgstr "Effacer toutes les pages"
+
+
+#: MainWindow.py:1736
+msgid "Import from AlbumEasy"
+msgstr "Import de AlbumEasy"
+
+#: MainWindow.py:1743
+msgid "Import AlbumEasy"
+msgstr "Import de AlbumEasy"
+
+#: MainWindow.py:1744
+msgid ""
+"Do you want to replace the actual album ?\n"
+"(Choose 'No' to append it)"
+msgstr ""
+"Voulez vous remplacer l'album courant ?\n"
+"(Choisir 'Non' pour l'ajouter)"
+
+
 
 #: MainWindow.py:688
 msgid "Open Album file"

@@ -350,32 +350,6 @@ class Page(QGraphicsScene):
 
             stamp.updateStamp(stampItem, stampObj, self)
 
-    def printPagePDF_old(self, fileName2):
-        """Export current page as a PDF file."""
-        for item in self.items():
-            item.setSelected(False)
-
-        printer = QPrinter(QPrinter.PrinterMode.HighResolution)
-
-        if self.pageType == "portrait":
-            printer.setPageOrientation(QPageLayout.Orientation.Portrait)
-        else:
-            printer.setPageOrientation(QPageLayout.Orientation.Landscape)
-
-        printer.setOutputFormat(QPrinter.OutputFormat.PdfFormat)
-        printer.setOutputFileName(fileName2)
-        scale = printer.resolution() / 96.0
-
-        printer.setPageMargins(QtCore.QMarginsF(0.0, 0.0, 0.0, 0.0), QtGui.QPageLayout.Unit.Millimeter)
-
-        p = QPainter(printer)
-
-        source = QtCore.QRectF(0, 0, self.width(), self.height())
-        target = QRectF(0, 0, source.size().width() * scale, source.size().height() * scale)
-
-        self.render(p, target, source)
-        p.end()
-
     def printPagePDF(self, fileName2):
         """Export current page as a PDF file."""
         # 1. Désélectionner tous les objets
@@ -425,21 +399,6 @@ class Page(QGraphicsScene):
 
         previewDialog.paintRequested.connect(self.createPreview)
         previewDialog.exec()
-
-    def createPreview_old(self, printer):
-        """Render scene page preview for QPrintPreviewDialog."""
-        for item in self.items():
-            item.setSelected(False)
-
-        scale = printer.resolution() / 96.0
-        printer.setPageMargins(QtCore.QMarginsF(0.0, 0.0, 0.0, 0.0), QtGui.QPageLayout.Unit.Millimeter)
-
-        p = QPainter(printer)
-        source = QtCore.QRectF(0, 0, self.width(), self.height())
-        target = QRectF(0, 0, source.size().width() * scale, source.size().height() * scale)
-
-        self.render(p, target, source)
-        p.end()
 
     def createPreview(self, printer):
         """Render scene page preview for QPrintPreviewDialog."""
@@ -638,62 +597,6 @@ class Page(QGraphicsScene):
                 if it2.isSelected() and it2.parentItem() is None:
                     it2.setPos(topX - it2.boundingRect().size().width(), it2.y())
 
-    def distributeHorizontally_old(self):
-        itemLength = 0
-        minX = 0
-        maxX = 0
-        nbrItems = 0
-        posX = []
-
-        if self.countSelectedItems() > 2:
-            for it in self.items():
-                if it.isSelected() and it.parentItem() is None:
-                    nbrItems += 1
-                    if it.type().real == 8:
-                        if minX == 0:
-                            minX = it.x()
-                        if it.x() < minX:
-                            minX = it.x()
-                        if (it.x() + it.boundingRect().size().width()) > maxX:
-                            maxX = it.x() + it.boundingRect().size().width()
-                    elif it.type().real == 10 and it.data(0) == "stampGroup":
-                        stampIts = it.childItems()
-                        for stampIt in stampIts:
-                            if stampIt.type().real == 3:
-                                if stampIt.x() < 0:
-                                    if minX == 0:
-                                        minX = it.x() + stampIt.x()
-                                    if (it.x() - stampIt.x()) < minX:
-                                        minX = it.x() + stampIt.x()
-                                    if (it.x() + stampIt.x() + it.boundingRect().size().width()) > maxX:
-                                        maxX = it.x() + it.boundingRect().size().width()
-                                else:
-                                    if minX == 0:
-                                        minX = it.x()
-                                    if it.x() < minX:
-                                        minX = it.x()
-                                    if (it.x() + it.boundingRect().size().width()) > maxX:
-                                        maxX = it.x() + it.boundingRect().size().width()
-
-                    posX.append(it.x())
-                    itemLength += it.boundingRect().size().width()
-
-            space = (maxX - minX - itemLength) / (nbrItems - 1)
-            posX.sort()
-
-            nextX = minX
-            for px in posX:
-                for i in self.items():
-                    if i.isSelected() and i.parentItem() is None and px == i.x():
-                        i.setPos(nextX, i.y())
-                        if i.type().real == 8:
-                            nextX += i.boundingRect().size().width() + space
-                        elif i.type().real == 10 and i.data(0) == "stampGroup":
-                            stampItems = i.childItems()
-                            for stampItem in stampItems:
-                                if stampItem.type().real == 3:
-                                    nextX += i.boundingRect().size().width() + space
-
     def distributeHorizontally(self):
         # Sécurité : nécessite au moins 3 objets pour distribuer horizontalement
         if self.countSelectedItems() < 3:
@@ -753,36 +656,6 @@ class Page(QGraphicsScene):
                             for stampItem in stampItems:
                                 if stampItem.type().real == 3:
                                     nextX += i.boundingRect().size().width() + space
-
-    def distributeVertically_old(self):
-        itemLength = 0
-        minY = 0
-        maxY = 0
-        nbrItems = 0
-        posY = []
-        if self.countSelectedItems() > 2:
-            print(self.countSelectedItems())
-            for it in self.items():
-                if it.isSelected() and it.parentItem() is None:
-                    nbrItems += 1
-                    if minY == 0:
-                        minY = it.y()
-                    if it.y() < minY:
-                        minY = it.y()
-                    if (it.y() + it.boundingRect().size().height()) > maxY:
-                        maxY = it.y() + it.boundingRect().size().height()
-
-                    posY.append(it.y())
-                    itemLength += it.boundingRect().size().height()
-
-            space = (maxY - minY - itemLength) / (nbrItems - 1)
-            posY.sort()
-            nextY = minY
-            for py in posY:
-                for i in self.items():
-                    if i.isSelected() and i.parentItem() is None and py == i.y():
-                        i.setPos(i.x(), nextY)
-                        nextY += i.boundingRect().size().height() + space
 
     def distributeVertically(self):
         # Sécurité : nécessite au moins 3 objets pour distribuer verticalement
@@ -873,26 +746,6 @@ class Page(QGraphicsScene):
         else:
             super().mouseDoubleClickEvent(event)
 
-    def mousePressEvent_old(self, event):
-        """Record initial positions for items before drag operations and preserve text item selection."""
-        scene_pos = event.scenePos()
-        items_under_cursor = self.items(scene_pos)
-
-        # Filtrer pour éviter de sélectionner la bordure si on clique sur un texte
-        for item in items_under_cursor:
-            top_item = item
-            while top_item.parentItem() is not None:
-                top_item = top_item.parentItem()
-            data_type = str(top_item.data(0)) if top_item.data(0) is not None else ""
-            if data_type != "borderGroup":
-                top_item.setSelected(True)
-                break
-
-        self.mouse_press_positions = {
-            item: item.pos() for item in self.selectedItems() if item.parentItem() is None
-        }
-        super().mousePressEvent(event)
-
     def mousePressEvent(self, event):
         """Gère la sélection unitaire ou multiple par Ctrl+Clic et le déplacement."""
         scene_pos = event.scenePos()
@@ -946,26 +799,6 @@ class Page(QGraphicsScene):
             item: item.pos() for item in self.selectedItems() if item.parentItem() is None
         }
         super().mousePressEvent(event)
-
-    def mouseReleaseEvent_old(self, event):
-        super().mouseReleaseEvent(event)
-
-        moved_items = []
-        old_positions = []
-
-        for item, old_pos in self.mouse_press_positions.items():
-            if hasattr(item, 'is_resizing') and item.is_resizing:
-                continue
-
-            if item.pos() != old_pos:
-                moved_items.append(item)
-                old_positions.append(old_pos)
-
-        if moved_items:
-            cmd = MoveCommand(moved_items, old_positions)
-            self.undoStack.push(cmd)
-
-        self.mouse_press_positions.clear()
 
     def mouseReleaseEvent(self, event):
         super().mouseReleaseEvent(event)

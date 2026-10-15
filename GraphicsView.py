@@ -73,7 +73,6 @@ def item_to_ds(it, ds):
     if isinstance(it, QtWidgets.QGraphicsPathItem):
         ds << it.path()
 
-
 def ds_to_item(ds):
     module_name = ds.readQString()
     class_name = ds.readQString()
