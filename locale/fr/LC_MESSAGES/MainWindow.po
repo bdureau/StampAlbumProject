@@ -124,6 +124,10 @@ msgstr "Effacer Album ..."
 msgid "New text ..."
 msgstr "Nouveau texte ..."
 
+#: MainWindow.py:336
+msgid "New Rich Text ..."
+msgstr "Nouveau texte riche"
+
 #: MainWindow.py:277
 msgid "New Image ..."
 msgstr "Nouvelle image ..."

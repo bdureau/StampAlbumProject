@@ -13,7 +13,7 @@ from AboutDlg import AboutDlg
 from PyQt6.QtCore import QPointF, Qt, QPoint, QByteArray, QRectF
 from PyQt6 import QtCore, QtWidgets, QtGui
 from PyQt6.QtWidgets import (
-    QMessageBox, QGraphicsPixmapItem,
+    QGridLayout, QMessageBox, QGraphicsPixmapItem,
     QGraphicsRectItem,
     QGraphicsScene, QFileDialog, QComboBox,
     QGraphicsView, QApplication, QLabel, QMainWindow, QMenuBar, QMenu,
@@ -92,7 +92,10 @@ class Window(QMainWindow):
         # Create an initial default page
         print("before self.newPage(None, True)")
         self.newPage(None, True)
-        print("after self.newPage(None, True)")
+
+        self.tabs.setMovable(True)
+        # On connecte le déplacement d'onglet pour renommer "Page 1, Page 2..." correctement
+        self.tabs.tabBar().tabMoved.connect(self.renameTabs)
         self.setCentralWidget(self.tabs)
 
     def _createMenuBar(self):
@@ -146,6 +149,10 @@ class Window(QMainWindow):
         pageMenu.addAction(self.deletePageObjectsAction)
         pageMenu.addAction(self.drawGridAction)
         pageMenu.addAction(self.deleteAlbumAction)
+        pageMenu.addAction(self.changeBorderCurrentAction)
+        pageMenu.addAction(self.changeBorderAllAction)
+        pageMenu.addSeparator()
+        pageMenu.addAction(self.reorderPagesAction)
 
         # Objects Menu
         objectMenu = menuBar.addMenu(_("Objects"))
@@ -179,6 +186,8 @@ class Window(QMainWindow):
         # Status bar zoom display widget
         self.statusZoomLabel = QLabel("Zoom: 100%", self.statusBar())
         self.statusBar().addPermanentWidget(self.statusZoomLabel)
+
+
 
     def selectAll(self):
         """Sélectionne tous les éléments mobiles de la page active."""
@@ -449,6 +458,22 @@ class Window(QMainWindow):
         self.selectAllAction.setShortcut(QKeySequence.StandardKey.SelectAll)
         self.selectAllAction.triggered.connect(self.selectAll)
 
+        self.reorderPagesAction = QAction(_("Planche contact..."), self)
+        iconReorder = QIcon()
+        # Tu peux utiliser l'icône de la grille ou en créer une spécifique
+        iconReorder.addPixmap(QPixmap("images/grid.png"), QIcon.Mode.Normal, QIcon.State.Off)
+        self.reorderPagesAction.setIcon(iconReorder)
+        self.reorderPagesAction.triggered.connect(self.openThumbnails)
+
+        self.changeBorderCurrentAction = QAction(_("Changer la bordure (Page courante)"), self)
+        iconBorder = QIcon()
+        iconBorder.addPixmap(QPixmap("images/border.png"), QIcon.Mode.Normal, QIcon.State.Off)
+        self.changeBorderCurrentAction.setIcon(iconBorder)
+
+        self.changeBorderAllAction = QAction(_("Changer la bordure (Toutes les pages)"), self)
+        self.changeBorderAllAction.setIcon(iconBorder)
+
+
     def _createToolBars(self):
         """Construct application toolbars."""
         fileToolBar = self.addToolBar("File")
@@ -472,6 +497,10 @@ class Window(QMainWindow):
         pageToolBar.addAction(self.deletePageObjectsAction)
         pageToolBar.addAction(self.drawGridAction)
         pageToolBar.addAction(self.deleteAlbumAction)
+        # Dans _createToolBars (sous pageToolBar) :
+        pageToolBar.addAction(self.reorderPagesAction)
+        pageToolBar.addAction(self.changeBorderCurrentAction)
+        pageToolBar.addAction(self.changeBorderAllAction)
         self.addToolBar(pageToolBar)
 
         alignToolBar = QToolBar("Align", self)
@@ -560,6 +589,9 @@ class Window(QMainWindow):
         self.helpContentAction.triggered.connect(self.help)
         self.autoArrangeAction.triggered.connect(self.autoArrangeStamps)
 
+        self.changeBorderCurrentAction.triggered.connect(self.changeBorderCurrentPage)
+        self.changeBorderAllAction.triggered.connect(self.changeBorderAllPages)
+
     def closeEvent(self, event):
         """Prompt user confirmation before closing the application window."""
         qm = QMessageBox()
@@ -587,7 +619,7 @@ class Window(QMainWindow):
         """Close the main window."""
         self.close()
 
-    def newPage(self, _pageType=None, border=None, paper_format=None):
+    def newPage_old(self, _pageType=None, border=None, paper_format=None):
         """Create and append a new album page tab."""
         border_style = None
         if _pageType is not None and (_pageType == 'portrait' or _pageType == 'landscape'):
@@ -623,6 +655,79 @@ class Window(QMainWindow):
         layout.addWidget(view)
         tab1.setLayout(layout)
 
+        palette = tab1.palette()
+        palette.setColor(tab1.backgroundRole(), Qt.GlobalColor.lightGray)
+        tab1.setPalette(palette)
+
+        self.pageCount = self.pageCount + 1
+
+        self.tabs.blockSignals(True)
+        tab_title = f"Page {self.tabs.count() + 1}"
+        currentPage = self.tabs.addTab(tab1, tab_title)
+        self.tabs.setCurrentIndex(currentPage)
+        self.tabs.blockSignals(False)
+
+        self.zoomCombo.blockSignals(True)
+        view.setZoomFactor(1.0)
+        self.zoomCombo.setCurrentText("100%")
+        self.zoomCombo.blockSignals(False)
+
+        return page
+
+    def newPage(self, _pageType=None, border=None, paper_format=None):
+        """Create and append a new album page tab."""
+        border_style = None
+        if _pageType is not None and (_pageType == 'portrait' or _pageType == 'landscape'):
+            self.pageType = _pageType
+        else:
+            self.pageType = "portrait"
+            pDlg = PageDlg()
+            res = pDlg.exec()
+            if res == 1:
+                if pDlg.pageType == "portrait":
+                    self.pageType = "portrait"
+                    border = True
+                else:
+                    self.pageType = "landscape"
+                    border = True
+                border_style = pDlg.borderStyle
+            if res == 0:
+                return
+
+        page = Page(self.pageType, border, paper_format=paper_format, border_style=border_style)
+        view = GraphicsView(page)
+        view.scrollContentsBy(0, 0)
+        view.zoomChanged.connect(self.updateZoomStatus)
+
+        tab1 = QWidget()
+        tab1.view = view
+
+        # ------------------ CHANGEMENTS ICI ------------------
+        layout = QGridLayout(tab1)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+
+        from GraphicsView import RulerWidget
+        h_ruler = RulerWidget(view, Qt.Orientation.Horizontal)
+        v_ruler = RulerWidget(view, Qt.Orientation.Vertical)
+
+        view.zoomChanged.connect(lambda x: h_ruler.update())
+        view.zoomChanged.connect(lambda x: v_ruler.update())
+
+        # Bouton dans l'angle supérieur gauche pour effacer tous les guides
+        btn_clear = QPushButton("×")
+        btn_clear.setFixedSize(20, 20)
+        btn_clear.setToolTip(_("Effacer les guides"))
+        btn_clear.setStyleSheet("border: 1px solid #ccc; background: #e0e0e0; font-weight: bold; color: #555;")
+        btn_clear.clicked.connect(page.clearGuides)
+
+        layout.addWidget(btn_clear, 0, 0)
+        layout.addWidget(h_ruler, 0, 1)
+        layout.addWidget(v_ruler, 1, 0)
+        layout.addWidget(view, 1, 1)
+        # -----------------------------------------------------
+
+        tab1.setLayout(layout)
         palette = tab1.palette()
         palette.setColor(tab1.backgroundRole(), Qt.GlobalColor.lightGray)
         tab1.setPalette(palette)
@@ -1572,3 +1677,89 @@ class Window(QMainWindow):
         scene = self.getCurrentPageScene()
         if scene and hasattr(scene, "autoArrangeStamps"):
             scene.autoArrangeStamps()
+
+    def renameTabs(self, *args):
+        """Renomme séquentiellement tous les onglets après un déplacement manuel ou une réorganisation."""
+        self.tabs.blockSignals(True)
+        for i in range(self.tabs.count()):
+            self.tabs.setTabText(i, f"Page {i + 1}")
+        self.tabs.blockSignals(False)
+
+    def openThumbnails(self):
+        """Ouvre la planche contact pour réorganiser visuellement les pages."""
+        from ThumbnailsDlg import ThumbnailsDlg
+        dlg = ThumbnailsDlg(self.tabs, self)
+
+        if dlg.exec() == 1:
+            new_order = dlg.get_new_order()
+
+            # Vérifier si l'ordre a vraiment changé pour éviter de tout recharger inutilement
+            if new_order == list(range(self.tabs.count())):
+                return
+
+            # Mettre en cache tous les widgets (pages) existants
+            widgets = [self.tabs.widget(i) for i in range(self.tabs.count())]
+
+            # On efface les onglets et on les recrée dans le nouvel ordre
+            self.tabs.blockSignals(True)
+            self.tabs.clear()
+
+            for original_index in new_order:
+                self.tabs.addTab(widgets[original_index], "")  # Le nom sera mis par renameTabs
+
+            self.tabs.blockSignals(False)
+
+            # Renommer "Page 1", "Page 2" proprement
+            self.renameTabs()
+
+            # Afficher la première page par défaut après la réorganisation
+            if self.tabs.count() > 0:
+                self.tabs.setCurrentIndex(0)
+
+    def changeBorderCurrentPage(self):
+        """Ouvre le dialogue et modifie la bordure de la page courante."""
+        scene = self.getCurrentPageScene()
+        if not scene: return
+
+        current_style = None
+        for item in scene.items():
+            if item.data(0) == "borderGroup":
+                current_style = item.data(4)
+                break
+
+        from BorderDlg import BorderDlg
+        dlg = BorderDlg(current_style, self)
+        if dlg.exec() == 1:
+            new_style = dlg.get_style()
+            scene.replaceBorder(new_style)
+
+    def changeBorderAllPages(self):
+        """Ouvre le dialogue et modifie la bordure de TOUTES les pages de l'album."""
+        if self.tabs.count() == 0: return
+
+        # On repère le style de la page actuelle par défaut
+        current_scene = self.getCurrentPageScene()
+        current_style = None
+        if current_scene:
+            for item in current_scene.items():
+                if item.data(0) == "borderGroup":
+                    current_style = item.data(4)
+                    break
+
+        from BorderDlg import BorderDlg
+        dlg = BorderDlg(current_style, self)
+        if dlg.exec() == 1:
+            new_style = dlg.get_style()
+
+            # Retenir l'index de la page actuellement affichée pour y revenir
+            current_index = self.tabs.currentIndex()
+
+            # On applique à chaque onglet
+            for i in range(self.tabs.count()):
+                self.tabs.setCurrentIndex(i)
+                scene = self.getCurrentPageScene()
+                if scene:
+                    scene.replaceBorder(new_style)
+
+            # Restaurer l'affichage de l'onglet de départ
+            self.tabs.setCurrentIndex(current_index)

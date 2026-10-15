@@ -401,3 +401,133 @@ class GraphicsView(QtWidgets.QGraphicsView):
                     return
 
         super().mouseDoubleClickEvent(event)
+
+
+class GuideLineItem(QtWidgets.QGraphicsLineItem):
+    """Repère visuel (ligne guide) non imprimable, déplaçable sur un seul axe."""
+
+    def __init__(self, orientation, pos_val):
+        super().__init__()
+        self.orientation = orientation
+        self.setData(0, "guideLine")
+
+        # Style de la ligne guide (cyan pointillé)
+        pen = QtGui.QPen(QtGui.QColor(0, 200, 255, 200), 1.5, Qt.PenStyle.DashLine)
+        pen.setCosmetic(True)  # Reste toujours fine quel que soit le zoom
+        self.setPen(pen)
+        self.setZValue(1000)  # Toujours au-dessus des autres éléments
+
+        self.setFlags(QtWidgets.QGraphicsItem.GraphicsItemFlag.ItemIsMovable |
+                      QtWidgets.QGraphicsItem.GraphicsItemFlag.ItemIsSelectable |
+                      QtWidgets.QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges)
+
+        # Dimensions infinies factices
+        if orientation == Qt.Orientation.Horizontal:
+            self.setLine(-10000, 0, 10000, 0)
+            self.setPos(0, pos_val)
+            self.setCursor(Qt.CursorShape.SplitVCursor)
+        else:
+            self.setLine(0, -10000, 0, 10000)
+            self.setPos(pos_val, 0)
+            self.setCursor(Qt.CursorShape.SplitHCursor)
+
+    def itemChange(self, change, value):
+        """Bloque le déplacement sur l'axe opposé."""
+        if change == QtWidgets.QGraphicsItem.GraphicsItemChange.ItemPositionChange:
+            new_pos = value
+            if self.orientation == Qt.Orientation.Horizontal:
+                return QtCore.QPointF(self.pos().x(), new_pos.y())
+            else:
+                return QtCore.QPointF(new_pos.x(), self.pos().y())
+        return super().itemChange(change, value)
+
+    def shape(self):
+        """Agrandit la zone de saisie pour attraper la ligne plus facilement à la souris."""
+        path = QtGui.QPainterPath()
+        if self.orientation == Qt.Orientation.Horizontal:
+            path.addRect(-10000, -5, 20000, 10)
+        else:
+            path.addRect(-5, -10000, 10, 20000)
+        return path
+
+
+class RulerWidget(QtWidgets.QWidget):
+    """Règle millimétrée réagissant au zoom et au défilement."""
+
+    def __init__(self, view, orientation, parent=None):
+        super().__init__(parent)
+        self.view = view
+        self.orientation = orientation
+        if self.orientation == Qt.Orientation.Horizontal:
+            self.setFixedHeight(20)
+        else:
+            self.setFixedWidth(20)
+
+        self.setMouseTracking(True)
+        # Rafraîchir les règles au défilement
+        self.view.verticalScrollBar().valueChanged.connect(self.update)
+        self.view.horizontalScrollBar().valueChanged.connect(self.update)
+
+    def paintEvent(self, event):
+        painter = QtGui.QPainter(self)
+        painter.fillRect(self.rect(), QtGui.QColor("#f4f4f4"))
+        painter.setPen(Qt.GlobalColor.black)
+        painter.setFont(QtGui.QFont("Sans", 7))
+
+        viewport_rect = self.view.viewport().rect()
+        scale = self.view.transform().m11()
+        px_per_mm = 96.0 / 25.4
+
+        if self.orientation == Qt.Orientation.Horizontal:
+            start_scene = self.view.mapToScene(viewport_rect.topLeft()).x()
+            end_scene = self.view.mapToScene(viewport_rect.topRight()).x()
+        else:
+            start_scene = self.view.mapToScene(viewport_rect.topLeft()).y()
+            end_scene = self.view.mapToScene(viewport_rect.bottomLeft()).y()
+
+        mm_start = int(start_scene / px_per_mm) - 1
+        mm_end = int(end_scene / px_per_mm) + 1
+
+        for mm in range(mm_start, mm_end):
+            scene_pos = mm * px_per_mm
+
+            if self.orientation == Qt.Orientation.Horizontal:
+                screen_pos = self.view.mapFromScene(QtCore.QPointF(scene_pos, 0)).x()
+            else:
+                screen_pos = self.view.mapFromScene(QtCore.QPointF(0, scene_pos)).y()
+
+            if mm % 10 == 0:
+                length = 10
+                if self.orientation == Qt.Orientation.Horizontal:
+                    painter.drawText(int(screen_pos + 2), 10, str(mm))
+                else:
+                    painter.save()
+                    painter.translate(10, int(screen_pos - 2))
+                    painter.rotate(-90)
+                    painter.drawText(0, 0, str(mm))
+                    painter.restore()
+            elif mm % 5 == 0:
+                length = 7
+            else:
+                length = 4
+
+            if self.orientation == Qt.Orientation.Horizontal:
+                painter.drawLine(int(screen_pos), 20 - length, int(screen_pos), 20)
+            else:
+                painter.drawLine(20 - length, int(screen_pos), 20, int(screen_pos))
+
+    def mousePressEvent(self, event):
+        """Au clic sur la règle, on génère une ligne guide dans la scène."""
+        if event.button() == Qt.MouseButton.LeftButton:
+            # Récupère l'origine visuelle de la vue
+            scene_pt = self.view.mapToScene(0, 0)
+
+            if self.orientation == Qt.Orientation.Horizontal:
+                guide = GuideLineItem(Qt.Orientation.Horizontal, scene_pt.y() + 10)
+            else:
+                guide = GuideLineItem(Qt.Orientation.Vertical, scene_pt.x() + 10)
+
+            self.view.scene().addItem(guide)
+            self.view.scene().clearSelection()
+            guide.setSelected(True)
+            self.view.scene().update()

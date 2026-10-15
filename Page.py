@@ -350,7 +350,7 @@ class Page(QGraphicsScene):
 
             stamp.updateStamp(stampItem, stampObj, self)
 
-    def printPagePDF(self, fileName2):
+    def printPagePDF_old(self, fileName2):
         """Export current page as a PDF file."""
         for item in self.items():
             item.setSelected(False)
@@ -376,6 +376,42 @@ class Page(QGraphicsScene):
         self.render(p, target, source)
         p.end()
 
+    def printPagePDF(self, fileName2):
+        """Export current page as a PDF file."""
+        # 1. Désélectionner tous les objets
+        for item in self.items():
+            item.setSelected(False)
+
+        # 2. Cacher les lignes guides temporairement
+        guides = [it for it in self.items() if it.data(0) == "guideLine"]
+        for g in guides:
+            g.hide()
+
+        printer = QPrinter(QPrinter.PrinterMode.HighResolution)
+
+        if self.pageType == "portrait":
+            printer.setPageOrientation(QPageLayout.Orientation.Portrait)
+        else:
+            printer.setPageOrientation(QPageLayout.Orientation.Landscape)
+
+        printer.setOutputFormat(QPrinter.OutputFormat.PdfFormat)
+        printer.setOutputFileName(fileName2)
+        scale = printer.resolution() / 96.0
+
+        printer.setPageMargins(QtCore.QMarginsF(0.0, 0.0, 0.0, 0.0), QtGui.QPageLayout.Unit.Millimeter)
+
+        p = QPainter(printer)
+
+        source = QtCore.QRectF(0, 0, self.width(), self.height())
+        target = QRectF(0, 0, source.size().width() * scale, source.size().height() * scale)
+
+        self.render(p, target, source)
+        p.end()
+
+        # 3. Réafficher les lignes guides une fois l'export terminé
+        for g in guides:
+            g.show()
+
     def printPreview(self):
         """Display print preview for the current page."""
         previewDialog = QPrintPreviewDialog()
@@ -390,7 +426,7 @@ class Page(QGraphicsScene):
         previewDialog.paintRequested.connect(self.createPreview)
         previewDialog.exec()
 
-    def createPreview(self, printer):
+    def createPreview_old(self, printer):
         """Render scene page preview for QPrintPreviewDialog."""
         for item in self.items():
             item.setSelected(False)
@@ -404,6 +440,31 @@ class Page(QGraphicsScene):
 
         self.render(p, target, source)
         p.end()
+
+    def createPreview(self, printer):
+        """Render scene page preview for QPrintPreviewDialog."""
+        # 1. Désélectionner tous les objets
+        for item in self.items():
+            item.setSelected(False)
+
+        # 2. Cacher les lignes guides temporairement
+        guides = [it for it in self.items() if it.data(0) == "guideLine"]
+        for g in guides:
+            g.hide()
+
+        scale = printer.resolution() / 96.0
+        printer.setPageMargins(QtCore.QMarginsF(0.0, 0.0, 0.0, 0.0), QtGui.QPageLayout.Unit.Millimeter)
+
+        p = QPainter(printer)
+        source = QtCore.QRectF(0, 0, self.width(), self.height())
+        target = QRectF(0, 0, source.size().width() * scale, source.size().height() * scale)
+
+        self.render(p, target, source)
+        p.end()
+
+        # 3. Réafficher les lignes guides une fois l'aperçu généré
+        for g in guides:
+            g.show()
 
     def printPage(self):
         print("Print page")
@@ -1046,3 +1107,52 @@ class Page(QGraphicsScene):
         if moved_items:
             cmd = MoveCommand(moved_items, old_moved_positions)
             self.undoStack.push(cmd)
+
+    def clearGuides(self):
+        """Supprime toutes les lignes guides de la page."""
+        guides = [it for it in self.items() if it.data(0) == "guideLine"]
+        for g in guides:
+            self.removeItem(g)
+
+    def replaceBorder(self, new_style):
+        """Remplace la bordure existante par un nouveau style, ou en crée une si elle n'existe pas."""
+        old_border = None
+
+        # Chercher la bordure actuelle sur la page
+        for item in self.items():
+            if item.data(0) == "borderGroup":
+                old_border = item
+                break
+
+        if old_border:
+            # Récupérer les dimensions et la position de l'ancienne bordure
+            w = old_border.data(1)
+            h = old_border.data(2)
+            pos = old_border.pos()
+
+            # Supprimer l'ancienne bordure
+            self.removeItem(old_border)
+
+            # Générer la nouvelle et la placer exactement au même endroit
+            new_border = PageBorder(w, h, style=new_style)
+            new_border.setPos(pos)
+            self.addItemWithUndo(new_border, _("Changer la bordure"))
+        else:
+            # Si aucune bordure n'était présente, on en génère une standard
+            paper_format = self.get_configured_paper_format()
+            if paper_format == "Letter":
+                w_mm, h_mm = 215.9, 279.4
+            else:
+                w_mm, h_mm = 210.0, 297.0
+
+            if self.pageType == "portrait":
+                border_w = (w_mm - 33.0) / (25.4 / 96.0)
+                border_h = (h_mm - 25.0) / (25.4 / 96.0)
+                margin_l = 19.0 / (25.4 / 96.0)
+                self.addBorder(border_w, border_h, margin_l, 0, 0, 0, new_style)
+            else:
+                border_w = (h_mm - 25.0) / (25.4 / 96.0)
+                border_h = (w_mm - 33.0) / (25.4 / 96.0)
+                margin_l = (((h_mm / (25.4 / 96.0)) - border_w) / 2)
+                margin_t = 19.0 / (25.4 / 96.0)
+                self.addBorder(border_w, border_h, margin_l, 0, margin_t, 0, new_style)
