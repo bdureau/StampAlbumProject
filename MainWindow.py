@@ -41,11 +41,13 @@ from TextDlg import TextDlg
 
 import gettext
 from AppLanguage import get_language
-from PyQt6.QtGui import QAction, QIcon, QKeySequence
+from PyQt6.QtGui import QAction, QIcon, QKeySequence, QDesktopServices
+from PyQt6.QtCore import QUrl
+from AppPaths import get_help_dir
 
 # Set up gettext localization
 gettext.find("MainWindow")
-translate = gettext.translation('MainWindow', localedir='locale', languages=[get_language()])
+translate = gettext.translation('MainWindow', localedir='locale', languages=[get_language()], fallback=True)
 
 translate.install()
 _ = translate.gettext
@@ -854,14 +856,16 @@ class Window(QMainWindow):
         if ret == qm.StandardButton.No:
             return
 
-        self.deleteAllPages()
         options = QFileDialog.Option.DontUseNativeDialog
 
-        fileName, _ = QFileDialog.getOpenFileName(
+        # Choisir le fichier AVANT d'effacer l'album : un "Annuler" ne doit rien perdre
+        fileName, _filter = QFileDialog.getOpenFileName(
             self, "Open Album file", "", "Album Files (*.sta)", options=options
         )
         if not fileName:
             return
+
+        self.deleteAllPages()
 
         fileNameArray = fileName.split(".")
         if fileNameArray[len(fileNameArray) - 1] == "sta":
@@ -1197,7 +1201,7 @@ class Window(QMainWindow):
     def saveAlbumToFile(self):
         """Serialize album structure into a gzip-compressed XML file (.sta)."""
         options = QFileDialog.Option.DontUseNativeDialog
-        fileName, _ = QFileDialog.getSaveFileName(
+        fileName, _filter = QFileDialog.getSaveFileName(
             self, "Save Album", "", "Album Files (*.sta)", options=options
         )
         if fileName:
@@ -1317,37 +1321,23 @@ class Window(QMainWindow):
 
     def printAllPagesPDF(self):
         """Export all album pages into a single PDF document."""
+        scenes = self._allScenes()
+        if not scenes:
+            return
+
+        # Sans nom d'album, demander où enregistrer (sinon le PDF s'appelait ".pdf")
+        pdf_name = (self.currentAlbumName + ".pdf") if self.currentAlbumName else ""
+        if not pdf_name:
+            options = QFileDialog.Option.DontUseNativeDialog
+            pdf_name, _filter = QFileDialog.getSaveFileName(self, "Save album as PDF", "album.pdf",
+                                                            "(*.pdf)", options=options)
+            if not pdf_name:
+                return
+
         printer = QPrinter(QPrinter.PrinterMode.HighResolution)
         printer.setOutputFormat(QPrinter.OutputFormat.PdfFormat)
-
-        printer.setOutputFileName(self.currentAlbumName + ".pdf")
-        scale = printer.resolution() / 96.0
-
-        printer.setPageMargins(QtCore.QMarginsF(0.0, 0.0, 0.0, 0.0), QtGui.QPageLayout.Unit.Millimeter)
-        p = QPainter(printer)
-        for x in range(self.tabs.count()):
-            self.tabs.setCurrentIndex(x)
-            currentScene = self.getCurrentPageScene()
-            if not currentScene:
-                continue
-
-            for item in currentScene.items():
-                item.setSelected(False)
-
-            if currentScene.pageType == "portrait":
-                printer.setPageOrientation(QPageLayout.Orientation.Portrait)
-            else:
-                printer.setPageOrientation(QPageLayout.Orientation.Landscape)
-
-            if x > 0:
-                printer.newPage()
-
-            source = QtCore.QRectF(0, 0, currentScene.width(), currentScene.height())
-            target = QRectF(0, 0, source.size().width() * scale, source.size().height() * scale)
-
-            currentScene.render(p, target, source)
-
-        p.end()
+        printer.setOutputFileName(pdf_name)
+        self._renderScenes(printer, scenes)
 
     def printPreviewAllPages(self):
         """Open print preview dialog for all pages."""
@@ -1359,40 +1349,38 @@ class Window(QMainWindow):
 
     def createPreview(self, printer):
         """Paint target pages into the QPrintPreviewDialog context."""
-        scale = printer.resolution() / 96.0
-        printer.setPageMargins(QtCore.QMarginsF(0.0, 0.0, 0.0, 0.0), QtGui.QPageLayout.Unit.Millimeter)
+        scenes = self._allScenes()
+        if scenes:
+            self._renderScenes(printer, scenes)
 
+    def _allScenes(self):
+        """Liste des scènes de toutes les pages, sans changer l'onglet affiché."""
+        scenes = []
+        for i in range(self.tabs.count()):
+            widget = self.tabs.widget(i)
+            if hasattr(widget, 'view') and widget.view and widget.view.scene():
+                scenes.append(widget.view.scene())
+        return scenes
+
+    def _renderScenes(self, printer, scenes):
+        """
+        Rend plusieurs pages dans un même document : chaque page reçoit son propre
+        format (A4/Letter) et sa propre orientation AVANT d'être dessinée.
+        """
+        scenes[0].apply_page_layout(printer)
         p = QPainter(printer)
-        for x in range(self.tabs.count()):
-            self.tabs.setCurrentIndex(x)
-
-            currentScene = self.getCurrentPageScene()
-            if not currentScene:
-                continue
-
-            if currentScene.pageType == "portrait":
-                printer.setPageOrientation(QPageLayout.Orientation.Portrait)
-            else:
-                printer.setPageOrientation(QPageLayout.Orientation.Landscape)
-
+        for x, scene in enumerate(scenes):
             if x > 0:
+                scene.apply_page_layout(printer)   # mise en page de la page suivante
                 printer.newPage()
-
-            for item in currentScene.items():
-                item.setSelected(False)
-
-            source = QtCore.QRectF(0, 0, currentScene.width(), currentScene.height())
-            target = QRectF(0, 0, source.size().width() * scale, source.size().height() * scale)
-
-            currentScene.render(p, target, source)
-
+            scene.renderToPrinter(p, printer)
         p.end()
 
     def printPagePDF(self):
         """Export active page to a PDF file."""
         options = QFileDialog.Option.DontUseNativeDialog
-        fileName2, _ = QFileDialog.getSaveFileName(self, "Save current page", "album.pdf",
-                                                   "(*.pdf)", options=options)
+        fileName2, _filter = QFileDialog.getSaveFileName(self, "Save current page", "album.pdf",
+                                                         "(*.pdf)", options=options)
         if not fileName2:
             return
         scene = self.getCurrentPageScene()
@@ -1453,8 +1441,12 @@ class Window(QMainWindow):
 
     def help(self):
         """Open user help PDF document in default system viewer."""
-        if sys.platform.startswith('win32'):
-            os.startfile("Help\\StampAlbum Manuel utilisateur 03-11-2024.pdf")
+        help_file = get_help_dir() / "StampAlbum Manuel utilisateur 03-11-2024.pdf"
+        if not help_file.is_file():
+            QMessageBox.warning(self, _("Help"), _("Help file not found:") + f"\n{help_file}")
+            return
+        # Ouvre le PDF avec le lecteur par défaut (Windows, macOS et Linux)
+        QDesktopServices.openUrl(QUrl.fromLocalFile(str(help_file)))
 
     def alignBottom(self):
         scene = self.getCurrentPageScene()
@@ -1538,19 +1530,24 @@ class Window(QMainWindow):
 
     def pixmapToBytes(self, pixmap):
         """Encode QPixmap to Base64 PNG string."""
+        # Une image vide (photo introuvable) ne doit pas faire planter la sauvegarde
+        if pixmap is None or pixmap.isNull():
+            return ""
         ba = QtCore.QByteArray()
         buff = QtCore.QBuffer(ba)
         buff.open(QtCore.QIODevice.OpenModeFlag.WriteOnly)
-        ok = pixmap.save(buff, "PNG")
-        assert ok
+        if not pixmap.save(buff, "PNG"):
+            return ""
         return bytes(ba.toBase64()).decode()
 
     def bytesToPixmap(self, pixmap_bytes):
-        """Decode Base64 PNG string back to QPixmap."""
-        ba = QtCore.QByteArray().fromBase64(pixmap_bytes.encode())
+        """Decode Base64 PNG string back to QPixmap (QPixmap vide si absent ou illisible)."""
         pixmap = QtGui.QPixmap()
-        ok = pixmap.loadFromData(ba, "PNG")
-        assert ok
+        if not pixmap_bytes:
+            return pixmap
+        ba = QtCore.QByteArray().fromBase64(pixmap_bytes.encode())
+        if not pixmap.loadFromData(ba, "PNG"):
+            print("Warning: unreadable image data in album file")
         return pixmap
 
     def getCurrentPageScene(self):
@@ -1616,9 +1613,11 @@ class Window(QMainWindow):
     def newImage(self):
         """Prompt user for image file and add it to the scene."""
         options = QFileDialog.Option.DontUseNativeDialog
-        fileName, _ = QFileDialog.getOpenFileName(self, "Select picture", "",
-                                                  ("all pictures (*.jpg *.jpeg *.png);;PNG (*.png)"),
-                                                  options=options)
+        fileName, _filter = QFileDialog.getOpenFileName(self, "Select picture", "",
+                                                        ("all pictures (*.jpg *.jpeg *.png);;PNG (*.png)"),
+                                                        options=options)
+        if not fileName:
+            return
         scene = self.getCurrentPageScene()
         if scene:
             scene.addImage(fileName)
@@ -1642,13 +1641,6 @@ class Window(QMainWindow):
         scene = self.getCurrentPageScene()
         if scene and hasattr(scene, "autoArrangeStamps"):
             scene.autoArrangeStamps()
-
-    def renameTabs(self, *args):
-        """Renomme séquentiellement tous les onglets après un déplacement manuel ou une réorganisation."""
-        self.tabs.blockSignals(True)
-        for i in range(self.tabs.count()):
-            self.tabs.setTabText(i, f"Page {i + 1}")
-        self.tabs.blockSignals(False)
 
     def openThumbnails(self):
         """Ouvre la planche contact pour réorganiser visuellement les pages."""

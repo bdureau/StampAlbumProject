@@ -16,9 +16,11 @@ from PyQt6.QtWidgets import (
     QHBoxLayout, QSpinBox, QTextEdit, QToolButton, QVBoxLayout
 )
 
+from AppLanguage import get_language
+
 # Set up gettext localization
 gettext.find("RichTextDlg")
-translate = gettext.translation('RichTextDlg', localedir='locale', languages=['fr'], fallback=True)
+translate = gettext.translation('RichTextDlg', localedir='locale', languages=[get_language()], fallback=True)
 translate.install()
 _ = translate.gettext
 

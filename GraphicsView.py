@@ -15,6 +15,9 @@ from PyQt6.QtGui import QFont, QTextCursor, QTextBlockFormat, QPen, QColor, QSho
 
 custom_mimeType = "application/x-qgraphicsitems"
 
+# Décalage appliqué aux objets collés (en pixels scène) pour qu'ils ne recouvrent pas l'original
+PASTE_OFFSET = 20.0
+
 
 def item_to_ds(it, ds):
     if not isinstance(it, QtWidgets.QGraphicsItem):
@@ -173,11 +176,16 @@ def ds_to_item(ds):
         stampBox.setData(1, boxW)
         stampBox.setData(2, boxH)
 
+        if not isinstance(pixmap, QtGui.QPixmap):
+            pixmap = QtGui.QPixmap()
         pixmapitem = QGraphicsPixmapItem(pixmap)
-        scale1 = (boxWidth - 4) / (pixmapitem.boundingRect().size().width())
-        scale2 = (boxHeight - 4) / (pixmapitem.boundingRect().size().height())
-
-        image_scale = min(scale1, scale2)
+        # Image vide (photo introuvable) : éviter la division par zéro
+        pix_w = pixmapitem.boundingRect().size().width()
+        pix_h = pixmapitem.boundingRect().size().height()
+        if pix_w > 0 and pix_h > 0:
+            image_scale = min((boxWidth - 4) / pix_w, (boxHeight - 4) / pix_h)
+        else:
+            image_scale = 1.0
         pixmapitem.setScale(image_scale)
 
         pixmapitem.setPos(pos2.x() + (stampDesc.boundingRect().size().width() / 2) - (image_scale * pixmapitem.boundingRect().size().width() / 2),
@@ -186,6 +194,7 @@ def ds_to_item(ds):
 
         stampNbr = QGraphicsTextItem(nbr)
         stampNbr.setData(0, "stampNbr")
+        stampNbr.setFont(font3)
 
         stampNbr.setFlags(QGraphicsTextItem.GraphicsItemFlag.ItemIsMovable |
                           QGraphicsTextItem.GraphicsItemFlag.ItemIsSelectable)
@@ -204,6 +213,7 @@ def ds_to_item(ds):
 
         stampValue = QGraphicsTextItem(value)
         stampValue.setData(0, "stampValue")
+        stampValue.setFont(font4)
         stampValue.setFlags(QGraphicsTextItem.GraphicsItemFlag.ItemIsMovable |
                             QGraphicsTextItem.GraphicsItemFlag.ItemIsSelectable)
 
@@ -362,9 +372,32 @@ class GraphicsView(QtWidgets.QGraphicsView):
         if mimedata.hasFormat(custom_mimeType):
             ba = mimedata.data(custom_mimeType)
             ds = QtCore.QDataStream(ba)
+            scene = self.scene()
+
+            pasted = []
             while not ds.atEnd():
                 it = ds_to_item(ds)
-                self.scene().addItem(it)
+                it.moveBy(PASTE_OFFSET, PASTE_OFFSET)
+                pasted.append(it)
+            if not pasted:
+                return
+
+            # Un seul Ctrl+Z annule tout le collage
+            has_undo = hasattr(scene, "undoStack") and hasattr(scene, "addItemWithUndo")
+            if has_undo:
+                scene.undoStack.beginMacro("Paste")
+            for it in pasted:
+                if has_undo:
+                    scene.addItemWithUndo(it, "Paste")
+                else:
+                    scene.addItem(it)
+            if has_undo:
+                scene.undoStack.endMacro()
+
+            # Sélectionner les objets collés pour pouvoir les déplacer immédiatement
+            scene.clearSelection()
+            for it in pasted:
+                it.setSelected(True)
 
     def mouseDoubleClickEvent(self, event: QtGui.QMouseEvent):
         """Intercept double clicks at the viewport level before Qt unselects text items."""

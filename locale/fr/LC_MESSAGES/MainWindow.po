@@ -154,11 +154,11 @@ msgstr "Numéro sur toutes les pages"
 
 #: MainWindow.py:288
 msgid "Add year to page"
-msgstr "Ajouter l'année"
+msgstr "Ajouter l\'année"
 
 #: MainWindow.py:290
 msgid "Add year to all pages"
-msgstr "Ajouter l'année sur toutes les pages"
+msgstr "Ajouter l\'année sur toutes les pages"
 
 #: MainWindow.py:293
 msgid "Align Left"
@@ -222,7 +222,7 @@ msgstr "Selectionner tout"
 
 #: MainWindow.py:463
 msgid "Thundnails..."
-msgstr ""
+msgstr "Mosaic"
 
 #: MainWindow.py:470
 msgid "Change current page border"
@@ -238,7 +238,7 @@ msgstr "Importer AlbumEasy..."
 
 #: MainWindow.py:472
 msgid "Are you sure you want to exit the application?"
-msgstr "Etes vous certains de vouloir quitter l'application?"
+msgstr "Etes vous certains de vouloir quitter l\'application?"
 
 #: MainWindow.py:472
 msgid "Exit"
@@ -262,7 +262,7 @@ msgstr "Supprimer page courante"
 
 #: MainWindow.py:586
 msgid "Are you sure you want to delete the entire album?"
-msgstr "Etes vous certain de vouloir effacer l'album?"
+msgstr "Etes vous certain de vouloir effacer l\'album?"
 
 #: MainWindow.py:586
 msgid "Delete album"
@@ -270,7 +270,7 @@ msgstr "Effacer album"
 
 #: MainWindow.py:452
 msgid "Are you sure you want to delete all the pages?"
-msgstr "Etes vous certain d'effacer toutes les pages?"
+msgstr "Etes vous certain d\'effacer toutes les pages?"
 
 #: MainWindow.py:618 MainWindow.py:677
 msgid "Delete all pages"
@@ -288,12 +288,10 @@ msgstr "Import de AlbumEasy"
 #: MainWindow.py:1744
 msgid ""
 "Do you want to replace the actual album ?\n"
-"(Choose 'No' to append it)"
+"(Choose \'No\' to append it)"
 msgstr ""
-"Voulez vous remplacer l'album courant ?\n"
-"(Choisir 'Non' pour l'ajouter)"
-
-
+"Voulez vous remplacer l\'album courant ?\n"
+"(Choisir\'Non\' pour l\'ajouter)"
 
 #: MainWindow.py:688
 msgid "Open Album file"

@@ -1,4 +1,3 @@
-from os import walk
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QDialog, QRadioButton, QGroupBox,
@@ -6,8 +5,7 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtGui import QPixmap
 from PageBorder import PageBorder
-import configparser
-from pathlib import Path
+from AppPaths import get_config_value
 
 import gettext
 from AppLanguage import get_language
@@ -26,13 +24,7 @@ class PageDlg(QDialog):
 
     def get_configured_border_style(self) -> str:
         """Récupère le style de bordure configuré par défaut dans le fichier .cfg."""
-        config_path = Path(__file__).resolve().parent / 'stamp_album.cfg'
-        if config_path.exists():
-            parser = configparser.RawConfigParser()
-            parser.read(config_path)
-            if parser.has_option('CONF', 'type encadrement'):
-                return parser.get('CONF', 'type encadrement')
-        return PageBorder.STYLE_TRIPLE
+        return get_config_value('type encadrement', PageBorder.STYLE_TRIPLE)
 
     def createDlg(self):
         # page photo

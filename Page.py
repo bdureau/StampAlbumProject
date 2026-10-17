@@ -6,9 +6,10 @@ decorations, borders, rich text items, undo stack history, and print preview.
 
 Author: Boris du Reau
 """
-import configparser
-from pathlib import Path
+import functools
 import gettext
+from AppLanguage import get_language
+from AppPaths import get_config_value
 from ResizablePixmapItem import ResizablePixmapItem
 from PyQt6.QtCore import QPointF, Qt, QRectF, QMarginsF
 from PyQt6 import QtCore, QtGui, QtPrintSupport
@@ -30,9 +31,29 @@ from PyQt6.QtGui import QUndoStack
 from UndoCommands import AddItemCommand, DeleteItemsCommand, MoveCommand
 
 gettext.find("PageDlg")
-translate = gettext.translation('PageDlg', localedir='locale', languages=['fr'])
+translate = gettext.translation('PageDlg', localedir='locale', languages=[get_language()], fallback=True)
 translate.install()
 _ = translate.gettext
+
+
+def undoable_move(text):
+    """
+    Décorateur pour les fonctions d'alignement / distribution / centrage :
+    mémorise la position des objets avant l'opération et pousse un MoveCommand
+    unique dans l'historique pour les objets réellement déplacés.
+    """
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(self, *args, **kwargs):
+            items = [it for it in self.selectedItems() if it.parentItem() is None]
+            before = {it: it.pos() for it in items}
+            result = func(self, *args, **kwargs)
+            moved = [it for it in items if it.pos() != before[it]]
+            if moved:
+                self.undoStack.push(MoveCommand(moved, [before[it] for it in moved], text))
+            return result
+        return wrapper
+    return decorator
 
 
 class Page(QGraphicsScene):
@@ -89,13 +110,40 @@ class Page(QGraphicsScene):
 
     def get_configured_paper_format(self) -> str:
         """Read default paper format from configuration file."""
-        config_path = Path(__file__).resolve().parent / 'stamp_album.cfg'
-        if config_path.exists():
-            parser = configparser.RawConfigParser()
-            parser.read(config_path)
-            if parser.has_option('CONF', 'paper format'):
-                return parser.get('CONF', 'paper format')
-        return "A4"
+        return get_config_value('paper format', "A4")
+
+    def apply_page_layout(self, printer):
+        """
+        Applique au QPrinter le format papier, l'orientation et des marges nulles
+        correspondant à cette page (A4 ou Letter, portrait ou paysage).
+        """
+        size_id = QPageSize.PageSizeId.Letter if self.paper_format == "Letter" else QPageSize.PageSizeId.A4
+        orientation = (QPageLayout.Orientation.Portrait if self.pageType == "portrait"
+                       else QPageLayout.Orientation.Landscape)
+        layout = QPageLayout(QPageSize(size_id), orientation, QMarginsF(0, 0, 0, 0),
+                             QPageLayout.Unit.Millimeter)
+        printer.setPageLayout(layout)
+
+    def hiddenGuides(self):
+        """Désélectionne tout et cache les guides ; retourne la liste à réafficher."""
+        for item in self.selectedItems():
+            item.setSelected(False)
+        guides = [it for it in self.items() if it.data(0) == "guideLine"]
+        for g in guides:
+            g.hide()
+        return guides
+
+    def renderToPrinter(self, painter, printer):
+        """Rend la page entière sur le painter à la résolution de l'imprimante."""
+        scale = printer.resolution() / 96.0
+        source = QtCore.QRectF(0, 0, self.width(), self.height())
+        target = QRectF(0, 0, source.width() * scale, source.height() * scale)
+        guides = self.hiddenGuides()
+        try:
+            self.render(painter, target, source)
+        finally:
+            for g in guides:
+                g.show()
 
     def addItemNative(self, item):
         """Add item directly to scene without pushing an Undo command."""
@@ -134,13 +182,7 @@ class Page(QGraphicsScene):
 
     def get_configured_border_style(self) -> str:
         """Read default border style from configuration file."""
-        config_path = Path(__file__).resolve().parent / 'stamp_album.cfg'
-        if config_path.exists():
-            parser = configparser.RawConfigParser()
-            parser.read(config_path)
-            if parser.has_option('CONF', 'type encadrement'):
-                return parser.get('CONF', 'type encadrement')
-        return PageBorder.STYLE_TRIPLE
+        return get_config_value('type encadrement', PageBorder.STYLE_TRIPLE)
 
     def addBorder(self, boxWidth, boxHeight, margin_left, margin_right, margin_top, margin_bottom, style=None):
         """Add a decorative border to the page using PageBorder class."""
@@ -223,15 +265,10 @@ class Page(QGraphicsScene):
             print(f"Error editing rich text: {e}")
 
     def clearPage(self):
-        """Remove all items from the current page."""
-        items = self.items()
-        for item in items:
-            self.removeItem(item)
-
-    def removeItems(self):
-        items = self.selectedItems()
-        for item in items:
-            self.removeItem(item)
+        """Remove all items from the current page (annulable avec Ctrl+Z)."""
+        items = [it for it in self.items() if it.parentItem() is None]
+        if items:
+            self.undoStack.push(DeleteItemsCommand(self, items, _("Clear page")))
 
     def editObject(self, item=None):
         """Edit currently selected scene item or the item passed directly."""
@@ -341,89 +378,47 @@ class Page(QGraphicsScene):
             stampObj['stampNbr_text'] = dlg.eNbr.text()
             stampObj['stampValue_text'] = dlg.eValue.toPlainText()
 
+            if dlg.pochetteList.currentItem() is None:
+                return
             ret = dlg.getBoxInfo(dlg.pochetteList.currentItem().text())
+            if len(ret) < 2:
+                return
             width = ret[0]
             stampObj['stampBox_boxWidth'] = width
             height = ret[1]
             stampObj['stampBox_boxHeight'] = height
-            stampObj['pixmapItem_image'] = dlg.photo.pixmap()
+            # image pleine résolution (et non la vignette 200 px affichée dans le dialogue)
+            stampObj['pixmapItem_image'] = dlg.getPixmap()
 
             stamp.updateStamp(stampItem, stampObj, self)
 
     def printPagePDF(self, fileName2):
         """Export current page as a PDF file."""
-        # 1. Désélectionner tous les objets
-        for item in self.items():
-            item.setSelected(False)
-
-        # 2. Cacher les lignes guides temporairement
-        guides = [it for it in self.items() if it.data(0) == "guideLine"]
-        for g in guides:
-            g.hide()
-
         printer = QPrinter(QPrinter.PrinterMode.HighResolution)
-
-        if self.pageType == "portrait":
-            printer.setPageOrientation(QPageLayout.Orientation.Portrait)
-        else:
-            printer.setPageOrientation(QPageLayout.Orientation.Landscape)
-
         printer.setOutputFormat(QPrinter.OutputFormat.PdfFormat)
         printer.setOutputFileName(fileName2)
-        scale = printer.resolution() / 96.0
-
-        printer.setPageMargins(QtCore.QMarginsF(0.0, 0.0, 0.0, 0.0), QtGui.QPageLayout.Unit.Millimeter)
+        # Format (A4/Letter), orientation et marges AVANT de créer le QPainter
+        self.apply_page_layout(printer)
 
         p = QPainter(printer)
-
-        source = QtCore.QRectF(0, 0, self.width(), self.height())
-        target = QRectF(0, 0, source.size().width() * scale, source.size().height() * scale)
-
-        self.render(p, target, source)
+        self.renderToPrinter(p, printer)
         p.end()
-
-        # 3. Réafficher les lignes guides une fois l'export terminé
-        for g in guides:
-            g.show()
 
     def printPreview(self):
         """Display print preview for the current page."""
         previewDialog = QPrintPreviewDialog()
         previewDialog.printer().setResolution(QPrinter.PrinterMode.HighResolution.value)
         previewDialog.printer().setOutputFormat(QPrinter.OutputFormat.PdfFormat)
-
-        if self.pageType == "portrait":
-            previewDialog.printer().setPageOrientation(QPageLayout.Orientation.Portrait)
-        else:
-            previewDialog.printer().setPageOrientation(QPageLayout.Orientation.Landscape)
+        self.apply_page_layout(previewDialog.printer())
 
         previewDialog.paintRequested.connect(self.createPreview)
         previewDialog.exec()
 
     def createPreview(self, printer):
         """Render scene page preview for QPrintPreviewDialog."""
-        # 1. Désélectionner tous les objets
-        for item in self.items():
-            item.setSelected(False)
-
-        # 2. Cacher les lignes guides temporairement
-        guides = [it for it in self.items() if it.data(0) == "guideLine"]
-        for g in guides:
-            g.hide()
-
-        scale = printer.resolution() / 96.0
-        printer.setPageMargins(QtCore.QMarginsF(0.0, 0.0, 0.0, 0.0), QtGui.QPageLayout.Unit.Millimeter)
-
         p = QPainter(printer)
-        source = QtCore.QRectF(0, 0, self.width(), self.height())
-        target = QRectF(0, 0, source.size().width() * scale, source.size().height() * scale)
-
-        self.render(p, target, source)
+        self.renderToPrinter(p, printer)
         p.end()
-
-        # 3. Réafficher les lignes guides une fois l'aperçu généré
-        for g in guides:
-            g.show()
 
     def printPage(self):
         print("Print page")
@@ -478,14 +473,7 @@ class Page(QGraphicsScene):
 
     def newCopyRight(self):
         """Add a copyright footer to the page."""
-        text = "CopyRight © Boris du Reau 2003-2026"
-        configParser = configparser.RawConfigParser()
-        configFilePath = r'stamp_album.cfg'
-        configParser.read(configFilePath)
-        if configParser.has_section('CONF'):
-            conf = configParser['CONF']
-            if configParser.has_option('CONF', 'copyright'):
-                text = conf['copyright']
+        text = get_config_value('copyright', "CopyRight © Boris du Reau 2003-2026")
 
         font = QFont()
         font.setPointSize(6)
@@ -551,6 +539,7 @@ class Page(QGraphicsScene):
         else:
             self.addTextLabel(year, (px_h - textWidth) / 2, 80, font, Qt.AlignmentFlag.AlignLeft, "labelYear")
 
+    @undoable_move("Align Top")
     def alignTop(self):
         topY = 0.0
         if self.countSelectedItems() > 1:
@@ -564,6 +553,7 @@ class Page(QGraphicsScene):
                 if it2.isSelected() and it2.parentItem() is None:
                     it2.setPos(it2.x(), topY)
 
+    @undoable_move("Align Bottom")
     def alignBottom(self):
         topY = 0.0
         if self.countSelectedItems() > 1:
@@ -575,6 +565,7 @@ class Page(QGraphicsScene):
                 if it2.isSelected() and it2.parentItem() is None:
                     it2.setPos(it2.x(), topY - it2.boundingRect().height())
 
+    @undoable_move("Align Left")
     def alignLeft(self):
         topX = self.sceneRect().width()
         if self.countSelectedItems() > 1:
@@ -587,6 +578,7 @@ class Page(QGraphicsScene):
                 if it2.isSelected() and it2.parentItem() is None:
                     it2.setPos(topX, it2.y())
 
+    @undoable_move("Align Right")
     def alignRight(self):
         topX = 0.0
         if self.countSelectedItems() > 1:
@@ -597,6 +589,7 @@ class Page(QGraphicsScene):
                 if it2.isSelected() and it2.parentItem() is None:
                     it2.setPos(topX - it2.boundingRect().size().width(), it2.y())
 
+    @undoable_move("Distribute Horizontally")
     def distributeHorizontally(self):
         # Sécurité : nécessite au moins 3 objets pour distribuer horizontalement
         if self.countSelectedItems() < 3:
@@ -657,6 +650,7 @@ class Page(QGraphicsScene):
                                 if stampItem.type().real == 3:
                                     nextX += i.boundingRect().size().width() + space
 
+    @undoable_move("Distribute Vertically")
     def distributeVertically(self):
         # Sécurité : nécessite au moins 3 objets pour distribuer verticalement
         if self.countSelectedItems() < 3:
@@ -691,6 +685,7 @@ class Page(QGraphicsScene):
                         i.setPos(i.x(), nextY)
                         nextY += i.boundingRect().size().height() + space
 
+    @undoable_move("Center Horizontally")
     def centerHorizontally(self):
         if self.countSelectedItems() > 0:
             for it in self.items():
@@ -710,6 +705,7 @@ class Page(QGraphicsScene):
                                     centerItem = it.boundingRect().width() / 2
                                     it.setPos((centerPage - centerItem), it.y())
 
+    @undoable_move("Center Vertically")
     def centerVertically(self):
         if self.countSelectedItems() > 0:
             for it in self.items():
@@ -731,7 +727,7 @@ class Page(QGraphicsScene):
             if not pixmap.isNull():
                 pixmapitem = ResizablePixmapItem(pixmap)
                 pixmapitem.setPos(50, 50)
-                self.addItem(pixmapitem)
+                self.addItemWithUndo(pixmapitem, _("Add Image"))
 
     def mouseDoubleClickEvent(self, event):
         """Fallback double-click handling if not caught by GraphicsView."""
@@ -963,20 +959,17 @@ class Page(QGraphicsScene):
             h = old_border.data(2)
             pos = old_border.pos()
 
-            # Supprimer l'ancienne bordure
-            self.removeItem(old_border)
-
-            # Générer la nouvelle et la placer exactement au même endroit
+            # Suppression + ajout regroupés : un seul Ctrl+Z restaure l'ancienne bordure
+            self.undoStack.beginMacro(_("Changer la bordure"))
+            self.undoStack.push(DeleteItemsCommand(self, [old_border]))
             new_border = PageBorder(w, h, style=new_style)
             new_border.setPos(pos)
             self.addItemWithUndo(new_border, _("Changer la bordure"))
+            self.undoStack.endMacro()
         else:
             # Si aucune bordure n'était présente, on en génère une standard
-            paper_format = self.get_configured_paper_format()
-            if paper_format == "Letter":
-                w_mm, h_mm = 215.9, 279.4
-            else:
-                w_mm, h_mm = 210.0, 297.0
+            # format de CETTE page (et non celui de la configuration)
+            w_mm, h_mm = self.page_width_mm, self.page_height_mm
 
             if self.pageType == "portrait":
                 border_w = (w_mm - 33.0) / (25.4 / 96.0)

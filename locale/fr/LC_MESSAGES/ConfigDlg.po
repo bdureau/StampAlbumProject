@@ -20,22 +20,6 @@ msgstr ""
 msgid "Application configuration"
 msgstr "Configuration application"
 
-#: ConfigDlg.py:55
-msgid "Default Copyright:"
-msgstr "Copyright par défaut:"
-
-#: ConfigDlg.py:56
-msgid "Border type:"
-msgstr "Type encadrement:"
-
-#: ConfigDlg.py:57
-msgid "Default Country:"
-msgstr "Pays par défaut:"
-
-#: ConfigDlg.py:87
-msgid "Default Database:"
-msgstr "Base de Données par défaut:"
-
 #: ConfigDlg.py:61
 msgid "Triple (Classic)"
 msgstr "Triple (Classique)"
@@ -51,3 +35,32 @@ msgstr "Grecque (Encoches)"
 #: ConfigDlg.py:64
 msgid "Dentelle (Philately)"
 msgstr "Dentelle (Philatélie)"
+
+#: ConfigDlg.py:55
+msgid "Default Copyright:"
+msgstr "Copyright par défaut:"
+
+#: ConfigDlg.py:87
+msgid "Language:"
+msgstr "Langue:"
+
+#: ConfigDlg.py:88
+msgid "Paper format:"
+msgstr "Format Page:"
+
+#: ConfigDlg.py:56
+msgid "Border type:"
+msgstr "Type encadrement:"
+
+#: ConfigDlg.py:90
+msgid "Default Font:"
+msgstr "Police par défaut:"
+
+#: ConfigDlg.py:57
+msgid "Default Country:"
+msgstr "Pays par défaut:"
+
+#: ConfigDlg.py:87
+msgid "Default Database:"
+msgstr "Base de Données par défaut:"
+

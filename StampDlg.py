@@ -6,7 +6,6 @@ Dialog window for selecting and creating stamp items from catalog databases.
 Author: Boris du Reau
 """
 
-from os import walk
 from PyQt6.QtCore import QPointF, Qt, QPoint, QByteArray, QRectF
 from PyQt6 import QtCore, QtGui
 from PyQt6.QtWidgets import (
@@ -22,7 +21,7 @@ from PyQt6.QtPrintSupport import QPrintPreviewDialog, QPrinter, QPrintDialog
 from Databases import DB
 from pathlib import Path
 from Stamp import Stamp
-import configparser
+from AppPaths import get_config_value, get_photos_dir, get_images_dir, list_countries
 
 import gettext
 from AppLanguage import get_language
@@ -38,8 +37,13 @@ class StampDlg(QDialog):
         super(StampDlg, self).__init__(parent)
         self.setWindowTitle(_("Create new stamp"))
         self.currentStampNbr = ""
-        self.createDlg(lastStampObj)
+        self.fullPhotoPath = None
+        self.db = None
+        # La scène doit être connue AVANT createDlg (les boutons Create l'utilisent)
         self.scene = scene
+        if lastStampObj is None:
+            lastStampObj = {'country': None, 'type': None, 'year': None, 'nbr': None}
+        self.createDlg(lastStampObj)
         if lastStampObj['country'] is not None:
             print(lastStampObj['country'])
             print(lastStampObj['year'])
@@ -48,15 +52,7 @@ class StampDlg(QDialog):
 
     def get_configured_country(self) -> str:
         """Read default country setting from stamp_album.cfg configuration file."""
-        base_dir = Path(__file__).resolve().parent
-        config_path = base_dir / 'stamp_album.cfg'
-
-        if config_path.exists():
-            parser = configparser.RawConfigParser()
-            parser.read(config_path)
-            if parser.has_option('CONF', 'default country'):
-                return parser.get('CONF', 'default country')
-        return "France"
+        return get_config_value('default country', "France")
 
     def onStampCurrentChanged(self, current, previous):
         """Met à jour l'affichage du timbre lors d'un changement de sélection (souris ou clavier)."""
@@ -228,36 +224,33 @@ class StampDlg(QDialog):
 
         #print("target_country:" + target_country )
         # get the list of countries from the databases available
-        self.retCountryCombo = []
         self.db = None
-        filenames = next(walk("databases"), (None, None, []))[2]  # [] if no file
+        # Liste des pays selon le moteur configuré (.db pour sqlite, .mdb pour Access)
+        self.stampCountries = list_countries()
 
-        # create an array of file name first the open the db with the first one
-        self.stampCountries = []
-        for file in filenames:
-            shortFile = file.rsplit(".")
-            if shortFile[0] != "master":
-                if shortFile[1] == "mdb":
-                    self.stampCountries.append(shortFile[0])
+        if not self.stampCountries:
+            QMessageBox.warning(self, _("No database"),
+                                _("No country database was found in the 'databases' folder."))
+            return
 
-        # open the first country
-        if len(self.stampCountries) > 0:
-            self.db = DB(self.stampCountries[0])
+        # Ouvrir directement le pays cible (évite d'ouvrir le 1er puis de changer)
+        if target_country not in self.stampCountries:
+            target_country = self.stampCountries[0]
 
-        for country in self.stampCountries:
-            self.retCountryCombo.append(country)
+        try:
+            self.db = DB(target_country)
+        except Exception as e:
+            QMessageBox.critical(self, _("Database error"), str(e))
+            self.db = None
+            return
 
-        # select the first country available
-        self.selectedCountryCombo.addItems(self.retCountryCombo)
+        # Remplir la combo sans déclencher countryClicked pendant l'initialisation
+        self.selectedCountryCombo.blockSignals(True)
+        self.selectedCountryCombo.addItems(self.stampCountries)
+        self.selectedCountryCombo.setCurrentText(target_country)
+        self.selectedCountryCombo.blockSignals(False)
 
-        index = self.selectedCountryCombo.findText(target_country )
-
-        if index != -1:
-            self.selectedCountryCombo.setCurrentIndex(index)
-        else:
-            self.selectedCountryCombo.setCurrentIndex(0)
-
-        self.currentCountry = self.selectedCountryCombo.currentText()
+        self.currentCountry = target_country
         print("self.currentCountry:"+self.currentCountry)
         # open the first country
         #self.db = DB(self.currentCountry)
@@ -290,6 +283,9 @@ class StampDlg(QDialog):
         if len(self.yearsList.selectedItems()) < 1:
             self.yearsList.setCurrentRow(0)
 
+        if self.yearsList.currentItem() is None:
+            return
+
         # load all available stamp number for the current year
         retStampNbrList = self.db.loadStampList(self.stampTypeCombo.currentText(), self.yearsList.currentItem().text())
 
@@ -315,6 +311,8 @@ class StampDlg(QDialog):
 
 
         retitem = self.stampNbrList.model().item(myIndex, 0)
+        if retitem is None:
+            return
         self.currentStampNbr = retitem.text()
 
         # get pochette for the current stamp
@@ -343,7 +341,7 @@ class StampDlg(QDialog):
     # year has changed, let's retrieve all the stamps for that year
     def yearClicked(self, year):
         """Update stamp list view according to selected year."""
-        if year.text() != "":
+        if year.text() != "" and self.yearsList.currentItem() is not None:
             if self.db is not None:
                 # load all available stamp number for the current year
                 retStampNbrList = self.db.loadStampList(self.stampTypeCombo.currentText(),
@@ -363,19 +361,22 @@ class StampDlg(QDialog):
                     self.stampNbrList.setCurrentIndex(self.stampNbrList.model().index(0, 0))
 
                 retitem = self.stampNbrList.model().item(0, 0)
-
-                self.setStampInfo(retitem)
+                if retitem is not None:
+                    self.currentStampNbr = retitem.text()
+                    self.setStampInfo(retitem)
 
     # stamp has changed let's change the image and all the stamp properties
     def stampClicked(self, index):
         """Update preview image and form fields when a stamp is clicked."""
         retitem = self.stampNbrList.model().item(index.row(), 0)
+        if retitem is None:
+            return
         self.setStampInfo(retitem)
         self.currentStampNbr = retitem.text()
 
     def setStampInfo(self, retitem):
         """Fetch stamp information and load image preview from country database."""
-        if self.db is not None:
+        if self.db is not None and retitem is not None and self.yearsList.currentItem() is not None:
             # get pochette for the current stamp
             stampType = self.stampTypeCombo.currentText()
             stampYear = self.yearsList.currentItem().text()
@@ -408,40 +409,41 @@ class StampDlg(QDialog):
 
             if len(retStampInfo) > 0:
                 # nbr,year,valuecolor, stampDescription,width, height,sub_nbr,stampDescription1
-                self.eWidth.setText(retStampInfo[4])
-                self.eHeight.setText(retStampInfo[5])
-                self.eYear.setText(retStampInfo[1])
-                self.eValue.setText(retStampInfo[2])
-                self.eStampDescription.setPlainText(retStampInfo[7])
-                self.eStampDescription2.setPlainText(retStampInfo[3])
+                # Les champs NULL de la base reviennent en None : on les convertit en ""
+                info = ["" if v is None else str(v) for v in retStampInfo]
+                self.eWidth.setText(info[4])
+                self.eHeight.setText(info[5])
+                self.eYear.setText(info[1])
+                self.eValue.setText(info[2])
+                self.eStampDescription.setPlainText(info[7])
+                self.eStampDescription2.setPlainText(info[3])
 
                 stampSubNbr = retStampInfo[6]
 
                 photoName = self.getPhotoName(str(stampNbr), str(stampType), stampSubNbr)
-                self.fullPhotoPath = "photos\\" + self.currentCountry + "\\" + photoName
-
-                # check if the file exists
-                my_file = Path(self.fullPhotoPath)
-                if my_file.is_file():
-                    # file exists
-                    print("File exist")
-                else:
-                    print("File does not exist")
-                    self.fullPhotoPath = "images\\blanc.jpg"
+                # Chemin portable (Windows / macOS / Linux)
+                photo_path = get_photos_dir() / self.currentCountry / photoName
+                if not photo_path.is_file():
+                    photo_path = get_images_dir() / "blanc.jpg"
+                self.fullPhotoPath = str(photo_path)
 
                 if self.photo is not None:
                     pix = QPixmap(self.fullPhotoPath)
-
-                    if pix.width() > pix.height():
-                        self.photo.setPixmap(QPixmap(self.fullPhotoPath).scaledToWidth(200))
-                    else:
-                        self.photo.setPixmap(QPixmap(self.fullPhotoPath).scaledToHeight(200))
+                    if not pix.isNull():
+                        if pix.width() > pix.height():
+                            self.photo.setPixmap(pix.scaledToWidth(200))
+                        else:
+                            self.photo.setPixmap(pix.scaledToHeight(200))
 
     def countryClicked(self, country):
         """Switch country database connection when country dropdown selection changes."""
         if country != "":
             if self.db is not None:
-                self.db.OpenCountryDB(country)
+                try:
+                    self.db.OpenCountryDB(country)
+                except Exception as e:
+                    QMessageBox.critical(self, _("Database error"), str(e))
+                    return
                 self.currentCountry = country
                 # get the stamp type from the current country open DB
                 self.stampTypeCombo.clear()
@@ -457,10 +459,8 @@ class StampDlg(QDialog):
                 retYearList = self.db.loadYearList(self.stampTypeCombo.currentText())
                 self.yearsList.addItems(retYearList)
 
-                if len(self.yearsList.selectedItems()) < 1:
+                if len(self.yearsList.selectedItems()) < 1 and self.yearsList.count() > 0:
                     self.yearsList.setCurrentRow(0)
-                    #self.yearsList.itemClicked(0)
-                    #self.yearsList.setCurrentItem(0)
                     self.yearsList.currentItem().setSelected(True)
                     #self.yearClicked(self.yearsList.currentItem().text())
 
@@ -602,7 +602,11 @@ class StampDlg(QDialog):
         if self.fullPhotoPath is not None:
             pixmap = self.fullPhotoPath
 
+        if self.pochetteList.currentItem() is None:
+            return
         ret = self.getBoxInfo(self.pochetteList.currentItem().text())
+        if len(ret) < 2:
+            return
         width = ret[0]
         height = ret[1]
 
@@ -624,8 +628,12 @@ class StampDlg(QDialog):
         #ret = self.getBoxInfo(self.pochetteList.currentItem().text())
         #self.eWidth.setText("")
         #self.eHeight.setText("")
-        width = self.eWidth.text()
-        height = self.eHeight.text()
+        try:
+            width = float(self.eWidth.text().replace(",", "."))
+            height = float(self.eHeight.text().replace(",", "."))
+        except ValueError:
+            QMessageBox.warning(self, _("Invalid size"), _("Width and height must be numbers (mm)."))
+            return
 
         stampNbr = self.currentStampNbr
 

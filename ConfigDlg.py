@@ -1,5 +1,4 @@
 from PageBorder import PageBorder
-from os import walk
 from pathlib import Path
 from PyQt6.QtWidgets import (
     QMessageBox, QGraphicsRectItem,
@@ -14,6 +13,7 @@ import configparser
 import sys
 import gettext
 from AppLanguage import get_language
+from AppPaths import get_app_dir, get_config_path, list_countries, read_config_into
 
 gettext.find("ConfigDlg")
 translate = gettext.translation('ConfigDlg', localedir='locale', languages=[get_language()], fallback=True)
@@ -30,18 +30,15 @@ class ConfigDlg(QDialog):
         self.setWindowTitle(_("Application configuration"))
         self.configParser = configparser.RawConfigParser()
 
-        self.base_dir = self.get_app_dir()
-        self.configFilePath = self.base_dir / 'stamp_album.cfg'
+        self.base_dir = get_app_dir()
+        self.configFilePath = get_config_path()
 
-        self.configParser.read(self.configFilePath)
+        read_config_into(self.configParser, self.configFilePath)
         self.createDlg()
 
     def get_app_dir(self) -> Path:
         """Return the base directory path, compatible with PyInstaller frozen executables."""
-        if getattr(sys, 'frozen', False):
-            return Path(sys.executable).resolve().parent
-        else:
-            return Path(__file__).resolve().parent
+        return get_app_dir()
 
     def createDlg(self):
         # Default Copyright
@@ -99,16 +96,18 @@ class ConfigDlg(QDialog):
         self.readConfig()
 
     def readConfig(self):
-        filenames = next(walk("databases"), (None, None, []))[2]
-        self.stampCountries = []
-        for file in filenames:
-            shortFile = file.rsplit(".")
-            if shortFile[0] != "master" and shortFile[1] == "mdb":
-                self.stampCountries.append(shortFile[0])
-
-        self.selectedCountryCombo.addItems(self.stampCountries)
         self.selectedDatabaseCombo.addItem("Access")
         self.selectedDatabaseCombo.addItem("sqlite")
+
+        # Afficher le moteur réellement utilisé (sqlite par défaut, comme Databases.py)
+        db_type = "sqlite"
+        if self.configParser.has_option('CONF', 'database type'):
+            db_type = self.configParser.get('CONF', 'database type')
+        self.selectedDatabaseCombo.setCurrentText(db_type)
+
+        # Les pays proposés dépendent du moteur choisi : on recharge la liste à chaque changement
+        self.selectedDatabaseCombo.currentTextChanged.connect(self.refreshCountries)
+        self.refreshCountries(db_type)
 
         if self.configParser.has_section('CONF'):
             conf = self.configParser['CONF']
@@ -148,8 +147,17 @@ class ConfigDlg(QDialog):
                 "default font": "Arial",
                 "database type": "sqlite"
             }
-            with open(self.configFilePath, 'w') as config:
+            with open(self.configFilePath, 'w', encoding="utf-8") as config:
                 self.configParser.write(config)
+
+    def refreshCountries(self, db_type):
+        """Recharge la liste des pays pour le moteur de base de données indiqué."""
+        current = self.selectedCountryCombo.currentText()
+        self.stampCountries = list_countries(db_type)
+        self.selectedCountryCombo.clear()
+        self.selectedCountryCombo.addItems(self.stampCountries)
+        if current:
+            self.selectedCountryCombo.setCurrentText(current)
 
     def saveConfig(self):
         selected_lang = self.selectedLanguageCombo.currentData() or "fr"
@@ -166,9 +174,10 @@ class ConfigDlg(QDialog):
             "default font": selected_font,
             "database type": self.selectedDatabaseCombo.currentText()
         }
-        with open(self.configFilePath, 'w') as config:
+        with open(self.configFilePath, 'w', encoding="utf-8") as config:
             self.configParser.write(config)
 
     def accept(self):
         self.saveConfig()
-        self.close()
+        # QDialog.accept() fait retourner "Accepted" à exec() (close() renvoyait Rejected)
+        super().accept()

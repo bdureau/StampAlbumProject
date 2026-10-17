@@ -1,4 +1,3 @@
-from os import walk
 from PyQt6.QtCore import QPointF, Qt, QPoint, QByteArray, QRectF
 from PyQt6 import QtCore, QtGui
 from PyQt6.QtWidgets import (
@@ -12,6 +11,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtGui import QBrush, QPainter, QPen, QPixmap, QPolygonF, QImage, QIcon, QStandardItem, QAction,QColor
 from PyQt6.QtPrintSupport import QPrintPreviewDialog, QPrinter, QPrintDialog
 from Databases import DB
+from AppPaths import list_countries
 
 import gettext
 from AppLanguage import get_language
@@ -44,15 +44,12 @@ class EditStampDlg(QDialog):
         self.photo.setFixedHeight(200)
         self.photo.setFixedWidth(200)
 
-        pix = stampObj.get('pixmapItem_image')
-        if not isinstance(pix, QPixmap) or pix.isNull():
-            print("invalid Pixmap ")
-            return
-
-        if pix.width() > pix.height():
-            self.photo.setPixmap(QPixmap(stampObj['pixmapItem_image']).scaledToWidth(200))
-        else:
-            self.photo.setPixmap(QPixmap(stampObj['pixmapItem_image']).scaledToHeight(200))
+        # Image pleine résolution conservée à part : le QLabel n'affiche qu'une vignette
+        # de 200 px, la relire avec photo.pixmap() dégradait l'image à chaque édition.
+        self.fullPixmap = stampObj.get('pixmapItem_image')
+        if not isinstance(self.fullPixmap, QPixmap):
+            self.fullPixmap = QPixmap()
+        self._showPreview(self.fullPixmap)
 
         # change image button
         imageButton = QPushButton(self.tr(_("&Change image ...")))
@@ -93,19 +90,19 @@ class EditStampDlg(QDialog):
 
     def populateData(self, stampObj):
         self.db = None
-        filenames = next(walk("databases"), (None, None, []))[2]  # [] if no file
+        # Liste des pays selon le moteur configuré (.db ou .mdb)
+        self.stampCountries = list_countries()
 
-        # create an array of file name first the open the db with the first one
-        self.stampCountries = []
-        for file in filenames:
-            shortFile = file.rsplit(".")
-            if shortFile[0] != "master":
-                if shortFile[1] == "mdb":
-                    self.stampCountries.append(shortFile[0])
+        # Seule la base master est utile ici (liste des pochettes)
+        if self.stampCountries:
+            try:
+                self.db = DB(self.stampCountries[0])
+            except Exception as e:
+                QMessageBox.critical(self, _("Database error"), str(e))
+                self.db = None
 
-        # open the first country
-        if len(self.stampCountries) > 0:
-            self.db = DB(self.stampCountries[0])
+        if self.db is None:
+            return
 
         # get the list of available stamp box from the master db
         retBoxList = self.db.loadBoxList()
@@ -127,18 +124,30 @@ class EditStampDlg(QDialog):
             ret = self.db.getCurrentBox(box)
         return ret
 
+    def _showPreview(self, pix):
+        if pix is None or pix.isNull():
+            return
+        if pix.width() > pix.height():
+            self.photo.setPixmap(pix.scaledToWidth(200))
+        else:
+            self.photo.setPixmap(pix.scaledToHeight(200))
+
+    def getPixmap(self):
+        """Image pleine résolution à utiliser pour le timbre."""
+        return self.fullPixmap
+
     def loadImage(self):
         options = QFileDialog.Option.DontUseNativeDialog
-        fileName, _ = QFileDialog.getOpenFileName(self, "Select picture", "",
-                                                  ("all pictures (*.jpg *.jpeg *.png);;PNG (*.png)"),
-                                                  options=options)
-        if self.photo is not None:
-            pix = QPixmap(fileName)
-            print(pix)
-            if pix.width() > pix.height():
-                self.photo.setPixmap(QPixmap(fileName).scaledToWidth(200))
-            else:
-                self.photo.setPixmap(QPixmap(fileName).scaledToHeight(200))
+        # ne pas nommer la 2e valeur "_" : cela masquerait la fonction de traduction gettext
+        fileName, _filter = QFileDialog.getOpenFileName(self, "Select picture", "",
+                                                        ("all pictures (*.jpg *.jpeg *.png);;PNG (*.png)"),
+                                                        options=options)
+        if not fileName:
+            return
+        pix = QPixmap(fileName)
+        if not pix.isNull():
+            self.fullPixmap = pix
+            self._showPreview(pix)
 
     def changeFont(self):
         print("change font")

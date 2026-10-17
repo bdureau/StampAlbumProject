@@ -14,12 +14,11 @@ from PyQt6.QtWidgets import (
     QLineEdit, QPushButton, QDialog, QFormLayout
 )
 from PyQt6.QtGui import QBrush, QPainter, QPen, QPixmap, QPolygonF, QColor, QTextCursor, QTextBlockFormat, QAction
-import json
-from EditStampDlg import EditStampDlg
+from AppLanguage import get_language
 # Set up gettext localization
 
 gettext.find("Stamp")
-translate = gettext.translation('Stamp', localedir='locale', languages=['fr'], fallback=True)
+translate = gettext.translation('Stamp', localedir='locale', languages=[get_language()], fallback=True)
 translate.install()
 _ = translate.gettext
 
@@ -44,10 +43,10 @@ class Stamp:
                     y (float): Scene target Y coordinate.
                     picture (str): Path to image asset file.
                 """
-        pixmap = QPixmap(picture)
+        pixmap = QPixmap(str(picture)) if picture else QPixmap()
 
-        if pixmap is None:
-            print("Pixmap is none")
+        if pixmap.isNull():
+            print(f"Image not found or invalid: {picture}")
         self.createStampPix(scene, nbr, value, desc, boxWidth, boxHeight, x, y, pixmap)
 
     def createStampPix(self, scene, nbr, value, desc, boxWidth, boxHeight, x, y, pixmap):
@@ -310,11 +309,18 @@ class Stamp:
         desc = stampObj['stampDesc_text']
         pixmap = stampObj['pixmapItem_image']
 
-        # Supprimer l'ancien groupe
-        scene.removeItem(stampItem)
-
-        # Créer le nouveau timbre avec les coordonnées exactes du coin supérieur gauche
-        self.createStampPix(scene, nbr, value, desc, boxWidth, boxHeight, top_left.x(), top_left.y(), pixmap)
+        undo_stack = getattr(scene, 'undoStack', None)
+        if undo_stack is not None:
+            # Suppression + recréation dans une seule macro :
+            # un Ctrl+Z restaure l'ancien timbre au lieu de le faire disparaître
+            from UndoCommands import DeleteItemsCommand
+            undo_stack.beginMacro(_("Edit Stamp"))
+            undo_stack.push(DeleteItemsCommand(scene, [stampItem]))
+            self.createStampPix(scene, nbr, value, desc, boxWidth, boxHeight, top_left.x(), top_left.y(), pixmap)
+            undo_stack.endMacro()
+        else:
+            scene.removeItem(stampItem)
+            self.createStampPix(scene, nbr, value, desc, boxWidth, boxHeight, top_left.x(), top_left.y(), pixmap)
 
     def updateStamp_old(self, stampItem, stampObj, scene):
         posX = stampItem.pos().x()

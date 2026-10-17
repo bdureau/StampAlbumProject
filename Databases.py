@@ -9,30 +9,29 @@ Supports SQLite and Microsoft Access (via PyODBC).
 
 Author: Boris du Reau
 """
-import sys
-import configparser
-from pathlib import Path
-import pyodbc
 import sqlite3
+from pathlib import Path
+
+from AppPaths import get_app_dir, get_db_dir, get_db_type
+
+# pyodbc n'est nécessaire que pour Microsoft Access : on ne l'impose pas en mode sqlite
+try:
+    import pyodbc
+except ImportError:  # pragma: no cover
+    pyodbc = None
 
 
 class DB:
     """Manages database connections and query operations for master and country databases."""
     def __init__(self, country: str):
         self.country = country
-        self.dbtype = "sqlite"
 
         # Define portable system paths using pathlib
-        self.base_dir = self.get_app_dir()
-        self.db_dir = self.base_dir / "databases"
-        config_path = self.base_dir / "stamp_album.cfg"
+        self.base_dir = get_app_dir()
+        self.db_dir = get_db_dir()
 
         # Load database engine preference from configuration file
-        configParser = configparser.RawConfigParser()
-        if config_path.exists():
-            configParser.read(config_path)
-            if configParser.has_option("CONF", "database type"):
-                self.dbtype = configParser.get("CONF", "database type")
+        self.dbtype = get_db_type()
 
         # Initialize connection and cursor instances
         self.con_master = None
@@ -44,31 +43,34 @@ class DB:
 
     def get_app_dir(self) -> Path:
         """Return the base directory path, compatible with PyInstaller frozen executables."""
-        if getattr(sys, 'frozen', False):
-            # Executable congelé (PyInstaller / CX_Freeze)
-            # sys.executable pointe vers le dossier où se trouve le .exe
-            return Path(sys.executable).resolve().parent
-        else:
-            # Script Python normal (.py)
-            return Path(__file__).resolve().parent
+        return get_app_dir()
+
+    def _is_sqlite(self) -> bool:
+        return self.dbtype.lower() == "sqlite"
+
+    def _connect_sqlite(self, path: Path):
+        # sqlite3.connect crée silencieusement un fichier vide si le chemin n'existe pas :
+        # on vérifie d'abord pour donner une erreur claire.
+        if not path.is_file():
+            raise FileNotFoundError(f"Database not found: {path}")
+        return sqlite3.connect(path)
+
+    def _connect_access(self, path: Path):
+        if pyodbc is None:
+            raise RuntimeError("pyodbc is required to open Microsoft Access databases")
+        if not path.is_file():
+            raise FileNotFoundError(f"Database not found: {path}")
+        return pyodbc.connect(f"Driver={{Microsoft Access Driver (*.mdb, *.accdb)}};DBQ={path};")
 
     def _init_db_connections(self, country: str):
         """Establish connections to master and selected country databases based on configuration."""
-        if self.dbtype == "sqlite":
-            master_db = self.db_dir / "master.db"
-            country_db = self.db_dir / f"{country}.db"
-
-            self.con_master = sqlite3.connect(master_db)
-            self.dbCurMaster = self.con_master.cursor()
-
-            self.con_country = sqlite3.connect(country_db)
-            self.dbCurCountry = self.con_country.cursor()
+        if self._is_sqlite():
+            self.con_master = self._connect_sqlite(self.db_dir / "master.db")
         else:
-            master_conn_str = f"Driver={{Microsoft Access Driver (*.mdb, *.accdb)}};DBQ={self.db_dir / 'master.mdb'};"
-            self.con_master = pyodbc.connect(master_conn_str)
-            self.dbCurMaster = self.con_master.cursor()
+            self.con_master = self._connect_access(self.db_dir / "master.mdb")
+        self.dbCurMaster = self.con_master.cursor()
 
-            self.OpenCountryDB(country)
+        self.OpenCountryDB(country)
 
     def OpenCountryDB(self, country: str):
         """Close existing country connection and open a new country database."""
@@ -77,14 +79,12 @@ class DB:
         if self.con_country:
             self.con_country.close()
 
-        if self.dbtype == "sqlite":
-            country_db = self.db_dir / f"{country}.db"
-            self.con_country = sqlite3.connect(country_db)
-            self.dbCurCountry = self.con_country.cursor()
+        if self._is_sqlite():
+            self.con_country = self._connect_sqlite(self.db_dir / f"{country}.db")
         else:
-            country_conn_str = f"Driver={{Microsoft Access Driver (*.mdb, *.accdb)}};DBQ={self.db_dir / f'{country}.mdb'};"
-            self.con_country = pyodbc.connect(country_conn_str)
-            self.dbCurCountry = self.con_country.cursor()
+            self.con_country = self._connect_access(self.db_dir / f"{country}.mdb")
+        self.dbCurCountry = self.con_country.cursor()
+        self.country = country
 
     def DBExecute(self, cursor, statement: str, params: tuple = ()):
         """Execute a SQL statement using parameterized queries to prevent SQL injection."""
@@ -127,7 +127,7 @@ class DB:
         """Find the earliest available issue year for a given stamp type."""
         query = (
             "SELECT DISTINCT year FROM Stamp_List WHERE type = ? AND year IS NOT"
-            " NOT NULL ORDER BY year ASC"
+            " NULL ORDER BY year ASC"
         )
         res = self.DBExecute(self.dbCurCountry, query, (stampType,))
         row = res.fetchone()
