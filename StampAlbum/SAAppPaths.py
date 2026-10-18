@@ -15,12 +15,32 @@ from pathlib import Path
 CONFIG_FILE_NAME = "stamp_album.cfg"
 
 
-def get_app_dir() -> Path:
+def get_app_dir_old() -> Path:
     """Dossier de l'application (celui du .exe si l'application est compilée)."""
     if getattr(sys, 'frozen', False):
         return Path(sys.executable).resolve().parent
     return Path(__file__).resolve().parent
 
+
+def get_app_dir() -> Path:
+    """
+    Dossier racine de l'application.
+
+    - En mode EXE (sys.frozen) : renvoie le dossier où se trouve l'exécutable.
+    - En mode script Python (.py dans un sous-dossier comme StampAlbum/) :
+      remonte au dossier parent s'il contient l'un des répertoires de ressources.
+    """
+    if getattr(sys, 'frozen', False):
+        return Path(sys.executable).resolve().parent
+
+    script_dir = Path(__file__).resolve().parent
+    parent_dir = script_dir.parent
+
+    # Vérifie si l'un des dossiers principaux existe dans le répertoire parent
+    if any((parent_dir / folder).exists() for folder in ["databases", "images", "photos", "docs", "Help"]):
+        return parent_dir
+
+    return script_dir
 
 def get_config_path() -> Path:
     return get_app_dir() / CONFIG_FILE_NAME

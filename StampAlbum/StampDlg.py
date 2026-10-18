@@ -6,25 +6,21 @@ Dialog window for selecting and creating stamp items from catalog databases.
 Author: Boris du Reau
 """
 
-from PyQt6.QtCore import QPointF, Qt, QPoint, QByteArray, QRectF
-from PyQt6 import QtCore, QtGui
+from PyQt6.QtCore import Qt
+from PyQt6 import QtGui
 from PyQt6.QtWidgets import (
     QMessageBox,
-    QGraphicsRectItem,
-    QGraphicsScene, QComboBox, QRadioButton, QButtonGroup, QGroupBox, QListWidgetItem,
-    QGraphicsView, QApplication, QLabel, QMainWindow, QMenuBar, QMenu, QHBoxLayout, QListView,
-    QToolBar, QGraphicsTextItem, QGraphicsItemGroup, QDialog, QPushButton, QListWidget,
-    QLineEdit, QFormLayout, QStatusBar, QTabWidget, QWidget, QVBoxLayout, QDialogButtonBox, QPlainTextEdit
+    QComboBox, QRadioButton, QGroupBox, QLabel, QHBoxLayout, QListView,
+    QDialog, QPushButton, QListWidget,
+    QLineEdit, QFormLayout, QVBoxLayout, QDialogButtonBox, QPlainTextEdit
 )
-from PyQt6.QtGui import QBrush, QPainter, QPen, QPixmap, QPolygonF, QImage, QIcon, QStandardItem, QColor,QAction
-from PyQt6.QtPrintSupport import QPrintPreviewDialog, QPrinter, QPrintDialog
-from Databases import DB
-from pathlib import Path
-from Stamp import Stamp
-from AppPaths import get_config_value, get_photos_dir, get_images_dir, list_countries
+from PyQt6.QtGui import QPixmap, QStandardItem
+from StampAlbum.Databases import DB
+from StampAlbum.Stamp import Stamp
+from StampAlbum.SAAppPaths import get_config_value, get_photos_dir, get_images_dir, list_countries
 
 import gettext
-from AppLanguage import get_language
+from StampAlbum.AppLanguage import get_language
 # Set up gettext localization
 gettext.find("StampDlg")
 translate = gettext.translation('StampDlg', localedir='locale', languages=[get_language()], fallback=True)

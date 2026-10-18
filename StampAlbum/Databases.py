@@ -12,7 +12,7 @@ Author: Boris du Reau
 import sqlite3
 from pathlib import Path
 
-from AppPaths import get_app_dir, get_db_dir, get_db_type
+from SAAppPaths import get_app_dir, get_db_dir, get_db_type
 
 # pyodbc n'est nécessaire que pour Microsoft Access : on ne l'impose pas en mode sqlite
 try:

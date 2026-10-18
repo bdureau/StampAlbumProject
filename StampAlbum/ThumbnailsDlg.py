@@ -5,7 +5,7 @@ from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QListWidget, QListWidgetItem,
     QListView, QAbstractItemView, QDialogButtonBox
 )
-from AppLanguage import get_language
+from StampAlbum.AppLanguage import get_language
 
 gettext.find("ThumbnailsDlg")
 translate = gettext.translation('ThumbnailsDlg', localedir='locale', languages=[get_language()], fallback=True)

@@ -7,6 +7,8 @@ and author details in both French and English with scrollable text.
 Author: Boris du Reau
 """
 
+import sys
+from pathlib import Path
 from PyQt6.QtCore import (Qt, QUrl)
 from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel,
@@ -29,7 +31,32 @@ class AboutDlg(QDialog):
         super(AboutDlg, self).__init__(parent)
         self.setWindowTitle(_("About Stamp Album"))
         self.resize(550, 450)
+
+        # Résolution dynamique du dossier d'images
+        self.base_dir = self._get_app_dir()
+        self.images_dir = self._get_resource_dir("images")
+
         self.createDlg()
+
+    def _get_app_dir(self) -> Path:
+        """Détermine le répertoire racine de l'application."""
+        if getattr(sys, 'frozen', False):
+            return Path(sys.executable).resolve().parent
+        else:
+            script_dir = Path(__file__).resolve().parent
+            parent_dir = script_dir.parent
+
+            if any((parent_dir / folder).exists() for folder in ["databases", "images", "photos", "docs", "Help", "locale"]):
+                return parent_dir
+
+            return script_dir
+
+    def _get_resource_dir(self, folder_name: str) -> Path:
+        """Résout le dossier de ressources spécifié."""
+        res_dir = self.base_dir / folder_name
+        if res_dir.exists():
+            return res_dir
+        return Path(__file__).resolve().parent / folder_name
 
     def createDlg(self):
         main_layout = QVBoxLayout()
@@ -38,7 +65,11 @@ class AboutDlg(QDialog):
         header_layout = QHBoxLayout()
 
         logo = QLabel()
-        pixmap = QPixmap('stamp_book1170.png')
+        logo_path = self.images_dir / 'stamp_book1170.png'
+        if not logo_path.exists():
+            logo_path = Path('stamp_book1170.png')
+
+        pixmap = QPixmap(str(logo_path))
         if not pixmap.isNull():
             logo.setPixmap(pixmap.scaledToWidth(64, Qt.TransformationMode.SmoothTransformation))
         header_layout.addWidget(logo)
@@ -131,7 +162,6 @@ class AboutDlg(QDialog):
             </ul>
             """
 
-        # On assemble le HTML final avec le CSS et le contenu de la langue choisie
         return f"""
         <!DOCTYPE html>
         <html>

@@ -1,4 +1,4 @@
-from AppPaths import get_config_value
+from SDAppPaths import get_config_value
 
 _cached_lang = None
 

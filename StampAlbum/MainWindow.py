@@ -6,31 +6,28 @@ tabbed page displays, actions, and file I/O operations (XML/gzip).
 
 Author: Boris du Reau
 """
+import sys
 import re
-import shlex
+from pathlib import Path
 from PyQt6 import sip
 from ResizablePixmapItem import ResizablePixmapItem
 from PageBorder import PageBorder
-from AboutDlg import AboutDlg
-from PyQt6.QtCore import QPointF, Qt, QPoint, QByteArray, QRectF
-from PyQt6 import QtCore, QtWidgets, QtGui
+from StampAlbum.SAAboutDlg import AboutDlg
+from PyQt6.QtCore import Qt
+from PyQt6 import QtCore, QtGui
 from PyQt6.QtWidgets import (
-    QGridLayout, QMessageBox, QGraphicsPixmapItem,
-    QGraphicsRectItem,
-    QGraphicsScene, QFileDialog, QComboBox,
-    QGraphicsView, QApplication, QLabel, QMainWindow, QMenuBar, QMenu,
-    QToolBar,  QGraphicsTextItem, QGraphicsItemGroup, QDialog, QPushButton,
-    QLineEdit, QFormLayout, QStatusBar, QTabWidget, QWidget, QVBoxLayout, QDialogButtonBox, QPlainTextEdit
+    QGridLayout, QMessageBox, QFileDialog, QComboBox,
+    QLabel, QMainWindow, QMenu,
+    QToolBar, QGraphicsTextItem, QPushButton,
+    QStatusBar, QTabWidget, QWidget
 )
-from PyQt6.QtGui import QBrush, QPainter, QPen, QPixmap, QPolygonF, QImage, QIcon, QColor, QFont, QAction, QPageLayout, \
-    QTextCursor, QTextBlockFormat
-from PyQt6.QtPrintSupport import QPrintPreviewDialog, QPrinter, QPrintDialog
+from PyQt6.QtGui import QBrush, QPainter, QPixmap, QFont, QTextCursor, QTextBlockFormat
+from PyQt6.QtPrintSupport import QPrintPreviewDialog, QPrinter
 from Stamp import Stamp
 
 from Page import Page
-from ConfigDlg import ConfigDlg
+from StampAlbum.ConfigDlg import ConfigDlg
 
-import sys
 import xml.etree.ElementTree as ET
 
 from PageDlg import PageDlg
@@ -40,10 +37,9 @@ import os, gzip
 from TextDlg import TextDlg
 
 import gettext
-from AppLanguage import get_language
+from StampAlbum.AppLanguage import get_language
 from PyQt6.QtGui import QAction, QIcon, QKeySequence, QDesktopServices
 from PyQt6.QtCore import QUrl
-from AppPaths import get_help_dir
 
 # Set up gettext localization
 gettext.find("MainWindow")
@@ -62,10 +58,18 @@ class Window(QMainWindow):
         """Initialize the main window and UI components."""
         super().__init__(parent)
         self.setWindowTitle("Stamp album")
-        self.setWindowIcon(QtGui.QIcon('stamp_book1170.png'))
+
+        self.base_dir = self._get_app_dir()
+        self.images_dir = self._get_resource_dir("images")
+
+        icon_path = self.images_dir / "stamp_book1170.png"
+        if icon_path.exists():
+            self.setWindowIcon(QtGui.QIcon(str(icon_path)))
+        else:
+            self.setWindowIcon(QtGui.QIcon('stamp_book1170.png'))
 
         # Set initial main window dimensions
-        #self.resize(int(222 / (25.4 / 96)), 800)
+        # self.resize(int(222 / (25.4 / 96)), 800)
         self.resize(900, 850)
 
         # Track page count and recent stamp dialog selections
@@ -102,6 +106,39 @@ class Window(QMainWindow):
         # On connecte le déplacement d'onglet pour renommer "Page 1, Page 2..." correctement
         self.tabs.tabBar().tabMoved.connect(self.renameTabs)
         self.setCentralWidget(self.tabs)
+
+    def _get_app_dir(self) -> Path:
+        """
+        Détermine le répertoire racine de l'application.
+
+        - Si exécuté en EXE : renvoie le répertoire contenant l'exécutable.
+        - Si exécuté depuis Python (.py dans un sous-dossier) : remonte au dossier parent
+          si 'databases', 'images', 'photos' ou 'docs' s'y trouve, sinon renvoie le dossier du script.
+        """
+        if getattr(sys, 'frozen', False):
+            return Path(sys.executable).resolve().parent
+        else:
+            script_dir = Path(__file__).resolve().parent
+            parent_dir = script_dir.parent
+
+            if any((parent_dir / folder).exists() for folder in ["databases", "images", "photos", "docs", "Help", "locale"]):
+                return parent_dir
+
+            return script_dir
+
+    def _get_resource_dir(self, folder_name: str) -> Path:
+        """Résout un dossier de ressources (images, docs, etc.) depuis le dossier applicatif ou relatif."""
+        res_dir = self.base_dir / folder_name
+        if res_dir.exists():
+            return res_dir
+        return Path(__file__).resolve().parent / folder_name
+
+    def _get_icon(self, icon_filename: str) -> QIcon:
+        """Utilitaire pour charger une icône depuis le répertoire 'images' de façon robuste."""
+        path = self.images_dir / icon_filename
+        if path.exists():
+            return QIcon(str(path))
+        return QIcon(f"../images/{icon_filename}")
 
     def _createMenuBar(self):
         """Construct the main menu bar."""
@@ -188,7 +225,6 @@ class Window(QMainWindow):
         self.zoomCombo.setCurrentText("100%")
         self.zoomCombo.currentTextChanged.connect(self.onZoomComboChanged)
 
-
         # Status bar zoom display widget
         self.statusZoomLabel = QLabel("Zoom: 100%", self.statusBar())
         self.statusBar().addPermanentWidget(self.statusZoomLabel)
@@ -249,241 +285,155 @@ class Window(QMainWindow):
         """Define QAction instances for menus and toolbars."""
         self.newAction = QAction(self)
         self.newAction.setText(_("&New"))
-        iconNew = QIcon()
-        iconNew.addPixmap(QPixmap("images/new.png"), QIcon.Mode.Normal, QIcon.State.Off)
-        self.newAction.setIcon(iconNew)
+        self.newAction.setIcon(self._get_icon("new.png"))
 
         self.openAction = QAction(_("&Open..."), self)
-        iconOpen = QIcon()
-        iconOpen.addPixmap(QPixmap("images/open.png"), QIcon.Mode.Normal, QIcon.State.Off)
-        self.openAction.setIcon(iconOpen)
+        self.openAction.setIcon(self._get_icon("open.png"))
         self.openAction.setObjectName("actionOpen")
 
         self.saveAction = QAction(_("&Save"), self)
-        iconSave = QIcon()
-        iconSave.addPixmap(QPixmap("images/save.png"), QIcon.Mode.Normal, QIcon.State.Off)
-        self.saveAction.setIcon(iconSave)
+        self.saveAction.setIcon(self._get_icon("save.png"))
         self.saveAction.setObjectName("actionSave")
 
         self.printAction = QAction(_("&Print all pages..."), self)
-        iconPrint = QIcon()
-        iconPrint.addPixmap(QPixmap("images/print.png"), QIcon.Mode.Normal, QIcon.State.Off)
-        self.printAction.setIcon(iconPrint)
+        self.printAction.setIcon(self._get_icon("print.png"))
         self.printAction.setObjectName("printAction")
 
         self.printPreviewAllPagesAction = QAction(_("&Print preview all pages..."), self)
-        iconPrintPreviewAllPages = QIcon()
-        iconPrintPreviewAllPages.addPixmap(QPixmap("images/printprev.png"), QIcon.Mode.Normal, QIcon.State.Off)
-        self.printPreviewAllPagesAction.setIcon(iconPrintPreviewAllPages)
+        self.printPreviewAllPagesAction.setIcon(self._get_icon("printprev.png"))
         self.printPreviewAllPagesAction.setObjectName("printPreviewAllPagesAction")
 
         self.printPreviewCurrentPageAction = QAction(_("&Print preview current page..."), self)
-        iconPrintPreviewCurrentPage = QIcon()
-        iconPrintPreviewCurrentPage.addPixmap(QPixmap("images/printprev.png"), QIcon.Mode.Normal, QIcon.State.Off)
-        self.printPreviewCurrentPageAction.setIcon(iconPrintPreviewCurrentPage)
+        self.printPreviewCurrentPageAction.setIcon(self._get_icon("printprev.png"))
         self.printPreviewCurrentPageAction.setObjectName("printPreviewCurrentPageAction")
 
         self.printPDFAction = QAction(_("&Print current to PDF..."), self)
-        iconPrintPDF = QIcon()
-        iconPrintPDF.addPixmap(QPixmap("images/pdf.png"), QIcon.Mode.Normal, QIcon.State.Off)
-        self.printPDFAction.setIcon(iconPrintPDF)
+        self.printPDFAction.setIcon(self._get_icon("pdf.png"))
         self.printPDFAction.setObjectName("printPDFAction")
 
         self.exitAction = QAction(_("&Exit"), self)
-        iconExit = QIcon()
-        iconExit.addPixmap(QPixmap("images/exit.png"), QIcon.Mode.Normal, QIcon.State.Off)
-        self.exitAction.setIcon(iconExit)
+        self.exitAction.setIcon(self._get_icon("exit.png"))
         self.exitAction.setObjectName("exitAction")
 
         self.copyAction = QAction(_("&Copy"), self)
-        iconCopy = QIcon()
-        iconCopy.addPixmap(QPixmap("images/copy.png"), QIcon.Mode.Normal, QIcon.State.Off)
-        self.copyAction.setIcon(iconCopy)
+        self.copyAction.setIcon(self._get_icon("copy.png"))
 
         self.pasteAction = QAction(_("&Paste"), self)
-        iconPaste = QIcon()
-        iconPaste.addPixmap(QPixmap("images/paste.png"), QIcon.Mode.Normal, QIcon.State.Off)
-        self.pasteAction.setIcon(iconPaste)
+        self.pasteAction.setIcon(self._get_icon("paste.png"))
 
         self.cutAction = QAction(_("C&ut"), self)
-        iconCut = QIcon()
-        iconCut.addPixmap(QPixmap("images/cut.png"), QIcon.Mode.Normal, QIcon.State.Off)
-        self.cutAction.setIcon(iconCut)
+        self.cutAction.setIcon(self._get_icon("cut.png"))
 
         self.newStampAction = QAction(_("New Stamp ..."), self)
         self.editStampAction = QAction(_("Edit Current Stamp ..."), self)
-        stampIcon = QIcon()
-        stampIcon.addPixmap(QPixmap("images/stamp.png"), QIcon.Mode.Normal, QIcon.State.Off)
-        self.newStampAction.setIcon(stampIcon)
+        self.newStampAction.setIcon(self._get_icon("stamp.png"))
 
         self.newPageAction = QAction(_("New Page ..."), self)
-        iconNewPage = QIcon()
-        iconNewPage.addPixmap(QPixmap("images/page.png"), QIcon.Mode.Normal, QIcon.State.Off)
-        self.newPageAction.setIcon(iconNewPage)
+        self.newPageAction.setIcon(self._get_icon("page.png"))
 
         self.deletePageAction = QAction(_("Delete Page ..."), self)
-        iconDeletePage = QIcon()
-        iconDeletePage.addPixmap(QPixmap("images/delete_page.png"), QIcon.Mode.Normal, QIcon.State.Off)
-        self.deletePageAction.setIcon(iconDeletePage)
+        self.deletePageAction.setIcon(self._get_icon("delete_page.png"))
 
         self.deletePageObjectsAction = QAction(_("Delete Page Objects..."), self)
-        iconDeletePageObjects = QIcon()
-        iconDeletePageObjects.addPixmap(QPixmap("images/clear_page.png"), QIcon.Mode.Normal, QIcon.State.Off)
-        self.deletePageObjectsAction.setIcon(iconDeletePageObjects)
+        self.deletePageObjectsAction.setIcon(self._get_icon("clear_page.png"))
 
         self.drawGridAction = QAction(_("Grid on/off"), self)
-        iconDrawGrid = QIcon()
-        iconDrawGrid.addPixmap(QPixmap("images/grid.png"), QIcon.Mode.Normal, QIcon.State.Off)
-        self.drawGridAction.setIcon(iconDrawGrid)
+        self.drawGridAction.setIcon(self._get_icon("grid.png"))
 
         self.deleteAlbumAction = QAction(_("Delete Album ..."), self)
-        iconDelete = QIcon()
-        iconDelete.addPixmap(QPixmap("images/trash.png"), QIcon.Mode.Normal, QIcon.State.Off)
-        self.deleteAlbumAction.setIcon(iconDelete)
+        self.deleteAlbumAction.setIcon(self._get_icon("trash.png"))
 
         self.newTextAction = QAction(_("New text ..."), self)
-        iconNewText = QIcon()
-        iconNewText.addPixmap(QPixmap("images/text.png"), QIcon.Mode.Normal, QIcon.State.Off)
-        self.newTextAction.setIcon(iconNewText)
+        self.newTextAction.setIcon(self._get_icon("text.png"))
 
         self.newRichTextAction = QAction(_("New Rich Text ..."), self)
-        iconRichText = QIcon()
-        iconRichText.addPixmap(QPixmap("images/rich_text.png"), QIcon.Mode.Normal, QIcon.State.Off)
-        self.newRichTextAction.setIcon(iconRichText)
+        self.newRichTextAction.setIcon(self._get_icon("rich_text.png"))
 
         self.newImageAction = QAction(_("New Image ..."), self)
-        iconNewImage = QIcon()
-        iconNewImage.addPixmap(QPixmap("images/image.png"), QIcon.Mode.Normal, QIcon.State.Off)
-        self.newImageAction.setIcon(iconNewImage)
+        self.newImageAction.setIcon(self._get_icon("image.png"))
 
         self.newCopyRightAction = QAction(_("New copyright"), self)
-        iconCopyright = QIcon()
-        iconCopyright.addPixmap(QPixmap("images/copyright.png"), QIcon.Mode.Normal, QIcon.State.Off)
-        self.newCopyRightAction.setIcon(iconCopyright)
+        self.newCopyRightAction.setIcon(self._get_icon("copyright.png"))
 
         self.newCopyRightAllPagesAction = QAction(_("New copyright all pages"), self)
-        iconCopyrightAllPages = QIcon()
-        iconCopyrightAllPages.addPixmap(QPixmap("images/page_copyright.png"), QIcon.Mode.Normal, QIcon.State.Off)
-        self.newCopyRightAllPagesAction.setIcon(iconCopyrightAllPages)
+        self.newCopyRightAllPagesAction.setIcon(self._get_icon("page_copyright.png"))
 
         self.newBorderAction = QAction(_("New Page border"), self)
-        iconNewBorder = QIcon()
-        iconNewBorder.addPixmap(QPixmap("images/border.png"), QIcon.Mode.Normal, QIcon.State.Off)
-        self.newBorderAction.setIcon(iconNewBorder)
+        self.newBorderAction.setIcon(self._get_icon("border.png"))
 
         self.newPageNbrAction = QAction(_("New page nbr"), self)
-        iconPageNbr = QIcon()
-        iconPageNbr.addPixmap(QPixmap("images/number.png"), QIcon.Mode.Normal, QIcon.State.Off)
-        self.newPageNbrAction.setIcon(iconPageNbr)
+        self.newPageNbrAction.setIcon(self._get_icon("number.png"))
 
         self.newPageNbrAllPagesAction = QAction(_("New page nbr all pages"), self)
-        iconPageNbrAllPages = QIcon()
-        iconPageNbrAllPages.addPixmap(QPixmap("images/number.png"), QIcon.Mode.Normal, QIcon.State.Off)
-        self.newPageNbrAllPagesAction.setIcon(iconPageNbrAllPages)
+        self.newPageNbrAllPagesAction.setIcon(self._get_icon("number.png"))
 
         self.newYearToPageAction = QAction(_("Add year to page"), self)
-        iconAddYear = QIcon()
-        iconAddYear.addPixmap(QPixmap("images/add_year.png"), QIcon.Mode.Normal, QIcon.State.Off)
-        self.newYearToPageAction.setIcon(iconAddYear)
+        self.newYearToPageAction.setIcon(self._get_icon("add_year.png"))
 
         self.newYearToAllPagesAction = QAction(_("Add year to all pages"), self)
 
         self.alignLeftAction = QAction(_("Align Left"), self)
-        iconAlignLeft = QIcon()
-        iconAlignLeft.addPixmap(QPixmap("images/align_left.png"), QIcon.Mode.Normal, QIcon.State.Off)
-        self.alignLeftAction.setIcon(iconAlignLeft)
+        self.alignLeftAction.setIcon(self._get_icon("align_left.png"))
 
         self.alignRightAction = QAction(_("Align Right"), self)
-        iconAlignRight = QIcon()
-        iconAlignRight.addPixmap(QPixmap("images/align_right.png"), QIcon.Mode.Normal, QIcon.State.Off)
-        self.alignRightAction.setIcon(iconAlignRight)
+        self.alignRightAction.setIcon(self._get_icon("align_right.png"))
 
         self.alignTopAction = QAction(_("Align Top"), self)
-        iconAlignTop = QIcon()
-        iconAlignTop.addPixmap(QPixmap("images/align_top.png"), QIcon.Mode.Normal, QIcon.State.Off)
-        self.alignTopAction.setIcon(iconAlignTop)
+        self.alignTopAction.setIcon(self._get_icon("align_top.png"))
 
         self.alignBottomAction = QAction(_("Align Bottom"), self)
-        iconAlignBottom = QIcon()
-        iconAlignBottom.addPixmap(QPixmap("images/align_bottom.png"), QIcon.Mode.Normal, QIcon.State.Off)
-        self.alignBottomAction.setIcon(iconAlignBottom)
+        self.alignBottomAction.setIcon(self._get_icon("align_bottom.png"))
 
         self.distributeVerticallyAction = QAction(_("Distribute Vertically"), self)
-        iconDistributeVertically = QIcon()
-        iconDistributeVertically.addPixmap(QPixmap("images/distribute_vertical.png"), QIcon.Mode.Normal, QIcon.State.Off)
-        self.distributeVerticallyAction.setIcon(iconDistributeVertically)
+        self.distributeVerticallyAction.setIcon(self._get_icon("distribute_vertical.png"))
 
         self.distributeHorizontallyAction = QAction(_("Distribute Horizontally"), self)
-        iconDistributeHorizontally = QIcon()
-        iconDistributeHorizontally.addPixmap(QPixmap("images/distribute_horiz.png"), QIcon.Mode.Normal, QIcon.State.Off)
-        self.distributeHorizontallyAction.setIcon(iconDistributeHorizontally)
+        self.distributeHorizontallyAction.setIcon(self._get_icon("distribute_horiz.png"))
 
         self.centerHorizontallyAction = QAction(_("Center Horizontally"), self)
-        iconCenterHorizontally = QIcon()
-        iconCenterHorizontally.addPixmap(QPixmap("images/center_horizontal.png"), QIcon.Mode.Normal, QIcon.State.Off)
-        self.centerHorizontallyAction.setIcon(iconCenterHorizontally)
+        self.centerHorizontallyAction.setIcon(self._get_icon("center_horizontal.png"))
 
         self.centerVerticallyAction = QAction(_("Center Vertically"), self)
-        iconCenterVertically = QIcon()
-        iconCenterVertically.addPixmap(QPixmap("images/center_vertical.png"), QIcon.Mode.Normal, QIcon.State.Off)
-        self.centerVerticallyAction.setIcon(iconCenterVertically)
+        self.centerVerticallyAction.setIcon(self._get_icon("center_vertical.png"))
 
         self.setupAppAction = QAction(_("Setup application"), self)
-        iconSetup = QIcon()
-        iconSetup.addPixmap(QPixmap("images/config.png"), QIcon.Mode.Normal, QIcon.State.Off)
-        self.setupAppAction.setIcon(iconSetup)
+        self.setupAppAction.setIcon(self._get_icon("config.png"))
 
         self.helpContentAction = QAction(_("&Help Content"), self)
-        iconHelp = QIcon()
-        iconHelp.addPixmap(QPixmap("images/help.png"), QIcon.Mode.Normal, QIcon.State.Off)
-        self.helpContentAction.setIcon(iconHelp)
+        self.helpContentAction.setIcon(self._get_icon("help.png"))
 
         self.aboutAction = QAction(_("&About"), self)
-        iconAbout = QIcon()
-        iconAbout.addPixmap(QPixmap("images/about.png"), QIcon.Mode.Normal, QIcon.State.Off)
-        self.aboutAction.setIcon(iconAbout)
+        self.aboutAction.setIcon(self._get_icon("about.png"))
 
         self.undoAction = QAction(_("&Undo"), self)
         self.undoAction.setShortcut(QKeySequence.StandardKey.Undo)
-        self.undoAction.setIcon(QIcon("images/undo.png"))
+        self.undoAction.setIcon(self._get_icon("undo.png"))
         self.undoAction.triggered.connect(self.undo)
 
         self.redoAction = QAction(_("&Redo"), self)
         self.redoAction.setShortcut(QKeySequence.StandardKey.Redo)
-        self.redoAction.setIcon(QIcon("images/redo.png"))
+        self.redoAction.setIcon(self._get_icon("redo.png"))
         self.redoAction.triggered.connect(self.redo)
 
         self.autoArrangeAction = QAction(_("Auto-arrange Stamps"), self)
-        iconAutoArrange = QIcon()
-        iconAutoArrange.addPixmap(QPixmap("images/auto_arrange.png"), QIcon.Mode.Normal, QIcon.State.Off)
-        self.autoArrangeAction.setIcon(iconAutoArrange)
+        self.autoArrangeAction.setIcon(self._get_icon("auto_arrange.png"))
 
         self.selectAllAction = QAction(_("Select &All"), self)
         self.selectAllAction.setShortcut(QKeySequence.StandardKey.SelectAll)
         self.selectAllAction.triggered.connect(self.selectAll)
 
         self.reorderPagesAction = QAction(_("Thundnails..."), self)
-        iconReorder = QIcon()
-        # Tu peux utiliser l'icône de la grille ou en créer une spécifique
-        iconReorder.addPixmap(QPixmap("images/thumbnails.png"), QIcon.Mode.Normal, QIcon.State.Off)
-        self.reorderPagesAction.setIcon(iconReorder)
+        self.reorderPagesAction.setIcon(self._get_icon("thumbnails.png"))
         self.reorderPagesAction.triggered.connect(self.openThumbnails)
 
         self.changeBorderCurrentAction = QAction(_("Change current page border"), self)
-        iconBorder = QIcon()
-        iconBorder.addPixmap(QPixmap("images/border.png"), QIcon.Mode.Normal, QIcon.State.Off)
-        self.changeBorderCurrentAction.setIcon(iconBorder)
+        self.changeBorderCurrentAction.setIcon(self._get_icon("border.png"))
 
         self.changeBorderAllAction = QAction(_("Change page bordure (all pages)"), self)
-        #self.changeBorderAllAction.setIcon(iconBorder)
-        iconBorderAll = QIcon()
-        iconBorderAll.addPixmap(QPixmap("images/border_all.png"), QIcon.Mode.Normal, QIcon.State.Off)
-        self.changeBorderAllAction.setIcon(iconBorderAll)
+        self.changeBorderAllAction.setIcon(self._get_icon("border_all.png"))
 
         self.importAlbumEasyAction = QAction(_("Import AlbumEasy..."), self)
-        iconImport = QIcon()
-        iconImport.addPixmap(QPixmap("images/open.png"), QIcon.Mode.Normal, QIcon.State.Off)
-        self.importAlbumEasyAction.setIcon(iconImport)
+        self.importAlbumEasyAction.setIcon(self._get_icon("open.png"))
 
     def _createToolBars(self):
         """Construct application toolbars."""
@@ -881,7 +831,7 @@ class Window(QMainWindow):
         file_version = myroot.attrib.get("version", "0.9")
         print(file_version)
         self.openNewAlbumFileVersion(myroot)
-        #self.openOldAlbumFileVersion(myroot)
+        # self.openOldAlbumFileVersion(myroot)
 
     def openOldAlbumFileVersion(self, myroot):
         for it in myroot.findall('page'):
@@ -1371,7 +1321,7 @@ class Window(QMainWindow):
         p = QPainter(printer)
         for x, scene in enumerate(scenes):
             if x > 0:
-                scene.apply_page_layout(printer)   # mise en page de la page suivante
+                scene.apply_page_layout(printer)  # mise en page de la page suivante
                 printer.newPage()
             scene.renderToPrinter(p, printer)
         p.end()
@@ -1441,7 +1391,9 @@ class Window(QMainWindow):
 
     def help(self):
         """Open user help PDF document in default system viewer."""
-        help_file = get_help_dir() / "StampAlbum Manuel utilisateur 03-11-2024.pdf"
+        docs_dir = self._get_resource_dir("Help")
+        help_file = docs_dir / "StampAlbum Manuel utilisateur 03-11-2024.pdf"
+
         if not help_file.is_file():
             QMessageBox.warning(self, _("Help"), _("Help file not found:") + f"\n{help_file}")
             return
@@ -1684,7 +1636,7 @@ class Window(QMainWindow):
                 current_style = item.data(4)
                 break
 
-        from BorderDlg import BorderDlg
+        from StampAlbum.BorderDlg import BorderDlg
         dlg = BorderDlg(current_style, self)
         if dlg.exec() == 1:
             new_style = dlg.get_style()
@@ -1703,7 +1655,7 @@ class Window(QMainWindow):
                     current_style = item.data(4)
                     break
 
-        from BorderDlg import BorderDlg
+        from StampAlbum.BorderDlg import BorderDlg
         dlg = BorderDlg(current_style, self)
         if dlg.exec() == 1:
             new_style = dlg.get_style()

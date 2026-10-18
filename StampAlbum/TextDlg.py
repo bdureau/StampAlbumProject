@@ -1,20 +1,12 @@
-from os import walk
-from PyQt6.QtCore import QPointF, Qt, QPoint, QByteArray, QRectF
-from PyQt6 import QtCore, QtGui
+from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
-    QMessageBox,
-    QGraphicsRectItem,
-    QGraphicsScene, QComboBox, QRadioButton, QButtonGroup, QGroupBox, QListWidgetItem,
-    QGraphicsView, QApplication, QLabel, QMainWindow, QMenuBar, QMenu, QHBoxLayout, QListView,
-    QToolBar,  QGraphicsTextItem, QGraphicsItemGroup, QDialog, QPushButton, QListWidget, QTextEdit,
-    QLineEdit, QFormLayout, QStatusBar, QTabWidget, QWidget, QVBoxLayout, QDialogButtonBox, QPlainTextEdit
+    QComboBox, QHBoxLayout, QDialog, QPushButton, QTextEdit,
+    QFormLayout, QDialogButtonBox
 )
-from PyQt6.QtGui import QFont, QBrush, QPainter, QPen, QPixmap, QPolygonF, QImage, QIcon, QStandardItem, QColor, \
-    QTextBlockFormat, QAction, QTextCursor
-from PyQt6.QtPrintSupport import QPrintPreviewDialog, QPrinter, QPrintDialog
+from PyQt6.QtGui import QIcon, QTextBlockFormat, QTextCursor
 
 import gettext
-from AppLanguage import get_language
+from StampAlbum.AppLanguage import get_language
 gettext.find("TextDlg")
 translate = gettext.translation('TextDlg', localedir='locale', languages=[get_language()], fallback=True)
 translate.install()
@@ -44,30 +36,30 @@ class TextDlg(QDialog):
 
         boldButton = QPushButton()
         boldButton.setFixedWidth(30)
-        boldButton.setIcon(QIcon("images/bold.png"))
+        boldButton.setIcon(QIcon("../images/bold.png"))
 
         italicButton = QPushButton()
-        italicButton.setIcon(QIcon("images/italic.png"))
+        italicButton.setIcon(QIcon("../images/italic.png"))
         italicButton.setFixedWidth(30)
 
         strikeButton = QPushButton()
-        strikeButton.setIcon(QIcon("images/strike.png"))
+        strikeButton.setIcon(QIcon("../images/strike.png"))
         strikeButton.setFixedWidth(30)
 
         underlineButton = QPushButton()
-        underlineButton.setIcon(QIcon("images/underline.png"))
+        underlineButton.setIcon(QIcon("../images/underline.png"))
         underlineButton.setFixedWidth(30)
 
         justifyLeftButton = QPushButton()
-        justifyLeftButton.setIcon(QIcon("images/justify left.png"))
+        justifyLeftButton.setIcon(QIcon("../images/justify left.png"))
         justifyLeftButton.setFixedWidth(30)
 
         centerButton = QPushButton()
-        centerButton.setIcon(QIcon("images/justify center.png"))
+        centerButton.setIcon(QIcon("../images/justify center.png"))
         centerButton.setFixedWidth(30)
 
         justifyRightButton = QPushButton()
-        justifyRightButton.setIcon(QIcon("images/justify right.png"))
+        justifyRightButton.setIcon(QIcon("../images/justify right.png"))
         justifyRightButton.setFixedWidth(30)
 
         hLayout1.addWidget(boldButton)

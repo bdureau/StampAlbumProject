@@ -7,14 +7,12 @@ grouped stamp items on a QGraphicsScene.
 Author: Boris du Reau
 """
 import gettext
-from PyQt6.QtCore import QPointF, Qt
+from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
-    QGraphicsRectItem, QGraphicsScene, QGraphicsView, QApplication, QLabel, QMainWindow,
-    QMenuBar, QMenu, QToolBar, QGraphicsTextItem,QGraphicsItemGroup, QGraphicsPixmapItem,
-    QLineEdit, QPushButton, QDialog, QFormLayout
+    QGraphicsRectItem, QGraphicsTextItem, QGraphicsItemGroup, QGraphicsPixmapItem
 )
-from PyQt6.QtGui import QBrush, QPainter, QPen, QPixmap, QPolygonF, QColor, QTextCursor, QTextBlockFormat, QAction
-from AppLanguage import get_language
+from PyQt6.QtGui import QPen, QPixmap, QTextCursor, QTextBlockFormat
+from StampAlbum.AppLanguage import get_language
 # Set up gettext localization
 
 gettext.find("Stamp")

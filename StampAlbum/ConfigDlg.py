@@ -13,7 +13,7 @@ import configparser
 import sys
 import gettext
 from AppLanguage import get_language
-from AppPaths import get_app_dir, get_config_path, list_countries, read_config_into
+from SAAppPaths import get_app_dir, get_config_path, list_countries, read_config_into
 
 gettext.find("ConfigDlg")
 translate = gettext.translation('ConfigDlg', localedir='locale', languages=[get_language()], fallback=True)

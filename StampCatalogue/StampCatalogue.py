@@ -7,31 +7,33 @@ searching country catalogues, and exporting Excel mancolists.
 Reuses the exact same image resolution logic (getPhotoName) and localization
 framework (gettext + AppLanguage) as StampAlbum.
 
-Author: Boris du Reau / AI Assistant
+Author: Boris du Reau
 Year: 2026
 """
 
 import sys
 import os
 import sqlite3
+import configparser
 import gettext
+import subprocess
 from pathlib import Path
 import openpyxl
-from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+from openpyxl.styles import Font, PatternFill, Alignment
 from openpyxl.utils import get_column_letter
 
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QSize
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QComboBox, QLabel, QTableWidget, QTableWidgetItem, QPushButton,
     QHeaderView, QLineEdit, QSpinBox, QDoubleSpinBox, QMessageBox,
     QFileDialog, QGroupBox, QFormLayout, QTextEdit, QSplitter,
-    QDialog, QDialogButtonBox
+    QDialog, QDialogButtonBox, QToolBar, QStyle
 )
-from PyQt6.QtGui import QPixmap
+from PyQt6.QtGui import QPixmap, QIcon, QAction
 
 # Localization setup following StampAlbum's architecture
-from AppLanguage import get_language
+from StampAlbum.AppLanguage import get_language
 
 gettext.find("StampCatalogue")
 translate = gettext.translation(
@@ -39,6 +41,84 @@ translate = gettext.translation(
 )
 translate.install()
 _ = translate.gettext
+
+
+class ConfigManager:
+    """Manages application settings stored in a Windows-style INI file (StampCatalogue)."""
+
+    def __init__(self, config_file: Path):
+        self.config_file = config_file
+        self.config = configparser.ConfigParser()
+        self.load()
+
+    def load(self):
+        if self.config_file.exists():
+            self.config.read(self.config_file, encoding='utf-8')
+        else:
+            self._set_defaults()
+            self.save()
+
+    def _set_defaults(self):
+        self.config['General'] = {
+            'language': get_language(),
+            'db_type': 'SQLite'
+        }
+
+    def get_language(self) -> str:
+        return self.config.get('General', 'language', fallback=get_language())
+
+    def get_db_type(self) -> str:
+        return self.config.get('General', 'db_type', fallback='SQLite')
+
+    def set_settings(self, language: str, db_type: str):
+        if 'General' not in self.config:
+            self.config['General'] = {}
+        self.config['General']['language'] = language
+        self.config['General']['db_type'] = db_type
+        self.save()
+
+    def save(self):
+        with open(self.config_file, 'w', encoding='utf-8') as f:
+            self.config.write(f)
+
+
+class ConfigurationDialog(QDialog):
+    """Dialog for modifying application settings."""
+
+    def __init__(self, current_lang: str, current_db_type: str, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle(_("Settings"))
+        self.resize(320, 160)
+
+        layout = QVBoxLayout(self)
+        form = QFormLayout()
+
+        self.combo_lang = QComboBox()
+        self.combo_lang.addItem("Français", "fr")
+        self.combo_lang.addItem("English", "en")
+
+        # Select current language in dropdown
+        idx_lang = self.combo_lang.findData(current_lang)
+        if idx_lang != -1:
+            self.combo_lang.setCurrentIndex(idx_lang)
+        form.addRow(_("Language:"), self.combo_lang)
+
+        self.combo_db = QComboBox()
+        self.combo_db.addItems(["SQLite", "Access"])
+        idx_db = self.combo_db.findText(current_db_type)
+        if idx_db != -1:
+            self.combo_db.setCurrentIndex(idx_db)
+        form.addRow(_("Database Type:"), self.combo_db)
+
+        layout.addLayout(form)
+
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+        buttons.accepted.connect(self.accept)
+        buttons.rejected.connect(self.reject)
+        layout.addWidget(buttons)
+
+    def get_settings(self):
+        return self.combo_lang.currentData(), self.combo_db.currentText()
 
 
 class CollectionManagerDB:
@@ -221,6 +301,10 @@ class MainWindow(QMainWindow):
 
         self.base_dir = self._get_app_dir()
         self.db_dir = self.base_dir / "databases"
+        self.icons_dir = self.base_dir / "images"
+
+        # Load Configuration
+        self.config_manager = ConfigManager(self.base_dir / "StampCatalogue.cfg")
 
         self.central_db = CollectionManagerDB(self.db_dir)
         self.country_db = None
@@ -231,13 +315,66 @@ class MainWindow(QMainWindow):
 
         self.available_countries = self._detect_available_countries()
 
+        self._create_actions()
+        self._create_menu_and_toolbar()
         self._init_ui()
         self._load_collections()
 
-    def _get_app_dir(self) -> Path:
+    def _get_app_dir_old(self) -> Path:
         if getattr(sys, 'frozen', False):
             return Path(sys.executable).resolve().parent
         return Path(__file__).resolve().parent
+
+    def _get_app_dir_old2(self) -> Path:
+        """
+        Détermine le répertoire racine de l'application.
+
+        - Si exécuté en EXE : renvoie le répertoire où se trouve l'exécutable.
+        - Si exécuté depuis Python (.py dans un sous-dossier) : remonte au dossier parent
+          si 'databases' ou 'images' s'y trouve, sinon renvoie le dossier du script.
+        """
+        if getattr(sys, 'frozen', False):
+            # Mode exécutable (EXE) : le dossier de l'exécutable
+            return Path(sys.executable).resolve().parent
+        else:
+            # Mode script Python (.py)
+            script_dir = Path(__file__).resolve().parent
+            parent_dir = script_dir.parent
+
+            # Si le script est dans un sous-dossier et que 'databases' ou 'images' existe au niveau parent
+            if (parent_dir / "databases").exists() or (parent_dir / "images").exists():
+                return parent_dir
+
+            return script_dir
+
+    def _get_app_dir(self) -> Path:
+        """
+        Détermine le répertoire racine de l'application.
+
+        - Si exécuté en EXE : renvoie le répertoire contenant l'exécutable.
+        - Si exécuté depuis Python (.py dans un sous-dossier) : remonte au dossier parent
+          si 'databases', 'images' ou 'photos' s'y trouve, sinon renvoie le dossier du script.
+        """
+        if getattr(sys, 'frozen', False):
+            # Mode exécutable (EXE)
+            return Path(sys.executable).resolve().parent
+        else:
+            # Mode script Python (.py)
+            script_dir = Path(__file__).resolve().parent
+            parent_dir = script_dir.parent
+
+            # Vérifie si l'un des dossiers de ressources existe dans le dossier parent
+            if any((parent_dir / folder).exists() for folder in ["databases", "images", "photos", "Help", "locale"]):
+                return parent_dir
+
+            return script_dir
+
+    def _get_icon(self, icon_filename: str, fallback_standard_icon: QStyle.StandardPixmap) -> QIcon:
+        """Utility to fetch custom PNG icon from icons/ or fall back to system standard icon."""
+        custom_icon_path = self.icons_dir / icon_filename
+        if custom_icon_path.exists():
+            return QIcon(str(custom_icon_path))
+        return self.style().standardIcon(fallback_standard_icon)
 
     def _detect_available_countries(self):
         """Detect country database files in the databases/ folder."""
@@ -245,12 +382,96 @@ class MainWindow(QMainWindow):
             return []
         return sorted([f.stem for f in self.db_dir.glob("*.db") if f.stem not in ["master", "collections"]])
 
+    def _create_actions(self):
+        """Create shared QActions for menus and toolbars."""
+        # Action: New Collection
+        icon_add = self._get_icon("new.png", QStyle.StandardPixmap.SP_FileDialogNewFolder)
+        self.action_new_coll = QAction(icon_add, _("New Collection..."), self)
+        self.action_new_coll.setToolTip(_("Create a new collection"))
+        self.action_new_coll.triggered.connect(self._create_collection)
+
+        # Action: Delete Collection
+        icon_del = self._get_icon("trash.png", QStyle.StandardPixmap.SP_TrashIcon)
+        self.action_del_coll = QAction(icon_del, _("Delete Collection"), self)
+        self.action_del_coll.setToolTip(_("Delete current collection"))
+        self.action_del_coll.triggered.connect(self._delete_collection)
+
+        # Action: Export Mancolist
+        icon_export = self._get_icon("export_to_csv.png", QStyle.StandardPixmap.SP_DialogSaveButton)
+        self.action_export_mancolist = QAction(icon_export, _("Export Mancolist (Excel)"), self)
+        self.action_export_mancolist.setToolTip(_("Export missing stamps to Excel"))
+        self.action_export_mancolist.triggered.connect(self._export_mancolist)
+
+        # Action: Configuration
+        icon_config = self._get_icon("config.png", QStyle.StandardPixmap.SP_FileDialogEnd)
+        self.action_config = QAction(icon_config, _("Settings..."), self)
+        self.action_config.setToolTip(_("Configure application settings"))
+        self.action_config.triggered.connect(self._open_settings)
+
+        # Action: User Manual
+        icon_help = self._get_icon("help.png", QStyle.StandardPixmap.SP_DialogHelpButton)
+        self.action_manual = QAction(icon_help, _("User Manual"), self)
+        self.action_manual.setToolTip(_("Open user manual"))
+        self.action_manual.triggered.connect(self._open_manual)
+
+        # Action: About
+        icon_about = self._get_icon("about.png", QStyle.StandardPixmap.SP_MessageBoxInformation)
+        self.action_about = QAction(icon_about, _("About"), self)
+        self.action_about.setToolTip(_("About StampCatalogue"))
+        self.action_about.triggered.connect(self._show_about)
+
+        # Action: Exit Application
+        icon_exit = self._get_icon("exit.png", QStyle.StandardPixmap.SP_DialogCloseButton)
+        self.action_exit = QAction(icon_exit, _("Quit"), self)
+        self.action_exit.setShortcut("Ctrl+Q")
+        self.action_exit.setToolTip(_("Quit application"))
+        self.action_exit.triggered.connect(self.close)
+
+    def _create_menu_and_toolbar(self):
+        """Build Menu Bar and Top ToolBar."""
+        menu_bar = self.menuBar()
+
+        # Collection Menu
+        collection_menu = menu_bar.addMenu(_("&Collection"))
+        collection_menu.addAction(self.action_new_coll)
+        collection_menu.addAction(self.action_del_coll)
+        collection_menu.addSeparator()
+        collection_menu.addAction(self.action_exit)
+
+        # Tools Menu
+        tools_menu = menu_bar.addMenu(_("&Tools"))
+        tools_menu.addAction(self.action_export_mancolist)
+
+        # Settings Menu
+        config_menu = menu_bar.addMenu(_("&Configuration"))
+        config_menu.addAction(self.action_config)
+
+        # Help Menu
+        help_menu = menu_bar.addMenu(_("&Help"))
+        help_menu.addAction(self.action_manual)
+        help_menu.addSeparator()
+        help_menu.addAction(self.action_about)
+
+        # Top ToolBar (Icon Only)
+        toolbar = QToolBar(_("Main Toolbar"))
+        toolbar.setIconSize(QSize(24, 24))
+        toolbar.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonIconOnly)
+        self.addToolBar(Qt.ToolBarArea.TopToolBarArea, toolbar)
+
+        toolbar.addAction(self.action_new_coll)
+        toolbar.addAction(self.action_del_coll)
+        toolbar.addSeparator()
+        toolbar.addAction(self.action_export_mancolist)
+        toolbar.addSeparator()
+        toolbar.addAction(self.action_config)
+        toolbar.addAction(self.action_manual)
+
     def _init_ui(self):
         main_widget = QWidget()
         self.setCentralWidget(main_widget)
         main_layout = QVBoxLayout(main_widget)
 
-        # Collection Header Bar
+        # Collection Selection Header
         coll_box = QGroupBox(_("Collection Selection"))
         coll_layout = QHBoxLayout()
 
@@ -258,19 +479,6 @@ class MainWindow(QMainWindow):
         self.combo_collections = QComboBox()
         self.combo_collections.currentIndexChanged.connect(self._on_collection_changed)
         coll_layout.addWidget(self.combo_collections, stretch=1)
-
-        btn_new_coll = QPushButton(_("New Collection..."))
-        btn_new_coll.clicked.connect(self._create_collection)
-        coll_layout.addWidget(btn_new_coll)
-
-        btn_del_coll = QPushButton(_("Delete Collection"))
-        btn_del_coll.clicked.connect(self._delete_collection)
-        coll_layout.addWidget(btn_del_coll)
-
-        btn_export = QPushButton(_("Export Mancolist (Excel)"))
-        btn_export.setStyleSheet("background-color: #1d6f42; color: white; font-weight: bold;")
-        btn_export.clicked.connect(self._export_mancolist)
-        coll_layout.addWidget(btn_export)
 
         coll_box.setLayout(coll_layout)
         main_layout.addWidget(coll_box)
@@ -314,6 +522,7 @@ class MainWindow(QMainWindow):
         ])
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+        self.table.setSortingEnabled(True)  # Enable sorting by clicking column headers
         self.table.itemSelectionChanged.connect(self._on_stamp_selected)
         splitter.addWidget(self.table)
 
@@ -332,12 +541,16 @@ class MainWindow(QMainWindow):
         detail_box = QGroupBox(_("Stamp Details"))
         detail_form = QFormLayout()
 
+        self.lbl_year = QLabel("-")
+        self.lbl_yvert = QLabel("-")
         self.lbl_valeur = QLabel("-")
         self.lbl_desc = QLabel("-")
         self.lbl_desc.setWordWrap(True)
 
+        detail_form.addRow(_("Year:"), self.lbl_year)
+        detail_form.addRow(_("Yvert N°:"), self.lbl_yvert)
         detail_form.addRow(_("Value / Color:"), self.lbl_valeur)
-        detail_form.addRow(_("Description:"), self.lbl_desc)
+        detail_form.addRow(_("Description 1:"), self.lbl_desc)
         detail_box.setLayout(detail_form)
         right_layout.addWidget(detail_box)
 
@@ -389,6 +602,63 @@ class MainWindow(QMainWindow):
         splitter.setSizes([650, 350])
 
         main_layout.addWidget(splitter)
+
+    def _open_settings(self):
+        """Open settings dialog and save updated INI configuration."""
+        dialog = ConfigurationDialog(
+            current_lang=self.config_manager.get_language(),
+            current_db_type=self.config_manager.get_db_type(),
+            parent=self
+        )
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            new_lang, new_db_type = dialog.get_settings()
+            self.config_manager.set_settings(new_lang, new_db_type)
+            QMessageBox.information(
+                self,
+                _("Settings Saved"),
+                _("Configuration saved to StampCatalogue.cfg.\nPlease restart the application to apply changes.")
+            )
+
+    def _show_about(self):
+        """Display 'About' dialog with application description."""
+        about_text = _(
+            "StampCatalogue v1.2\n\n"
+            "A standalone desktop application designed for philatelists to:\n"
+            "- Manage multiple stamp collections across different countries.\n"
+            "- Browse country-specific stamp catalogues.\n"
+            "- Track stamp ownership status, condition, purchase price, and notes.\n"
+            "- Export mancolists (missing stamps) directly to Excel.\n\n"
+            "Author: Boris du Reau / AI Assistant\n"
+            "Year: 2026"
+        )
+        QMessageBox.about(self, _("About StampCatalogue"), about_text)
+
+    def _open_manual(self):
+        """Open language-specific manual file."""
+        lang = self.config_manager.get_language()
+        doc_dir = self.base_dir / "docs"
+
+        # Try language-specific file, fall back to English
+        manual_path = doc_dir / f"manual_{lang}.pdf"
+        if not manual_path.exists():
+            manual_path = doc_dir / "manual_en.pdf"
+
+        if manual_path.exists():
+            try:
+                if sys.platform == 'win32':
+                    os.startfile(manual_path)
+                elif sys.platform == 'darwin':
+                    subprocess.run(["open", str(manual_path)])
+                else:
+                    subprocess.run(["xdg-open", str(manual_path)])
+            except Exception as e:
+                QMessageBox.critical(self, _("Error"), f"{_('Could not open manual:')}\n{str(e)}")
+        else:
+            QMessageBox.warning(
+                self,
+                _("Manual Not Found"),
+                f"{_('User manual file not found:')}\n{manual_path}"
+            )
 
     def _load_collections(self):
         """Populate the collections dropdown."""
@@ -486,7 +756,10 @@ class MainWindow(QMainWindow):
 
         user_items = self.central_db.get_collection_items(self.current_collection_id)
 
+        # Temporarily disable sorting while populating items
+        self.table.setSortingEnabled(False)
         self.table.setRowCount(0)
+
         for row_idx, stamp in enumerate(stamps):
             nbr, year, stype, valcolor, desc, key, sub_nbr = stamp
             self.table.insertRow(row_idx)
@@ -512,6 +785,9 @@ class MainWindow(QMainWindow):
             full_data = stamp + (user_data,)
             self.table.item(row_idx, 0).setData(Qt.ItemDataRole.UserRole, full_data)
 
+        # Re-enable sorting
+        self.table.setSortingEnabled(True)
+
     def _on_stamp_selected(self):
         selected_rows = self.table.selectedItems()
         if not selected_rows:
@@ -523,6 +799,8 @@ class MainWindow(QMainWindow):
         nbr, year, stype, valcolor, desc, key, sub_nbr, user_data = stamp_data
         self.selected_nbr = nbr
 
+        self.lbl_year.setText(str(year or "-"))
+        self.lbl_yvert.setText(str(nbr or "-"))
         self.lbl_valeur.setText(str(valcolor or "-"))
         self.lbl_desc.setText(str(desc or "-"))
 
@@ -770,6 +1048,8 @@ class MainWindow(QMainWindow):
 
     def _clear_ui(self):
         self.table.setRowCount(0)
+        self.lbl_year.setText("-")
+        self.lbl_yvert.setText("-")
         self.lbl_valeur.setText("-")
         self.lbl_desc.setText("-")
         self.img_label.setText(_("No Photo Available"))

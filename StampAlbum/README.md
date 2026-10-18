@@ -8,7 +8,7 @@
 
 Originally created in VBA (Excel) in the early 2000s, the suite has been modernized and re-engineered in Python 3 and PyQt6.
 
-![Stamp Album Creator Screenshot](stamp%20album.png)
+![Stamp Album Creator Screenshot](stamp album.png)
 
 ---
 
@@ -145,7 +145,7 @@ python main.py
 ## 📖 Documentation
 
 For detailed instructions, refer to the full user manual in the repository:
-* [Stamp Album User Manual (PDF)](Help/StampAlbum%20Manuel%20utilisateur%2003-11-2024.pdf)
+* [Stamp Album User Manual (PDF)](../Help/StampAlbum%20Manuel%20utilisateur%2003-11-2024.pdf)
 
 ---
 

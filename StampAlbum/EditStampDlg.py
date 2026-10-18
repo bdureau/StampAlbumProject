@@ -11,7 +11,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtGui import QBrush, QPainter, QPen, QPixmap, QPolygonF, QImage, QIcon, QStandardItem, QAction,QColor
 from PyQt6.QtPrintSupport import QPrintPreviewDialog, QPrinter, QPrintDialog
 from Databases import DB
-from AppPaths import list_countries
+from SAAppPaths import list_countries
 
 import gettext
 from AppLanguage import get_language

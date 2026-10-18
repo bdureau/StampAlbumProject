@@ -8,24 +8,21 @@ Author: Boris du Reau
 """
 import functools
 import gettext
-from AppLanguage import get_language
-from AppPaths import get_config_value
+from StampAlbum.AppLanguage import get_language
+from StampAlbum.SAAppPaths import get_config_value
 from ResizablePixmapItem import ResizablePixmapItem
-from PyQt6.QtCore import QPointF, Qt, QRectF, QMarginsF
-from PyQt6 import QtCore, QtGui, QtPrintSupport
+from PyQt6.QtCore import Qt, QRectF, QMarginsF
+from PyQt6 import QtCore, QtGui
 from PyQt6.QtWidgets import (
-    QGraphicsRectItem, QGraphicsScene, QGraphicsView, QApplication,
-    QLabel, QMainWindow, QMenuBar, QMenu, QToolBar,
-    QGraphicsTextItem, QGraphicsItemGroup,
-    QGraphicsPixmapItem, QDialog, QLineEdit, QPushButton, QFormLayout, QFileDialog
+    QGraphicsScene, QGraphicsTextItem, QGraphicsItemGroup
 )
-from PyQt6.QtGui import QBrush, QPainter, QPen, QPixmap, QPolygonF, QFont, QTextCursor, QAction, QTextBlockFormat, \
+from PyQt6.QtGui import QBrush, QPainter, QPixmap, QFont, QTextCursor, QTextBlockFormat, \
     QPageLayout, QPageSize
-from PyQt6.QtPrintSupport import QPrintPreviewDialog, QPrinter, QPrintDialog
+from PyQt6.QtPrintSupport import QPrintPreviewDialog, QPrinter
 from StampDlg import StampDlg
 from TextDlg import TextDlg
 from Stamp import Stamp
-from EditStampDlg import EditStampDlg
+from StampAlbum.EditStampDlg import EditStampDlg
 from PageBorder import PageBorder
 from PyQt6.QtGui import QUndoStack
 from UndoCommands import AddItemCommand, DeleteItemsCommand, MoveCommand

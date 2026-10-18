@@ -1,14 +1,15 @@
-from PyQt6.QtCore import Qt
+import sys
+from pathlib import Path
 from PyQt6.QtWidgets import (
     QDialog, QRadioButton, QGroupBox,
     QLabel, QHBoxLayout, QVBoxLayout, QDialogButtonBox, QComboBox, QFormLayout
 )
 from PyQt6.QtGui import QPixmap
 from PageBorder import PageBorder
-from AppPaths import get_config_value
+from StampAlbum.SAAppPaths import get_config_value
 
 import gettext
-from AppLanguage import get_language
+from StampAlbum.AppLanguage import get_language
 gettext.find("PageDlg")
 translate = gettext.translation('PageDlg', localedir='locale', languages=[get_language()], fallback=True)
 translate.install()
@@ -19,8 +20,40 @@ class PageDlg(QDialog):
         super(PageDlg, self).__init__(parent)
         self.setWindowTitle(_("Create new Page"))
         self.pageType = "portrait"
+
+        # Résolution dynamique du dossier d'images
+        self.base_dir = self._get_app_dir()
+        self.images_dir = self._get_resource_dir("images")
+
         self.borderStyle = self.get_configured_border_style()
         self.createDlg()
+
+    def _get_app_dir(self) -> Path:
+        """Détermine le répertoire racine de l'application."""
+        if getattr(sys, 'frozen', False):
+            return Path(sys.executable).resolve().parent
+        else:
+            script_dir = Path(__file__).resolve().parent
+            parent_dir = script_dir.parent
+
+            if any((parent_dir / folder).exists() for folder in ["databases", "images", "photos", "docs","Help", "locale"]):
+                return parent_dir
+
+            return script_dir
+
+    def _get_resource_dir(self, folder_name: str) -> Path:
+        """Résout le dossier de ressources spécifié."""
+        res_dir = self.base_dir / folder_name
+        if res_dir.exists():
+            return res_dir
+        return Path(__file__).resolve().parent / folder_name
+
+    def _get_pixmap(self, image_filename: str) -> QPixmap:
+        """Charge une image QPixmap depuis le dossier 'images' de façon sécurisée."""
+        image_path = self.images_dir / image_filename
+        if image_path.exists():
+            return QPixmap(str(image_path))
+        return QPixmap(f"../images/{image_filename}")
 
     def get_configured_border_style(self) -> str:
         """Récupère le style de bordure configuré par défaut dans le fichier .cfg."""
@@ -31,9 +64,8 @@ class PageDlg(QDialog):
         self.photo = QLabel()
         self.photo.setFixedHeight(200)
         self.photo.setFixedWidth(200)
-        self.photo.setPixmap(QPixmap("images/portrait.png"))
+        self.photo.setPixmap(self._get_pixmap("portrait.png"))
 
-        # descChoiceLbl = QLabel("Select the description to use:")
         rbtn1 = QRadioButton(_('Portrait'))
         rbtn2 = QRadioButton(_('Landscape'))
 
@@ -43,7 +75,6 @@ class PageDlg(QDialog):
         rbtn2.clicked.connect(self.rbtn2Clicked)
 
         rbGroup = QGroupBox(_("Select the page:"))
-        #vLayout1 = QVBoxLayout()
         vbox = QVBoxLayout()
         hBox = QHBoxLayout()
         rbGroup.setLayout(hBox)
@@ -53,7 +84,6 @@ class PageDlg(QDialog):
 
         hBox.addLayout(vbox)
         hBox.addWidget(self.photo)
-        #vLayout1.addWidget(rbGroup)
 
         # --- Sélection du type de bordure ---
         self.borderStyleCombo = QComboBox()
@@ -87,11 +117,11 @@ class PageDlg(QDialog):
         self.setLayout(vLayout1)
 
     def rbtn1Clicked(self):
-        self.photo.setPixmap(QPixmap("images/portrait.png"))
+        self.photo.setPixmap(self._get_pixmap("portrait.png"))
         self.pageType = "portrait"
 
     def rbtn2Clicked(self):
-        self.photo.setPixmap(QPixmap("images/landscape.png"))
+        self.photo.setPixmap(self._get_pixmap("landscape.png"))
         self.pageType = "landscape"
 
     def onBorderStyleChanged(self, index):

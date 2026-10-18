@@ -8,25 +8,25 @@ Supports SQLite and MS Access databases, CSV import/export (comma default),
 Undo/Redo, full record editing, add/delete records, MS Access availability verification,
 MS Access to SQLite database conversion, and metadata inspection.
 
-Author: Boris du Reau / AI Assistant
+Author: Boris du Reau
 Year: 2026
 """
 
 import sys
-import os
 import csv
 import sqlite3
+import configparser
 from pathlib import Path
 
 from PyQt6.QtCore import Qt, QUrl
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QComboBox, QLabel, QTableWidget, QTableWidgetItem, QPushButton,
-    QHeaderView, QLineEdit, QSpinBox, QDoubleSpinBox, QMessageBox,
+    QHeaderView, QLineEdit, QMessageBox,
     QFileDialog, QGroupBox, QFormLayout, QTextEdit, QSplitter,
-    QDialog, QDialogButtonBox, QRadioButton, QButtonGroup
+    QDialog, QDialogButtonBox, QRadioButton, QToolBar
 )
-from PyQt6.QtGui import QPixmap, QKeySequence, QDesktopServices, QUndoStack, QUndoCommand
+from PyQt6.QtGui import QPixmap, QKeySequence, QDesktopServices, QUndoStack, QUndoCommand, QIcon
 
 # Try importing pyodbc for Microsoft Access support
 try:
@@ -58,6 +58,37 @@ def test_ms_access_support() -> bool:
     except Exception:
         return False
 
+class AppConfigManager:
+    def __init__(self, config_path: Path):
+        self.config_path = config_path
+        self.config = configparser.ConfigParser()
+        self.language = "fr"
+        self.db_type = "sqlite"
+        self.last_country = ""
+        self.load_config()
+
+    def load_config(self):
+        if self.config_path.exists():
+            self.config.read(self.config_path, encoding='utf-8')
+            if 'General' in self.config:
+                self.language = self.config['General'].get('language', 'fr')
+                self.db_type = self.config['General'].get('db_type', 'sqlite')
+                self.last_country = self.config['General'].get('last_country', '')
+
+    def save_config(self, language=None, db_type=None, last_country=None):
+        if language is not None: self.language = language
+        if db_type is not None: self.db_type = db_type
+        if last_country is not None: self.last_country = last_country
+
+        if 'General' not in self.config:
+            self.config['General'] = {}
+
+        self.config['General']['language'] = self.language
+        self.config['General']['db_type'] = self.db_type
+        self.config['General']['last_country'] = self.last_country
+
+        with open(self.config_path, 'w', encoding='utf-8') as f:
+            self.config.write(f)
 
 class UpdateStampCommand(QUndoCommand):
     """QUndoCommand implementation for stamp record modifications."""
@@ -117,7 +148,7 @@ class DeleteStampsCommand(QUndoCommand):
 class CountryDatabaseAdapter:
     """Handles read/write operations for country databases (SQLite or MS Access)."""
 
-    DB_INFO_COLUMNS = ["Author", "Country", "description", "version", "catalogue", "language"]
+    DB_INFO_COLUMNS = ["Author", "Country", "Description", "Version", "Catalogue", "Language"]
 
     def __init__(self, country: str, db_dir: Path, db_type: str = "sqlite"):
         self.country = country
@@ -158,6 +189,7 @@ class CountryDatabaseAdapter:
                     year TEXT,
                     type TEXT,
                     valuecolor TEXT,
+                    stampDescription1 TEXT,
                     stampDescription TEXT,
                     width TEXT,
                     height TEXT,
@@ -174,14 +206,14 @@ class CountryDatabaseAdapter:
                     CREATE TABLE IF NOT EXISTS db_info (
                         Author TEXT,
                         Country TEXT,
-                        description TEXT,
-                        version TEXT,
-                        catalogue TEXT,
-                        language TEXT
+                        Description TEXT,
+                        Version TEXT,
+                        Catalogue TEXT,
+                        Language TEXT
                     )
                 """)
                 self.execute_query("""
-                    INSERT INTO db_info (Author, Country, description, version, catalogue, language)
+                    INSERT INTO db_info (Author, Country, Description, Version, Catalogue, Language)
                     VALUES (?, ?, ?, ?, ?, ?)
                 """, ("Boris du Reau", self.country, f"{self.country} Stamp Catalogue", "1.0", "Yvert", "fr"))
                 self.commit()
@@ -264,9 +296,9 @@ class CountryDatabaseAdapter:
         return [row[0] for row in res.fetchall() if row[0] is not None]
 
     def get_stamps(self, stamp_type=None, year=None, search_nbr=None):
-        """Query catalogue stamps based on filters."""
+        """Query catalogue stamps based on filters (Ordre: description1 puis description)."""
         query = """
-            SELECT key, nbr, year, type, valuecolor, stampDescription, width, height, sequence, ascii_seq, sub_nbr
+            SELECT key, nbr, year, type, valuecolor, stampDescription1, stampDescription, width, height, sequence, ascii_seq, sub_nbr
             FROM Stamp_List
             WHERE 1=1
         """
@@ -288,27 +320,27 @@ class CountryDatabaseAdapter:
         res = self.execute_query(query, tuple(params))
         return res.fetchall()
 
-    def update_stamp(self, key, nbr, year, stype, valcolor, desc, width, height, sequence, ascii_seq, sub_nbr):
+    def update_stamp(self, key, nbr, year, stype, valcolor, desc1, desc, width, height, sequence, ascii_seq, sub_nbr):
         """Update an existing stamp record in catalogue."""
         query = """
             UPDATE Stamp_List
-            SET nbr = ?, year = ?, type = ?, valuecolor = ?, stampDescription = ?, width = ?, height = ?, sequence = ?, ascii_seq = ?, sub_nbr = ?
+            SET nbr = ?, year = ?, type = ?, valuecolor = ?, stampDescription1 = ?, stampDescription = ?, width = ?, height = ?, sequence = ?, ascii_seq = ?, sub_nbr = ?
             WHERE key = ?
         """
         self.execute_query(query, (
-        str(nbr), str(year), str(stype), str(valcolor), str(desc), str(width), str(height), str(sequence),
-        str(ascii_seq), str(sub_nbr), key))
+            str(nbr), str(year), str(stype), str(valcolor), str(desc1), str(desc), str(width), str(height), str(sequence),
+            str(ascii_seq), str(sub_nbr), key))
 
     def insert_stamp(self, stamp_data):
         """Insert a new stamp record into catalogue."""
-        key, nbr, year, stype, valcolor, desc, width, height, sequence, ascii_seq, sub_nbr = stamp_data
+        key, nbr, year, stype, valcolor, desc1, desc, width, height, sequence, ascii_seq, sub_nbr = stamp_data
         query = """
-            INSERT INTO Stamp_List (key, nbr, year, type, valuecolor, stampDescription, width, height, sequence, ascii_seq, sub_nbr)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO Stamp_List (key, nbr, year, type, valuecolor, stampDescription1, stampDescription, width, height, sequence, ascii_seq, sub_nbr)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
         self.execute_query(query, (
-        str(key), str(nbr), str(year), str(stype), str(valcolor), str(desc), str(width), str(height), str(sequence),
-        str(ascii_seq), str(sub_nbr)))
+            str(key), str(nbr), str(year), str(stype), str(valcolor), str(desc1), str(desc), str(width), str(height), str(sequence),
+            str(ascii_seq), str(sub_nbr)))
 
     def delete_stamp(self, key):
         """Delete a stamp record by key."""
@@ -364,13 +396,13 @@ class DatabaseInfoDialog(QDialog):
         self.fields["Country"] = QLineEdit(self.info_data.get("Country", country_name))
         form.addRow(_("Country:"), self.fields["Country"])
 
-        self.fields["description"] = QTextEdit()
-        self.fields["description"].setPlainText(self.info_data.get("description", ""))
-        self.fields["description"].setMaximumHeight(60)
-        form.addRow(_("Description:"), self.fields["description"])
+        self.fields["Description"] = QTextEdit()
+        self.fields["Description"].setPlainText(self.info_data.get("Description", ""))
+        self.fields["Description"].setMaximumHeight(60)
+        form.addRow(_("Description:"), self.fields["Description"])
 
-        self.fields["version"] = QLineEdit(self.info_data.get("version", "1.0"))
-        form.addRow(_("Version:"), self.fields["version"])
+        self.fields["Version"] = QLineEdit(self.info_data.get("Version", "1.0"))
+        form.addRow(_("Version:"), self.fields["Version"])
 
         self.combo_catalogue = QComboBox()
         self.combo_catalogue.setEditable(True)
@@ -381,7 +413,7 @@ class DatabaseInfoDialog(QDialog):
         self.combo_language = QComboBox()
         self.combo_language.addItem(_("French"), "fr")
         self.combo_language.addItem(_("English"), "en")
-        lang_val = self.info_data.get("language", "fr")
+        lang_val = self.info_data.get("Language", "fr")
         idx = self.combo_language.findData(lang_val)
         if idx != -1:
             self.combo_language.setCurrentIndex(idx)
@@ -393,9 +425,9 @@ class DatabaseInfoDialog(QDialog):
             if col in self.fields:
                 self.fields[col].setEnabled(False)
                 self.fields[col].setToolTip(_("Column missing in database db_info table."))
-            elif col == "catalogue":
+            elif col == "Catalogue":
                 self.combo_catalogue.setEnabled(False)
-            elif col == "language":
+            elif col == "Language":
                 self.combo_language.setEnabled(False)
 
         layout.addLayout(form)
@@ -410,10 +442,10 @@ class DatabaseInfoDialog(QDialog):
         updated_dict = {
             "Author": self.fields["Author"].text().strip(),
             "Country": self.fields["Country"].text().strip(),
-            "description": self.fields["description"].toPlainText().strip(),
-            "version": self.fields["version"].text().strip(),
-            "catalogue": self.combo_catalogue.currentText().strip(),
-            "language": self.combo_language.currentData() or self.combo_language.currentText().strip()
+            "Description": self.fields["Description"].toPlainText().strip(),
+            "Version": self.fields["Version"].text().strip(),
+            "Catalogue": self.combo_catalogue.currentText().strip(),
+            "Language": self.combo_language.currentData() or self.combo_language.currentText().strip()
         }
         self.db_adapter.update_db_info(updated_dict)
         self.accept()
@@ -496,8 +528,9 @@ class CsvDelimiterDialog(QDialog):
 class ConfigDialog(QDialog):
     """Configuration dialog for language and database preferences."""
 
-    def __init__(self, parent=None):
+    def __init__(self, config_manager, parent=None):
         super().__init__(parent)
+        self.config_manager = config_manager
         self.setWindowTitle(_("Application Configuration"))
         self.resize(350, 150)
 
@@ -508,9 +541,19 @@ class ConfigDialog(QDialog):
         self.combo_lang.addItem("English", "en")
         self.combo_lang.addItem("Français", "fr")
 
+        # Sélectionner la langue actuelle dans la combo box
+        idx_lang = self.combo_lang.findData(self.config_manager.language)
+        if idx_lang != -1:
+            self.combo_lang.setCurrentIndex(idx_lang)
+
         self.combo_db_type = QComboBox()
         self.combo_db_type.addItem("SQLite", "sqlite")
         self.combo_db_type.addItem("Microsoft Access", "access")
+
+        # Sélectionner le type de base de données actuel dans la combo box
+        idx_db = self.combo_db_type.findData(self.config_manager.db_type)
+        if idx_db != -1:
+            self.combo_db_type.setCurrentIndex(idx_db)
 
         form.addRow(_("Language:"), self.combo_lang)
         form.addRow(_("Database Type:"), self.combo_db_type)
@@ -522,6 +565,13 @@ class ConfigDialog(QDialog):
         buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)
 
+    def get_selected_config(self):
+        """Retourne les valeurs sélectionnées dans la boîte de dialogue."""
+        return {
+            "language": self.combo_lang.currentData(),
+            "db_type": self.combo_db_type.currentData()
+        }
+
 
 class MainWindow(QMainWindow):
     """Main Window for StampDatabase administration tool."""
@@ -529,14 +579,15 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle(_("StampDatabase - Stamp Catalogue Administrator"))
-        self.resize(1250, 800)
+        self.resize(1300, 850)
 
         self.base_dir = self._get_app_dir()
         self.db_dir = self.base_dir / "databases"
-
+        self.config_manager = AppConfigManager(self.base_dir / "StampDatabase.cfg")
+        self.current_db_type = self.config_manager.db_type
         self.db_adapter = None
         self.current_country = None
-        self.current_db_type = "sqlite"
+        #self.current_db_type = "sqlite"
         self.is_dirty = False
 
         self.undo_stack = QUndoStack(self)
@@ -546,12 +597,57 @@ class MainWindow(QMainWindow):
 
         self._init_ui()
         self._init_menubar()
+        self._init_toolbar()
         self._load_country_list()
 
-    def _get_app_dir(self) -> Path:
+    def _get_app_dir_old(self) -> Path:
         if getattr(sys, 'frozen', False):
             return Path(sys.executable).resolve().parent
         return Path(__file__).resolve().parent
+
+    def _get_app_dir_old2(self) -> Path:
+        """
+        Détermine le répertoire racine de l'application.
+
+        - Si exécuté en EXE : renvoie le répertoire où se trouve l'exécutable.
+        - Si exécuté depuis Python (.py dans un sous-dossier) : remonte au dossier parent
+          si 'databases' ou 'images' s'y trouve, sinon renvoie le dossier du script.
+        """
+        if getattr(sys, 'frozen', False):
+            # Mode exécutable (EXE) : le dossier de l'exécutable
+            return Path(sys.executable).resolve().parent
+        else:
+            # Mode script Python (.py)
+            script_dir = Path(__file__).resolve().parent
+            parent_dir = script_dir.parent
+
+            # Si le script est dans un sous-dossier et que 'databases' ou 'images' existe au niveau parent
+            if (parent_dir / "databases").exists() or (parent_dir / "images").exists():
+                return parent_dir
+
+            return script_dir
+
+    def _get_app_dir(self) -> Path:
+        """
+        Détermine le répertoire racine de l'application.
+
+        - Si exécuté en EXE : renvoie le répertoire contenant l'exécutable.
+        - Si exécuté depuis Python (.py dans un sous-dossier) : remonte au dossier parent
+          si 'databases', 'images' ou 'photos' s'y trouve, sinon renvoie le dossier du script.
+        """
+        if getattr(sys, 'frozen', False):
+            # Mode exécutable (EXE)
+            return Path(sys.executable).resolve().parent
+        else:
+            # Mode script Python (.py)
+            script_dir = Path(__file__).resolve().parent
+            parent_dir = script_dir.parent
+
+            # Vérifie si l'un des dossiers de ressources existe dans le dossier parent
+            if any((parent_dir / folder).exists() for folder in ["databases", "images", "photos"]):
+                return parent_dir
+
+            return script_dir
 
     def _detect_available_countries(self):
         """Detect country databases in databases/ folder."""
@@ -576,7 +672,7 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(main_widget)
         main_layout = QVBoxLayout(main_widget)
 
-        # Country Header Bar & Create SQLite DB Button
+        # Country Header Bar
         country_box = QGroupBox(_("Database Selection"))
         country_layout = QHBoxLayout()
 
@@ -584,16 +680,7 @@ class MainWindow(QMainWindow):
         self.combo_country = QComboBox()
         self.combo_country.currentIndexChanged.connect(self._on_country_changed)
         country_layout.addWidget(self.combo_country, stretch=1)
-
-        self.btn_create_db = QPushButton(_("Create New Empty SQLite DB..."))
-        self.btn_create_db.setStyleSheet("background-color: #4a5568; color: white; font-weight: bold;")
-        self.btn_create_db.clicked.connect(self.create_new_sqlite_db)
-        country_layout.addWidget(self.btn_create_db)
-
-        btn_save = QPushButton(_("Save Database Changes"))
-        btn_save.setStyleSheet("background-color: #2b6cb0; color: white; font-weight: bold;")
-        btn_save.clicked.connect(self.save_changes)
-        country_layout.addWidget(btn_save)
+        country_layout.addStretch(2)
 
         country_box.setLayout(country_layout)
         main_layout.addWidget(country_box)
@@ -604,19 +691,22 @@ class MainWindow(QMainWindow):
 
         filter_layout.addWidget(QLabel(_("Type:")))
         self.combo_type = QComboBox()
+        self.combo_type.setMinimumWidth(250)
         self.combo_type.currentTextChanged.connect(self._refresh_table)
-        filter_layout.addWidget(self.combo_type)
+        filter_layout.addWidget(self.combo_type, stretch=3)
 
         filter_layout.addWidget(QLabel(_("Year:")))
         self.combo_year = QComboBox()
         self.combo_year.currentTextChanged.connect(self._refresh_table)
-        filter_layout.addWidget(self.combo_year)
+        filter_layout.addWidget(self.combo_year, stretch=1)
 
         filter_layout.addWidget(QLabel(_("Catalog N°:")))
         self.edit_search_nbr = QLineEdit()
         self.edit_search_nbr.setPlaceholderText(_("e.g. 154..."))
+        self.edit_search_nbr.setMaxLength(10)
+        self.edit_search_nbr.setMaximumWidth(100)
         self.edit_search_nbr.textChanged.connect(self._refresh_table)
-        filter_layout.addWidget(self.edit_search_nbr)
+        filter_layout.addWidget(self.edit_search_nbr, stretch=1)
 
         filter_box.setLayout(filter_layout)
         main_layout.addWidget(filter_box)
@@ -624,19 +714,24 @@ class MainWindow(QMainWindow):
         # Main Splitter
         splitter = QSplitter(Qt.Orientation.Horizontal)
 
-        # Stamps Table
+        # Stamps Table (6 colonnes : Description 1 puis Description)
         self.table = QTableWidget()
-        self.table.setColumnCount(5)
+        self.table.setColumnCount(6)
         self.table.setHorizontalHeaderLabels([
             _("Yvert N°"),
             _("Year"),
             _("Type"),
             _("Value / Color"),
+            _("Description 1"),
             _("Description")
         ])
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.table.setSelectionMode(QTableWidget.SelectionMode.ExtendedSelection)
+
+        # Activation du tri au clic sur les entêtes de colonnes
+        self.table.setSortingEnabled(True)
+
         self.table.itemSelectionChanged.connect(self._on_stamp_selected)
         splitter.addWidget(self.table)
 
@@ -647,7 +742,7 @@ class MainWindow(QMainWindow):
         # Image Viewer
         self.img_label = QLabel(_("No Photo Available"))
         self.img_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.img_label.setFixedSize(220, 220)
+        self.img_label.setFixedSize(200, 200)
         self.img_label.setStyleSheet("border: 1px solid #cbd5e0; background: #f7fafc;")
         right_layout.addWidget(self.img_label, alignment=Qt.AlignmentFlag.AlignCenter)
 
@@ -655,26 +750,35 @@ class MainWindow(QMainWindow):
         editor_box = QGroupBox(_("Stamp Catalogue Record Editor"))
         form = QFormLayout()
 
-        self.edit_key = QLineEdit()
-        self.edit_key.setReadOnly(True)
         self.edit_nbr = QLineEdit()
         self.edit_sub_nbr = QLineEdit()
         self.edit_year = QLineEdit()
         self.edit_type = QLineEdit()
         self.edit_valcolor = QLineEdit()
+
+        # Inversion : description1 puis description
+        self.edit_desc1 = QTextEdit()
+        self.edit_desc1.setMaximumHeight(50)
         self.edit_desc = QTextEdit()
-        self.edit_desc.setMaximumHeight(70)
+        self.edit_desc.setMaximumHeight(50)
+
         self.edit_width = QLineEdit()
         self.edit_height = QLineEdit()
-        self.edit_sequence = QLineEdit()
-        self.edit_ascii_seq = QLineEdit()
 
-        form.addRow(_("Database Key:"), self.edit_key)
+        self.edit_sequence = QLineEdit()
+        self.edit_sequence.setReadOnly(True)
+        self.edit_sequence.setStyleSheet("background-color: #edf2f7; color: #718096;")
+
+        self.edit_ascii_seq = QLineEdit()
+        self.edit_ascii_seq.setReadOnly(True)
+        self.edit_ascii_seq.setStyleSheet("background-color: #edf2f7; color: #718096;")
+
         form.addRow(_("Yvert N°:"), self.edit_nbr)
         form.addRow(_("Sub N° / Variant:"), self.edit_sub_nbr)
         form.addRow(_("Year:"), self.edit_year)
         form.addRow(_("Category / Type:"), self.edit_type)
         form.addRow(_("Value / Color:"), self.edit_valcolor)
+        form.addRow(_("Description 1:"), self.edit_desc1)
         form.addRow(_("Description:"), self.edit_desc)
         form.addRow(_("Width (mm):"), self.edit_width)
         form.addRow(_("Height (mm):"), self.edit_height)
@@ -705,16 +809,25 @@ class MainWindow(QMainWindow):
         right_layout.addLayout(btn_layout)
 
         splitter.addWidget(right_panel)
-        splitter.setSizes([600, 400])
+        splitter.setSizes([650, 450])
 
         main_layout.addWidget(splitter)
 
-    def _init_menubar(self):
+    def _init_menubar_old(self):
         """Initialize main menu bar."""
         menubar = self.menuBar()
 
         # File / Database Menu
         file_menu = menubar.addMenu(_("&File"))
+
+        self.act_create_db = file_menu.addAction(_("Create New Empty SQLite DB..."))
+        self.act_create_db.triggered.connect(self.create_new_sqlite_db)
+
+        self.act_save_db = file_menu.addAction(_("Save Changes"))
+        self.act_save_db.setShortcut(QKeySequence.StandardKey.Save)
+        self.act_save_db.triggered.connect(self.save_changes)
+
+        file_menu.addSeparator()
 
         act_db_info = file_menu.addAction(_("Current Database Info..."))
         act_db_info.triggered.connect(self.open_db_info)
@@ -732,15 +845,9 @@ class MainWindow(QMainWindow):
 
         file_menu.addSeparator()
 
-        act_save = file_menu.addAction(_("Save Changes"))
-        act_save.setShortcut(QKeySequence.StandardKey.Save)
-        act_save.triggered.connect(self.save_changes)
-
-        file_menu.addSeparator()
-
-        act_exit = file_menu.addAction(_("&Exit"))
-        act_exit.setShortcut(QKeySequence.StandardKey.Quit)
-        act_exit.triggered.connect(self.close)
+        self.act_exit_app = file_menu.addAction(_("&Exit"))
+        self.act_exit_app.setShortcut(QKeySequence.StandardKey.Quit)
+        self.act_exit_app.triggered.connect(self.close)
 
         # Edit Menu (Undo / Redo)
         edit_menu = menubar.addMenu(_("&Edit"))
@@ -767,6 +874,80 @@ class MainWindow(QMainWindow):
         act_about = help_menu.addAction(_("About StampDatabase"))
         act_about.triggered.connect(self.open_about)
 
+    def _init_menubar(self):
+        """Initialize main menu bar."""
+        menubar = self.menuBar()
+
+        # File / Database Menu
+        file_menu = menubar.addMenu(_("&File"))
+
+        self.act_create_db = file_menu.addAction(_("Create New Empty SQLite DB..."))
+        self.act_create_db.setIcon(QIcon(str(self.base_dir / "images" / "database_add.png")))
+        self.act_create_db.triggered.connect(self.create_new_sqlite_db)
+
+        self.act_save_db = file_menu.addAction(_("Save Changes"))
+        self.act_save_db.setIcon(QIcon(str(self.base_dir / "images" / "save.png")))
+        self.act_save_db.setShortcut(QKeySequence.StandardKey.Save)
+        self.act_save_db.triggered.connect(self.save_changes)
+
+        file_menu.addSeparator()
+
+        act_db_info = file_menu.addAction(_("Current Database Info..."))
+        act_db_info.triggered.connect(self.open_db_info)
+
+        file_menu.addSeparator()
+
+        self.act_convert_access = file_menu.addAction(_("Import MS Access DB to SQLite..."))
+        self.act_convert_access.triggered.connect(self.import_ms_access_to_sqlite)
+
+        act_import_csv = file_menu.addAction(_("Import CSV..."))
+        act_import_csv.triggered.connect(self.import_csv)
+
+        act_export_csv = file_menu.addAction(_("Export CSV..."))
+        act_export_csv.triggered.connect(self.export_csv)
+
+        file_menu.addSeparator()
+
+        self.act_exit_app = file_menu.addAction(_("&Exit"))
+        self.act_exit_app.setIcon(QIcon(str(self.base_dir / "images" / "exit.png")))
+        self.act_exit_app.setShortcut(QKeySequence.StandardKey.Quit)
+        self.act_exit_app.triggered.connect(self.close)
+        # Edit Menu (Undo / Redo)
+        edit_menu = menubar.addMenu(_("&Edit"))
+
+        act_undo = self.undo_stack.createUndoAction(self, _("&Undo"))
+        act_undo.setShortcut(QKeySequence.StandardKey.Undo)
+        edit_menu.addAction(act_undo)
+
+        act_redo = self.undo_stack.createRedoAction(self, _("&Redo"))
+        act_redo.setShortcut(QKeySequence.StandardKey.Redo)
+        edit_menu.addAction(act_redo)
+
+        # Config Menu
+        config_menu = menubar.addMenu(_("&Config"))
+        act_config = config_menu.addAction(_("Setup Application..."))
+        act_config.triggered.connect(self.open_config)
+
+        # Help Menu
+        help_menu = menubar.addMenu(_("&Help"))
+
+        act_help = help_menu.addAction(_("User Manual"))
+        act_help.triggered.connect(self.open_manual)
+
+        act_about = help_menu.addAction(_("About StampDatabase"))
+        act_about.triggered.connect(self.open_about)
+
+    def _init_toolbar(self):
+        """Initialize top shortcut ToolBar."""
+        toolbar = QToolBar(_("Main Toolbar"))
+        toolbar.setMovable(False)
+        self.addToolBar(toolbar)
+
+        toolbar.addAction(self.act_create_db)
+        toolbar.addAction(self.act_save_db)
+        toolbar.addSeparator()
+        toolbar.addAction(self.act_exit_app)
+
     def import_ms_access_to_sqlite(self):
         """Import MS Access database (.mdb / .accdb) and replicate Stamp_List & db_info to a new SQLite database."""
         if not test_ms_access_support():
@@ -782,7 +963,6 @@ class MainWindow(QMainWindow):
         access_path = Path(file_path)
         country_name = access_path.stem
 
-        # Output SQLite DB path
         out_path = self.db_dir / f"{country_name}.db"
         if out_path.exists():
             reply = QMessageBox.question(
@@ -795,16 +975,13 @@ class MainWindow(QMainWindow):
                 return
 
         try:
-            # 1. Connect to Access Source
             conn_str = f"Driver={{Microsoft Access Driver (*.mdb, *.accdb)}};DBQ={access_path};"
             access_conn = pyodbc.connect(conn_str)
             access_cur = access_conn.cursor()
 
-            # 2. Connect to Output SQLite Target
             sqlite_conn = sqlite3.connect(out_path)
             sqlite_cur = sqlite_conn.cursor()
 
-            # Create Stamp_List table
             sqlite_cur.execute("""
                 CREATE TABLE IF NOT EXISTS Stamp_List (
                     key TEXT PRIMARY KEY,
@@ -812,6 +989,7 @@ class MainWindow(QMainWindow):
                     year TEXT,
                     type TEXT,
                     valuecolor TEXT,
+                    stampDescription1 TEXT,
                     stampDescription TEXT,
                     width TEXT,
                     height TEXT,
@@ -821,44 +999,41 @@ class MainWindow(QMainWindow):
                 )
             """)
 
-            # Replicate Stamp_List
             try:
                 access_cur.execute(
-                    "SELECT key, nbr, year, type, valuecolor, stampDescription, width, height, sequence, ascii_seq, sub_nbr FROM Stamp_List")
+                    "SELECT key, nbr, year, type, valuecolor, stampDescription1, stampDescription, width, height, sequence, ascii_seq, sub_nbr FROM Stamp_List")
                 stamp_rows = access_cur.fetchall()
                 for row in stamp_rows:
                     sqlite_cur.execute("""
-                        INSERT OR REPLACE INTO Stamp_List (key, nbr, year, type, valuecolor, stampDescription, width, height, sequence, ascii_seq, sub_nbr)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        INSERT OR REPLACE INTO Stamp_List (key, nbr, year, type, valuecolor, stampDescription1, stampDescription, width, height, sequence, ascii_seq, sub_nbr)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """, tuple(str(val) if val is not None else "" for val in row))
             except Exception as ex:
                 QMessageBox.warning(self, _("Table Import Notice"),
                                     f"{_('Could not fully replicate Stamp_List table:')}\n{str(ex)}")
 
-            # Create & Replicate db_info
             sqlite_cur.execute("""
                 CREATE TABLE IF NOT EXISTS db_info (
                     Author TEXT,
                     Country TEXT,
-                    description TEXT,
-                    version TEXT,
-                    catalogue TEXT,
-                    language TEXT
+                    Description TEXT,
+                    Version TEXT,
+                    Catalogue TEXT,
+                    Language TEXT
                 )
             """)
 
             try:
-                access_cur.execute("SELECT Author, Country, description, version, catalogue, language FROM db_info")
+                access_cur.execute("SELECT Author, Country, Description, Version, Catalogue, Language FROM db_info")
                 info_rows = access_cur.fetchall()
                 for row in info_rows:
                     sqlite_cur.execute("""
-                        INSERT INTO db_info (Author, Country, description, version, catalogue, language)
+                        INSERT INTO db_info (Author, Country, Description, Version, Catalogue, Language)
                         VALUES (?, ?, ?, ?, ?, ?)
                     """, tuple(str(val) if val is not None else "" for val in row))
             except Exception:
-                # Insert default if missing in Access
                 sqlite_cur.execute("""
-                    INSERT INTO db_info (Author, Country, description, version, catalogue, language)
+                    INSERT INTO db_info (Author, Country, Description, Version, Catalogue, Language)
                     VALUES (?, ?, ?, ?, ?, ?)
                 """, ("Boris du Reau", country_name, f"{country_name} Stamp Catalogue", "1.0", "Yvert", "fr"))
 
@@ -866,7 +1041,6 @@ class MainWindow(QMainWindow):
             access_conn.close()
             sqlite_conn.close()
 
-            # Refresh list
             self.current_db_type = "sqlite"
             self._load_country_list()
             idx = self.combo_country.findText(country_name)
@@ -911,6 +1085,7 @@ class MainWindow(QMainWindow):
                     year TEXT,
                     type TEXT,
                     valuecolor TEXT,
+                    stampDescription1 TEXT,
                     stampDescription TEXT,
                     width TEXT,
                     height TEXT,
@@ -924,15 +1099,15 @@ class MainWindow(QMainWindow):
                 CREATE TABLE IF NOT EXISTS db_info (
                     Author TEXT,
                     Country TEXT,
-                    description TEXT,
-                    version TEXT,
-                    catalogue TEXT,
-                    language TEXT
+                    Description TEXT,
+                    Version TEXT,
+                    Catalogue TEXT,
+                    Language TEXT
                 )
             """)
 
             cur.execute("""
-                INSERT INTO db_info (Author, Country, description, version, catalogue, language)
+                INSERT INTO db_info (Author, Country, Description, Version, Catalogue, Language)
                 VALUES (?, ?, ?, ?, ?, ?)
             """, (data["author"], country, data["description"], "1.0", data["catalogue"], data["language"]))
 
@@ -964,7 +1139,7 @@ class MainWindow(QMainWindow):
 
         self.combo_country.blockSignals(False)
 
-        self.btn_create_db.setEnabled(self.current_db_type == "sqlite")
+        self.act_create_db.setEnabled(self.current_db_type == "sqlite")
 
         if self.available_countries:
             self._on_country_changed(0)
@@ -1013,6 +1188,9 @@ class MainWindow(QMainWindow):
         if not self.db_adapter:
             return
 
+        # Bloquer temporairement le tri pendant le remplissage pour éviter les conflits
+        self.table.setSortingEnabled(False)
+
         stamps = self.db_adapter.get_stamps(
             stamp_type=self.combo_type.currentText(),
             year=self.combo_year.currentText(),
@@ -1021,16 +1199,25 @@ class MainWindow(QMainWindow):
 
         self.table.setRowCount(0)
         for row_idx, stamp in enumerate(stamps):
-            key, nbr, year, stype, valcolor, desc, width, height, seq, ascii_seq, sub_nbr = stamp
+            key, nbr, year, stype, valcolor, desc1, desc, width, height, seq, ascii_seq, sub_nbr = stamp
             self.table.insertRow(row_idx)
 
             self.table.setItem(row_idx, 0, QTableWidgetItem(str(nbr or "")))
             self.table.setItem(row_idx, 1, QTableWidgetItem(str(year or "")))
             self.table.setItem(row_idx, 2, QTableWidgetItem(str(stype or "")))
             self.table.setItem(row_idx, 3, QTableWidgetItem(str(valcolor or "")))
-            self.table.setItem(row_idx, 4, QTableWidgetItem(str(desc or "")))
+            self.table.setItem(row_idx, 4, QTableWidgetItem(str(desc1 or "")))
+            self.table.setItem(row_idx, 5, QTableWidgetItem(str(desc or "")))
 
             self.table.item(row_idx, 0).setData(Qt.ItemDataRole.UserRole, stamp)
+
+        # Réactivation du tri dynamique
+        self.table.setSortingEnabled(True)
+
+        # Sélectionner le premier timbre par défaut et charger sa fiche
+        if self.table.rowCount() > 0:
+            self.table.selectRow(0)
+            self._on_stamp_selected()
 
     def _on_stamp_selected(self):
         selected_rows = self.table.selectedItems()
@@ -1040,14 +1227,14 @@ class MainWindow(QMainWindow):
         row = self.table.currentRow()
         stamp_data = self.table.item(row, 0).data(Qt.ItemDataRole.UserRole)
 
-        key, nbr, year, stype, valcolor, desc, width, height, seq, ascii_seq, sub_nbr = stamp_data
+        key, nbr, year, stype, valcolor, desc1, desc, width, height, seq, ascii_seq, sub_nbr = stamp_data
 
-        self.edit_key.setText(str(key or ""))
         self.edit_nbr.setText(str(nbr or ""))
         self.edit_sub_nbr.setText(str(sub_nbr or ""))
         self.edit_year.setText(str(year or ""))
         self.edit_type.setText(str(stype or ""))
         self.edit_valcolor.setText(str(valcolor or ""))
+        self.edit_desc1.setPlainText(str(desc1 or ""))
         self.edit_desc.setPlainText(str(desc or ""))
         self.edit_width.setText(str(width or ""))
         self.edit_height.setText(str(height or ""))
@@ -1072,6 +1259,7 @@ class MainWindow(QMainWindow):
             self.edit_year.text().strip(),
             self.edit_type.text().strip(),
             self.edit_valcolor.text().strip(),
+            self.edit_desc1.toPlainText().strip(),
             self.edit_desc.toPlainText().strip(),
             self.edit_width.text().strip(),
             self.edit_height.text().strip(),
@@ -1094,6 +1282,7 @@ class MainWindow(QMainWindow):
             "0",
             "2026",
             "Poste",
+            "",
             "",
             _("New Stamp Description"),
             "20",
@@ -1153,8 +1342,8 @@ class MainWindow(QMainWindow):
         if not self.db_adapter:
             return
 
-        _, nbr, year, stype, valcolor, desc, width, height, seq, ascii_seq, sub_nbr = stamp_data
-        self.db_adapter.update_stamp(key, nbr, year, stype, valcolor, desc, width, height, seq, ascii_seq, sub_nbr)
+        _, nbr, year, stype, valcolor, desc1, desc, width, height, seq, ascii_seq, sub_nbr = stamp_data
+        self.db_adapter.update_stamp(key, nbr, year, stype, valcolor, desc1, desc, width, height, seq, ascii_seq, sub_nbr)
 
         self._refresh_table()
 
@@ -1330,6 +1519,7 @@ class MainWindow(QMainWindow):
                         row.get("year", ""),
                         row.get("type", "Poste"),
                         row.get("valuecolor", ""),
+                        row.get("stampDescription1", ""),
                         row.get("stampDescription", ""),
                         row.get("width", "0"),
                         row.get("height", "0"),
@@ -1375,7 +1565,7 @@ class MainWindow(QMainWindow):
             with open(file_path, "w", newline="", encoding="utf-8") as f:
                 writer = csv.writer(f, delimiter=delimiter)
                 writer.writerow(
-                    ["key", "nbr", "year", "type", "valuecolor", "stampDescription", "width", "height", "sequence",
+                    ["key", "nbr", "year", "type", "valuecolor", "stampDescription1", "stampDescription", "width", "height", "sequence",
                      "ascii_seq", "sub_nbr"])
                 for row in stamps:
                     writer.writerow(list(row))
@@ -1385,19 +1575,33 @@ class MainWindow(QMainWindow):
             QMessageBox.critical(self, _("Export Error"), f"{_('Error exporting CSV:')}\n{str(e)}")
 
     def open_config(self):
-        """Open Application Configuration Dialog."""
-        dialog = ConfigDialog(self)
+        """Open Application Configuration Dialog and update StampDatabase.cfg upon acceptance."""
+        dialog = ConfigDialog(self.config_manager, self)
         if dialog.exec() == QDialog.DialogCode.Accepted:
-            selected_db_type = dialog.combo_db_type.currentData()
+            new_settings = dialog.get_selected_config()
+            selected_db_type = new_settings["db_type"]
+            selected_language = new_settings["language"]
 
+            # Vérification de la disponibilité de MS Access si sélectionné
             if selected_db_type == "access" and not test_ms_access_support():
                 self.show_access_warning_popup()
-                return
+                selected_db_type = "sqlite"
+
+            # Sauvegarde effective dans le fichier StampDatabase.cfg
+            self.config_manager.save_config(
+                language=selected_language,
+                db_type=selected_db_type,
+                last_country=self.current_country or ""
+            )
 
             self.current_db_type = selected_db_type
             self._load_country_list()
-            QMessageBox.information(self, _("Configuration"), _("Configuration updated."))
 
+            QMessageBox.information(
+                self,
+                _("Configuration"),
+                _("Configuration updated successfully.\nNote: Changing the language may require restarting the application.")
+            )
     def open_manual(self):
         """Open user manual PDF."""
         manual_path = self.base_dir / "Help" / "StampAlbum Manuel utilisateur 03-11-2024.pdf"
@@ -1413,7 +1617,7 @@ class MainWindow(QMainWindow):
             _("About StampDatabase"),
             _("<b>StampDatabase</b><br>"
               "Catalogue Administration Tool<br>"
-              "Version 1.0.0 (2026)<br>"
+              "Version 1.0.0 (2002-2026)<br>"
               "Author: Boris du Reau<br><br>"
               "Part of the StampAlbum Suite.")
         )

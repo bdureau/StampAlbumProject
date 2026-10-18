@@ -6,18 +6,13 @@ Displays local HTML help documentation adapted to the active locale language.
 #from os import walk
 #from PyQt6.QtCore import QPointF, Qt, QPoint, QByteArray, QRectF
 import gettext
-from PyQt6 import QtCore, QtGui
 from pathlib import Path
 from PyQt6.QtWidgets import (
-    QMessageBox,
-    QGraphicsRectItem,
-    QGraphicsScene, QComboBox, QRadioButton, QButtonGroup, QGroupBox, QListWidgetItem,
-    QGraphicsView, QApplication, QLabel, QMainWindow, QMenuBar, QMenu, QHBoxLayout, QListView,
-    QToolBar, QGraphicsTextItem, QGraphicsItemGroup, QDialog, QPushButton, QListWidget,QTextBrowser,
-    QLineEdit, QFormLayout, QStatusBar, QTabWidget, QWidget, QVBoxLayout, QDialogButtonBox, QPlainTextEdit
+    QDialog, QTextBrowser,
+    QFormLayout, QDialogButtonBox
 )
 
-from AppLanguage import get_language
+from StampAlbum.AppLanguage import get_language
 gettext.find("HelpDlg")
 translate = gettext.translation('HelpDlg', localedir='locale', languages=[get_language()], fallback=True)
 translate.install()
@@ -39,7 +34,7 @@ class HelpDlg(QDialog):
         #output.setSource(QtCore.QUrl.fromLocalFile("Help/stamp_album_help.html"))
         # Fallback to default if language file does not exist
         if not help_path.exists():
-            help_path = Path("Help/stamp_album_help.html")
+            help_path = Path("../Help/stamp_album_help.html")
 
         output.setSource(QUrl.fromLocalFile(str(help_path)))
 
