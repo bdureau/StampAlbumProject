@@ -871,7 +871,7 @@ class Page(QGraphicsScene):
         page_w = self.sceneRect().width()
         page_h = self.sceneRect().height()
 
-        # Marges estimées d'après les images (laissant de la place pour le titre/année et le copyright)
+        # Marges estimées d'après les Images (laissant de la place pour le titre/année et le copyright)
         margin_top = 200.0
         margin_bottom = page_h - 150.0
         available_h = max(200.0, margin_bottom - margin_top)

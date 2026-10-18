@@ -4,7 +4,7 @@ StampDatabase Application
 A standalone desktop database administration application for managing
 country-specific stamp catalogues used by StampAlbum and StampCatalogue.
 
-Supports SQLite and MS Access databases, CSV import/export (comma default),
+Supports SQLite and MS Access Databases, CSV import/export (comma default),
 Undo/Redo, full record editing, add/delete records, MS Access availability verification,
 MS Access to SQLite database conversion, and metadata inspection.
 
@@ -38,7 +38,7 @@ except ImportError:
 
 # Localization setup matching StampAlbum architecture
 import gettext
-from AppLanguage import get_language
+from SDAppLanguage import get_language
 
 gettext.find("StampDatabase")
 translate = gettext.translation(
@@ -146,7 +146,7 @@ class DeleteStampsCommand(QUndoCommand):
 
 
 class CountryDatabaseAdapter:
-    """Handles read/write operations for country databases (SQLite or MS Access)."""
+    """Handles read/write operations for country Databases (SQLite or MS Access)."""
 
     DB_INFO_COLUMNS = ["Author", "Country", "Description", "Version", "Catalogue", "Language"]
 
@@ -582,7 +582,7 @@ class MainWindow(QMainWindow):
         self.resize(1300, 850)
 
         self.base_dir = self._get_app_dir()
-        self.db_dir = self.base_dir / "databases"
+        self.db_dir = self.base_dir / "Databases"
         self.config_manager = AppConfigManager(self.base_dir / "StampDatabase.cfg")
         self.current_db_type = self.config_manager.db_type
         self.db_adapter = None
@@ -611,7 +611,7 @@ class MainWindow(QMainWindow):
 
         - Si exécuté en EXE : renvoie le répertoire où se trouve l'exécutable.
         - Si exécuté depuis Python (.py dans un sous-dossier) : remonte au dossier parent
-          si 'databases' ou 'images' s'y trouve, sinon renvoie le dossier du script.
+          si 'Databases' ou 'Images' s'y trouve, sinon renvoie le dossier du script.
         """
         if getattr(sys, 'frozen', False):
             # Mode exécutable (EXE) : le dossier de l'exécutable
@@ -621,8 +621,8 @@ class MainWindow(QMainWindow):
             script_dir = Path(__file__).resolve().parent
             parent_dir = script_dir.parent
 
-            # Si le script est dans un sous-dossier et que 'databases' ou 'images' existe au niveau parent
-            if (parent_dir / "databases").exists() or (parent_dir / "images").exists():
+            # Si le script est dans un sous-dossier et que 'Databases' ou 'Images' existe au niveau parent
+            if (parent_dir / "Databases").exists() or (parent_dir / "Images").exists():
                 return parent_dir
 
             return script_dir
@@ -633,7 +633,7 @@ class MainWindow(QMainWindow):
 
         - Si exécuté en EXE : renvoie le répertoire contenant l'exécutable.
         - Si exécuté depuis Python (.py dans un sous-dossier) : remonte au dossier parent
-          si 'databases', 'images' ou 'photos' s'y trouve, sinon renvoie le dossier du script.
+          si 'Databases', 'Images' ou 'photos' s'y trouve, sinon renvoie le dossier du script.
         """
         if getattr(sys, 'frozen', False):
             # Mode exécutable (EXE)
@@ -644,13 +644,13 @@ class MainWindow(QMainWindow):
             parent_dir = script_dir.parent
 
             # Vérifie si l'un des dossiers de ressources existe dans le dossier parent
-            if any((parent_dir / folder).exists() for folder in ["databases", "images", "photos"]):
+            if any((parent_dir / folder).exists() for folder in ["Databases", "Images", "photos"]):
                 return parent_dir
 
             return script_dir
 
     def _detect_available_countries(self):
-        """Detect country databases in databases/ folder."""
+        """Detect country Databases in Databases/ folder."""
         if not self.db_dir.exists():
             return []
         ext = ".db" if self.current_db_type == "sqlite" else ".mdb"
@@ -882,11 +882,11 @@ class MainWindow(QMainWindow):
         file_menu = menubar.addMenu(_("&File"))
 
         self.act_create_db = file_menu.addAction(_("Create New Empty SQLite DB..."))
-        self.act_create_db.setIcon(QIcon(str(self.base_dir / "images" / "database_add.png")))
+        self.act_create_db.setIcon(QIcon(str(self.base_dir / "Images" / "database_add.png")))
         self.act_create_db.triggered.connect(self.create_new_sqlite_db)
 
         self.act_save_db = file_menu.addAction(_("Save Changes"))
-        self.act_save_db.setIcon(QIcon(str(self.base_dir / "images" / "save.png")))
+        self.act_save_db.setIcon(QIcon(str(self.base_dir / "Images" / "save.png")))
         self.act_save_db.setShortcut(QKeySequence.StandardKey.Save)
         self.act_save_db.triggered.connect(self.save_changes)
 
@@ -909,7 +909,7 @@ class MainWindow(QMainWindow):
         file_menu.addSeparator()
 
         self.act_exit_app = file_menu.addAction(_("&Exit"))
-        self.act_exit_app.setIcon(QIcon(str(self.base_dir / "images" / "exit.png")))
+        self.act_exit_app.setIcon(QIcon(str(self.base_dir / "Images" / "exit.png")))
         self.act_exit_app.setShortcut(QKeySequence.StandardKey.Quit)
         self.act_exit_app.triggered.connect(self.close)
         # Edit Menu (Undo / Redo)
@@ -1463,9 +1463,9 @@ class MainWindow(QMainWindow):
         rel_filename = self.getPhotoName(stamp_nbr, stamp_type, stamp_sub_nbr)
 
         possible_paths = [
-            self.base_dir / "images" / self.current_country / rel_filename,
+            self.base_dir / "Images" / self.current_country / rel_filename,
             self.base_dir / "photos" / self.current_country / rel_filename,
-            self.base_dir / "images" / rel_filename,
+            self.base_dir / "Images" / rel_filename,
             self.base_dir / "photos" / rel_filename,
             self.base_dir / rel_filename
         ]

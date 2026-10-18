@@ -21,9 +21,9 @@ class PageDlg(QDialog):
         self.setWindowTitle(_("Create new Page"))
         self.pageType = "portrait"
 
-        # Résolution dynamique du dossier d'images
+        # Résolution dynamique du dossier d'Images
         self.base_dir = self._get_app_dir()
-        self.images_dir = self._get_resource_dir("images")
+        self.images_dir = self._get_resource_dir("Images")
 
         self.borderStyle = self.get_configured_border_style()
         self.createDlg()
@@ -36,7 +36,7 @@ class PageDlg(QDialog):
             script_dir = Path(__file__).resolve().parent
             parent_dir = script_dir.parent
 
-            if any((parent_dir / folder).exists() for folder in ["databases", "images", "photos", "docs","Help", "locale"]):
+            if any((parent_dir / folder).exists() for folder in ["Databases", "Images", "photos", "docs","Help", "locale"]):
                 return parent_dir
 
             return script_dir
@@ -49,11 +49,11 @@ class PageDlg(QDialog):
         return Path(__file__).resolve().parent / folder_name
 
     def _get_pixmap(self, image_filename: str) -> QPixmap:
-        """Charge une image QPixmap depuis le dossier 'images' de façon sécurisée."""
+        """Charge une image QPixmap depuis le dossier 'Images' de façon sécurisée."""
         image_path = self.images_dir / image_filename
         if image_path.exists():
             return QPixmap(str(image_path))
-        return QPixmap(f"../images/{image_filename}")
+        return QPixmap(f"../Images/{image_filename}")
 
     def get_configured_border_style(self) -> str:
         """Récupère le style de bordure configuré par défaut dans le fichier .cfg."""

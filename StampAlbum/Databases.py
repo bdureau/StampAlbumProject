@@ -2,7 +2,7 @@
 Database Access Module
 ----------------------
 Handles database connections and queries for both the master database
-(stamp boxes, global settings, messages) and country-specific databases
+(stamp boxes, global settings, messages) and country-specific Databases
 (stamp catalogues, series, types, and issues).
 
 Supports SQLite and Microsoft Access (via PyODBC).
@@ -22,7 +22,7 @@ except ImportError:  # pragma: no cover
 
 
 class DB:
-    """Manages database connections and query operations for master and country databases."""
+    """Manages database connections and query operations for master and country Databases."""
     def __init__(self, country: str):
         self.country = country
 
@@ -57,13 +57,13 @@ class DB:
 
     def _connect_access(self, path: Path):
         if pyodbc is None:
-            raise RuntimeError("pyodbc is required to open Microsoft Access databases")
+            raise RuntimeError("pyodbc is required to open Microsoft Access Databases")
         if not path.is_file():
             raise FileNotFoundError(f"Database not found: {path}")
         return pyodbc.connect(f"Driver={{Microsoft Access Driver (*.mdb, *.accdb)}};DBQ={path};")
 
     def _init_db_connections(self, country: str):
-        """Establish connections to master and selected country databases based on configuration."""
+        """Establish connections to master and selected country Databases based on configuration."""
         if self._is_sqlite():
             self.con_master = self._connect_sqlite(self.db_dir / "master.db")
         else:

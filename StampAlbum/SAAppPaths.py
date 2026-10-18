@@ -37,7 +37,7 @@ def get_app_dir() -> Path:
     parent_dir = script_dir.parent
 
     # Vérifie si l'un des dossiers principaux existe dans le répertoire parent
-    if any((parent_dir / folder).exists() for folder in ["databases", "images", "photos", "docs", "Help"]):
+    if any((parent_dir / folder).exists() for folder in ["Databases", "Images", "photos", "docs", "Help"]):
         return parent_dir
 
     return script_dir
@@ -47,7 +47,7 @@ def get_config_path() -> Path:
 
 
 def get_db_dir() -> Path:
-    return get_app_dir() / "databases"
+    return get_app_dir() / "Databases"
 
 
 def get_photos_dir() -> Path:
@@ -55,7 +55,7 @@ def get_photos_dir() -> Path:
 
 
 def get_images_dir() -> Path:
-    return get_app_dir() / "images"
+    return get_app_dir() / "Images"
 
 
 def get_help_dir() -> Path:
@@ -116,7 +116,7 @@ def get_db_extension(db_type: str = None) -> str:
 
 def list_countries(db_type: str = None) -> list:
     """
-    Liste triée des pays disponibles dans le dossier databases/,
+    Liste triée des pays disponibles dans le dossier Databases/,
     en ne gardant que les fichiers du moteur configuré (.db ou .mdb).
     """
     db_dir = get_db_dir()

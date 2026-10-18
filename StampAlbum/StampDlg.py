@@ -1,7 +1,7 @@
 """
 Stamp Dialog Module
 -------------------
-Dialog window for selecting and creating stamp items from catalog databases.
+Dialog window for selecting and creating stamp items from catalog Databases.
 
 Author: Boris du Reau
 """
@@ -219,14 +219,14 @@ class StampDlg(QDialog):
             target_country  = self.get_configured_country()
 
         #print("target_country:" + target_country )
-        # get the list of countries from the databases available
+        # get the list of countries from the Databases available
         self.db = None
         # Liste des pays selon le moteur configuré (.db pour sqlite, .mdb pour Access)
         self.stampCountries = list_countries()
 
         if not self.stampCountries:
             QMessageBox.warning(self, _("No database"),
-                                _("No country database was found in the 'databases' folder."))
+                                _("No country database was found in the 'Databases' folder."))
             return
 
         # Ouvrir directement le pays cible (évite d'ouvrir le 1er puis de changer)

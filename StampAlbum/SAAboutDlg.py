@@ -32,9 +32,9 @@ class AboutDlg(QDialog):
         self.setWindowTitle(_("About Stamp Album"))
         self.resize(550, 450)
 
-        # Résolution dynamique du dossier d'images
+        # Résolution dynamique du dossier d'Images
         self.base_dir = self._get_app_dir()
-        self.images_dir = self._get_resource_dir("images")
+        self.images_dir = self._get_resource_dir("Images")
 
         self.createDlg()
 
@@ -46,7 +46,7 @@ class AboutDlg(QDialog):
             script_dir = Path(__file__).resolve().parent
             parent_dir = script_dir.parent
 
-            if any((parent_dir / folder).exists() for folder in ["databases", "images", "photos", "docs", "Help", "locale"]):
+            if any((parent_dir / folder).exists() for folder in ["Databases", "Images", "photos", "docs", "Help", "locale"]):
                 return parent_dir
 
             return script_dir
@@ -154,7 +154,7 @@ class AboutDlg(QDialog):
 
             <h3>Key Features</h3>
             <ul>
-                <li><b>Catalogue Management:</b> Connects to country-specific stamp databases (SQLite / Access) organized by category, year, and catalogue numbers.</li>
+                <li><b>Catalogue Management:</b> Connects to country-specific stamp Databases (SQLite / Access) organized by category, year, and catalogue numbers.</li>
                 <li><b>Graphic Layout:</b> Precise placement of stamp mounts, illustrations, titles, nominal values, and descriptors.</li>
                 <li><b>Alignment Tools:</b> Automatic item alignment (left, right, top, bottom) and equal horizontal/vertical distribution.</li>
                 <li><b>Page Customization:</b> Insert decorative page borders, page numbers, copyright notices, and header years.</li>

@@ -93,28 +93,28 @@ class RichTextDlg(QDialog):
 
         # Paragraph alignment buttons using custom PNG icons
         self.btn_align_left = QToolButton()
-        self.btn_align_left.setIcon(QIcon("../images/justify left.png"))
+        self.btn_align_left.setIcon(QIcon("../Images/justify left.png"))
         self.btn_align_left.setIconSize(QSize(18, 18))
         self.btn_align_left.setToolTip(_("Align Left"))
         self.btn_align_left.clicked.connect(lambda: self._set_alignment(Qt.AlignmentFlag.AlignLeft))
         toolbar.addWidget(self.btn_align_left)
 
         self.btn_align_center = QToolButton()
-        self.btn_align_center.setIcon(QIcon("../images/justify center.png"))
+        self.btn_align_center.setIcon(QIcon("../Images/justify center.png"))
         self.btn_align_center.setIconSize(QSize(18, 18))
         self.btn_align_center.setToolTip(_("Center"))
         self.btn_align_center.clicked.connect(lambda: self._set_alignment(Qt.AlignmentFlag.AlignCenter))
         toolbar.addWidget(self.btn_align_center)
 
         self.btn_align_right = QToolButton()
-        self.btn_align_right.setIcon(QIcon("../images/justify right.png"))
+        self.btn_align_right.setIcon(QIcon("../Images/justify right.png"))
         self.btn_align_right.setIconSize(QSize(18, 18))
         self.btn_align_right.setToolTip(_("Align Right"))
         self.btn_align_right.clicked.connect(lambda: self._set_alignment(Qt.AlignmentFlag.AlignRight))
         toolbar.addWidget(self.btn_align_right)
 
         self.btn_align_justify = QToolButton()
-        self.btn_align_justify.setIcon(QIcon("../images/justify.png"))
+        self.btn_align_justify.setIcon(QIcon("../Images/justify.png"))
         self.btn_align_justify.setIconSize(QSize(18, 18))
         self.btn_align_justify.setToolTip(_("Justify"))
         self.btn_align_justify.clicked.connect(lambda: self._set_alignment(Qt.AlignmentFlag.AlignJustify))

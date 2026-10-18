@@ -33,7 +33,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtGui import QPixmap, QIcon, QAction
 
 # Localization setup following StampAlbum's architecture
-from StampAlbum.AppLanguage import get_language
+from SCAppLanguage import get_language
 
 gettext.find("StampCatalogue")
 translate = gettext.translation(
@@ -300,8 +300,8 @@ class MainWindow(QMainWindow):
         self.resize(1200, 750)
 
         self.base_dir = self._get_app_dir()
-        self.db_dir = self.base_dir / "databases"
-        self.icons_dir = self.base_dir / "images"
+        self.db_dir = self.base_dir / "Databases"
+        self.icons_dir = self.base_dir / "Images"
 
         # Load Configuration
         self.config_manager = ConfigManager(self.base_dir / "StampCatalogue.cfg")
@@ -331,7 +331,7 @@ class MainWindow(QMainWindow):
 
         - Si exécuté en EXE : renvoie le répertoire où se trouve l'exécutable.
         - Si exécuté depuis Python (.py dans un sous-dossier) : remonte au dossier parent
-          si 'databases' ou 'images' s'y trouve, sinon renvoie le dossier du script.
+          si 'Databases' ou 'Images' s'y trouve, sinon renvoie le dossier du script.
         """
         if getattr(sys, 'frozen', False):
             # Mode exécutable (EXE) : le dossier de l'exécutable
@@ -341,8 +341,8 @@ class MainWindow(QMainWindow):
             script_dir = Path(__file__).resolve().parent
             parent_dir = script_dir.parent
 
-            # Si le script est dans un sous-dossier et que 'databases' ou 'images' existe au niveau parent
-            if (parent_dir / "databases").exists() or (parent_dir / "images").exists():
+            # Si le script est dans un sous-dossier et que 'Databases' ou 'Images' existe au niveau parent
+            if (parent_dir / "Databases").exists() or (parent_dir / "Images").exists():
                 return parent_dir
 
             return script_dir
@@ -353,7 +353,7 @@ class MainWindow(QMainWindow):
 
         - Si exécuté en EXE : renvoie le répertoire contenant l'exécutable.
         - Si exécuté depuis Python (.py dans un sous-dossier) : remonte au dossier parent
-          si 'databases', 'images' ou 'photos' s'y trouve, sinon renvoie le dossier du script.
+          si 'Databases', 'Images' ou 'photos' s'y trouve, sinon renvoie le dossier du script.
         """
         if getattr(sys, 'frozen', False):
             # Mode exécutable (EXE)
@@ -364,7 +364,7 @@ class MainWindow(QMainWindow):
             parent_dir = script_dir.parent
 
             # Vérifie si l'un des dossiers de ressources existe dans le dossier parent
-            if any((parent_dir / folder).exists() for folder in ["databases", "images", "photos", "Help", "locale"]):
+            if any((parent_dir / folder).exists() for folder in ["Databases", "Images", "photos", "Help", "locale"]):
                 return parent_dir
 
             return script_dir
@@ -377,7 +377,7 @@ class MainWindow(QMainWindow):
         return self.style().standardIcon(fallback_standard_icon)
 
     def _detect_available_countries(self):
-        """Detect country database files in the databases/ folder."""
+        """Detect country database files in the Databases/ folder."""
         if not self.db_dir.exists():
             return []
         return sorted([f.stem for f in self.db_dir.glob("*.db") if f.stem not in ["master", "collections"]])
@@ -680,7 +680,7 @@ class MainWindow(QMainWindow):
     def _create_collection(self):
         """Open dialog to create a new collection."""
         if not self.available_countries:
-            QMessageBox.warning(self, _("Warning"), _("No country databases found in 'databases/'."))
+            QMessageBox.warning(self, _("Warning"), _("No country Databases found in 'Databases/'."))
             return
 
         dialog = CreateCollectionDialog(self.available_countries, self)
@@ -938,9 +938,9 @@ class MainWindow(QMainWindow):
 
         # Build potential absolute image paths
         possible_paths = [
-            self.base_dir / "images" / self.current_country / rel_filename,
+            self.base_dir / "Images" / self.current_country / rel_filename,
             self.base_dir / "photos" / self.current_country / rel_filename,
-            self.base_dir / "images" / rel_filename,
+            self.base_dir / "Images" / rel_filename,
             self.base_dir / "photos" / rel_filename,
             self.base_dir / rel_filename
         ]
