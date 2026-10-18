@@ -100,7 +100,7 @@ pip install PyQt6 pyodbc
 Launch the main application from the command line:
 
 ```bash
-python main.py
+python StampAlbum.py
 ```
 
 ### Basic Workflow

@@ -12,7 +12,7 @@ from PyQt6.QtWidgets import (
     QGraphicsRectItem, QGraphicsTextItem, QGraphicsItemGroup, QGraphicsPixmapItem
 )
 from PyQt6.QtGui import QPen, QPixmap, QTextCursor, QTextBlockFormat
-from StampAlbum.AppLanguage import get_language
+from AppLanguage import get_language
 # Set up gettext localization
 
 gettext.find("Stamp")

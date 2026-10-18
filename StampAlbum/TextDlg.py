@@ -6,14 +6,17 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtGui import QIcon, QTextBlockFormat, QTextCursor
 
 import gettext
-from StampAlbum.AppLanguage import get_language
+from AppLanguage import get_language
+from SAAppPaths import get_images_dir
+
 gettext.find("TextDlg")
 translate = gettext.translation('TextDlg', localedir='locale', languages=[get_language()], fallback=True)
 translate.install()
 _ = translate.gettext
 
+
 class TextDlg(QDialog):
-    def __init__(self,  txtObj=None, parent=None):
+    def __init__(self, txtObj=None, parent=None):
         super(TextDlg, self).__init__(parent)
 
         # Détermine s'il s'agit d'une mise à jour (édition) ou d'un ajout
@@ -23,43 +26,52 @@ class TextDlg(QDialog):
             self.setWindowTitle(_("Update text"))
         else:
             self.setWindowTitle(_("Add new text"))
-        #self.setWindowTitle(_("Add new text"))
+
         self.createDlg(txtObj)
 
+    def _get_icon(self, icon_name: str) -> QIcon:
+        """
+        Charge dynamiquement l'icône depuis le dossier des images résolu par SAAppPaths.
+        Si l'icône n'est pas trouvée directement, retombe sur le chemin relatif classique.
+        """
+        images_dir = get_images_dir()
+        icon_path = images_dir / icon_name
 
-    def createDlg(self,  txtObj=None):
-        #self.setWindowModality(Qt.ApplicationModal)
-        #self.setWindowFlags(Qt.Dialog)
+        if icon_path.exists():
+            return QIcon(str(icon_path))
 
+        # Chemin relatif de secours si besoin
+        return QIcon(f"../Images/{icon_name}")
 
+    def createDlg(self, txtObj=None):
         hLayout1 = QHBoxLayout()
 
         boldButton = QPushButton()
         boldButton.setFixedWidth(30)
-        boldButton.setIcon(QIcon("../Images/bold.png"))
+        boldButton.setIcon(self._get_icon("bold.png"))
 
         italicButton = QPushButton()
-        italicButton.setIcon(QIcon("../Images/italic.png"))
+        italicButton.setIcon(self._get_icon("italic.png"))
         italicButton.setFixedWidth(30)
 
         strikeButton = QPushButton()
-        strikeButton.setIcon(QIcon("../Images/strike.png"))
+        strikeButton.setIcon(self._get_icon("strike.png"))
         strikeButton.setFixedWidth(30)
 
         underlineButton = QPushButton()
-        underlineButton.setIcon(QIcon("../Images/underline.png"))
+        underlineButton.setIcon(self._get_icon("underline.png"))
         underlineButton.setFixedWidth(30)
 
         justifyLeftButton = QPushButton()
-        justifyLeftButton.setIcon(QIcon("../Images/justify left.png"))
+        justifyLeftButton.setIcon(self._get_icon("justify left.png"))
         justifyLeftButton.setFixedWidth(30)
 
         centerButton = QPushButton()
-        centerButton.setIcon(QIcon("../Images/justify center.png"))
+        centerButton.setIcon(self._get_icon("justify center.png"))
         centerButton.setFixedWidth(30)
 
         justifyRightButton = QPushButton()
-        justifyRightButton.setIcon(QIcon("../Images/justify right.png"))
+        justifyRightButton.setIcon(self._get_icon("justify right.png"))
         justifyRightButton.setFixedWidth(30)
 
         hLayout1.addWidget(boldButton)
@@ -76,9 +88,6 @@ class TextDlg(QDialog):
             self.fontSize.addItem(str(x))
 
         self.fontSize.setMaximumWidth(50)
-        #self.fontSize.setCurrentText(self.font_size)
-        #self.fontSize.
-
 
         hLayout1.addWidget(self.fontSize)
 
@@ -97,7 +106,6 @@ class TextDlg(QDialog):
         myFont = self.eTXT.font()
 
         self.fontSize.setCurrentText(str(myFont.pointSize()))
-        #self.fontSize.setCurrentText(str(self.font_size))
 
         self.fontSize.currentTextChanged.connect(self.fontSizeClicked)
 
@@ -134,7 +142,6 @@ class TextDlg(QDialog):
         bb.rejected.connect(self.reject)
         flo.addWidget(bb)
         self.eTXT.setFocus()
-
 
     def boldPushed(self):
         if self.eTXT.font().bold() == True:
@@ -184,7 +191,6 @@ class TextDlg(QDialog):
     def justifyLeftPushed(self):
         # set text alignment to AlignLeft
         self.eTXT.setAlignment(Qt.AlignmentFlag.AlignLeft)
-
 
     def centerPushed(self):
         self.eTXT.setAlignment(Qt.AlignmentFlag.AlignCenter)

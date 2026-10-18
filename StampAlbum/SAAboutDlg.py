@@ -46,7 +46,7 @@ class AboutDlg(QDialog):
             script_dir = Path(__file__).resolve().parent
             parent_dir = script_dir.parent
 
-            if any((parent_dir / folder).exists() for folder in ["Databases", "Images", "photos", "docs", "Help", "locale"]):
+            if any((parent_dir / folder).exists() for folder in ["Databases", "Images", "Photos", "docs", "Help", "locale"]):
                 return parent_dir
 
             return script_dir
@@ -65,9 +65,9 @@ class AboutDlg(QDialog):
         header_layout = QHBoxLayout()
 
         logo = QLabel()
-        logo_path = self.images_dir / 'stamp_book1170.png'
+        logo_path = self.images_dir / 'stamp_book.png'
         if not logo_path.exists():
-            logo_path = Path('stamp_book1170.png')
+            logo_path = Path('stamp_book.png')
 
         pixmap = QPixmap(str(logo_path))
         if not pixmap.isNull():

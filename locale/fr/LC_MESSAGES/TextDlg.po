@@ -14,4 +14,11 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: pygettext.py 1.5\n"
 
+#: TextDlg.py:26
+msgid "Update text"
+msgstr "Mise à jour du text"
+
+#: TextDlg.py:28
+msgid "Add new text"
+msgstr "Ajouter un nouveau text"
 

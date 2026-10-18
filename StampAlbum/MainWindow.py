@@ -12,7 +12,7 @@ from pathlib import Path
 from PyQt6 import sip
 from ResizablePixmapItem import ResizablePixmapItem
 from PageBorder import PageBorder
-from StampAlbum.SAAboutDlg import AboutDlg
+from SAAboutDlg import AboutDlg
 from PyQt6.QtCore import Qt
 from PyQt6 import QtCore, QtGui
 from PyQt6.QtWidgets import (
@@ -26,7 +26,7 @@ from PyQt6.QtPrintSupport import QPrintPreviewDialog, QPrinter
 from Stamp import Stamp
 
 from Page import Page
-from StampAlbum.ConfigDlg import ConfigDlg
+from ConfigDlg import ConfigDlg
 
 import xml.etree.ElementTree as ET
 
@@ -37,7 +37,7 @@ import os, gzip
 from TextDlg import TextDlg
 
 import gettext
-from StampAlbum.AppLanguage import get_language
+from AppLanguage import get_language
 from PyQt6.QtGui import QAction, QIcon, QKeySequence, QDesktopServices
 from PyQt6.QtCore import QUrl
 
@@ -62,11 +62,11 @@ class Window(QMainWindow):
         self.base_dir = self._get_app_dir()
         self.images_dir = self._get_resource_dir("Images")
 
-        icon_path = self.images_dir / "stamp_book1170.png"
+        icon_path = self.images_dir / "stamp_book.png"
         if icon_path.exists():
             self.setWindowIcon(QtGui.QIcon(str(icon_path)))
         else:
-            self.setWindowIcon(QtGui.QIcon('stamp_book1170.png'))
+            self.setWindowIcon(QtGui.QIcon('stamp_book.png'))
 
         # Set initial main window dimensions
         # self.resize(int(222 / (25.4 / 96)), 800)
@@ -113,7 +113,7 @@ class Window(QMainWindow):
 
         - Si exécuté en EXE : renvoie le répertoire contenant l'exécutable.
         - Si exécuté depuis Python (.py dans un sous-dossier) : remonte au dossier parent
-          si 'Databases', 'Images', 'photos' ou 'docs' s'y trouve, sinon renvoie le dossier du script.
+          si 'Databases', 'Images', 'Photos' ou 'docs' s'y trouve, sinon renvoie le dossier du script.
         """
         if getattr(sys, 'frozen', False):
             return Path(sys.executable).resolve().parent
@@ -121,7 +121,7 @@ class Window(QMainWindow):
             script_dir = Path(__file__).resolve().parent
             parent_dir = script_dir.parent
 
-            if any((parent_dir / folder).exists() for folder in ["Databases", "Images", "photos", "docs", "Help", "locale"]):
+            if any((parent_dir / folder).exists() for folder in ["Databases", "Images", "Photos", "docs", "Help", "locale"]):
                 return parent_dir
 
             return script_dir
@@ -1636,7 +1636,7 @@ class Window(QMainWindow):
                 current_style = item.data(4)
                 break
 
-        from StampAlbum.BorderDlg import BorderDlg
+        from BorderDlg import BorderDlg
         dlg = BorderDlg(current_style, self)
         if dlg.exec() == 1:
             new_style = dlg.get_style()
@@ -1655,7 +1655,7 @@ class Window(QMainWindow):
                     current_style = item.data(4)
                     break
 
-        from StampAlbum.BorderDlg import BorderDlg
+        from BorderDlg import BorderDlg
         dlg = BorderDlg(current_style, self)
         if dlg.exec() == 1:
             new_style = dlg.get_style()

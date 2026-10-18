@@ -37,7 +37,7 @@ def get_app_dir() -> Path:
     parent_dir = script_dir.parent
 
     # Vérifie si l'un des dossiers principaux existe dans le répertoire parent
-    if any((parent_dir / folder).exists() for folder in ["Databases", "Images", "photos", "docs", "Help"]):
+    if any((parent_dir / folder).exists() for folder in ["Databases", "Images", "Photos", "docs", "Help"]):
         return parent_dir
 
     return script_dir
@@ -51,7 +51,7 @@ def get_db_dir() -> Path:
 
 
 def get_photos_dir() -> Path:
-    return get_app_dir() / "photos"
+    return get_app_dir() / "Photos"
 
 
 def get_images_dir() -> Path:

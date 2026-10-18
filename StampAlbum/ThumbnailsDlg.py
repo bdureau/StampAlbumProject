@@ -5,7 +5,7 @@ from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QListWidget, QListWidgetItem,
     QListView, QAbstractItemView, QDialogButtonBox
 )
-from StampAlbum.AppLanguage import get_language
+from AppLanguage import get_language
 
 gettext.find("ThumbnailsDlg")
 translate = gettext.translation('ThumbnailsDlg', localedir='locale', languages=[get_language()], fallback=True)
@@ -19,7 +19,7 @@ class ThumbnailsDlg(QDialog):
     def __init__(self, tabs, parent=None):
         super().__init__(parent)
         self.tabs = tabs
-        self.setWindowTitle(_("Organiser les pages (Planche contact)"))
+        self.setWindowTitle(_("Organise pages (Thumdnails)"))
         self.resize(850, 600)
 
         layout = QVBoxLayout(self)

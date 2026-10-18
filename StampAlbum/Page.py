@@ -8,8 +8,8 @@ Author: Boris du Reau
 """
 import functools
 import gettext
-from StampAlbum.AppLanguage import get_language
-from StampAlbum.SAAppPaths import get_config_value
+from AppLanguage import get_language
+from SAAppPaths import get_config_value
 from ResizablePixmapItem import ResizablePixmapItem
 from PyQt6.QtCore import Qt, QRectF, QMarginsF
 from PyQt6 import QtCore, QtGui
@@ -22,7 +22,7 @@ from PyQt6.QtPrintSupport import QPrintPreviewDialog, QPrinter
 from StampDlg import StampDlg
 from TextDlg import TextDlg
 from Stamp import Stamp
-from StampAlbum.EditStampDlg import EditStampDlg
+from EditStampDlg import EditStampDlg
 from PageBorder import PageBorder
 from PyQt6.QtGui import QUndoStack
 from UndoCommands import AddItemCommand, DeleteItemsCommand, MoveCommand
@@ -957,11 +957,11 @@ class Page(QGraphicsScene):
             pos = old_border.pos()
 
             # Suppression + ajout regroupés : un seul Ctrl+Z restaure l'ancienne bordure
-            self.undoStack.beginMacro(_("Changer la bordure"))
+            self.undoStack.beginMacro(_("Change bordure"))
             self.undoStack.push(DeleteItemsCommand(self, [old_border]))
             new_border = PageBorder(w, h, style=new_style)
             new_border.setPos(pos)
-            self.addItemWithUndo(new_border, _("Changer la bordure"))
+            self.addItemWithUndo(new_border, _("Change bordure"))
             self.undoStack.endMacro()
         else:
             # Si aucune bordure n'était présente, on en génère une standard

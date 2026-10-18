@@ -8,6 +8,7 @@ Author: Boris du Reau
 """
 
 import gettext
+from pathlib import Path
 from PyQt6.QtCore import Qt, QSize
 from PyQt6.QtGui import QFont, QIcon, QTextBlockFormat, QTextCharFormat
 from PyQt6.QtWidgets import (
@@ -15,7 +16,8 @@ from PyQt6.QtWidgets import (
     QHBoxLayout, QSpinBox, QTextEdit, QToolButton, QVBoxLayout
 )
 
-from StampAlbum.AppLanguage import get_language
+from AppLanguage import get_language
+from SAAppPaths import get_images_dir
 
 # Set up gettext localization
 gettext.find("RichTextDlg")
@@ -38,6 +40,21 @@ class RichTextDlg(QDialog):
             self.editor.blockSignals(True)
             self.editor.setHtml(self.text_item.toHtml())
             self.editor.blockSignals(False)
+
+    def _get_icon(self, icon_name: str) -> QIcon:
+        """
+        Récupère l'icône de manière dynamique :
+        Cherche dans le dossier Images résolu par AppPaths,
+        puis retombe sur le chemin relatif habituel si besoin.
+        """
+        images_dir = get_images_dir()
+        icon_path = images_dir / icon_name
+
+        if icon_path.exists():
+            return QIcon(str(icon_path))
+
+        # Fallback au chemin relatif classique
+        return QIcon(f"../Images/{icon_name}")
 
     def _create_ui(self):
         layout = QVBoxLayout(self)
@@ -91,30 +108,30 @@ class RichTextDlg(QDialog):
         self.btn_color.clicked.connect(self._choose_color)
         toolbar.addWidget(self.btn_color)
 
-        # Paragraph alignment buttons using custom PNG icons
+        # Paragraph alignment buttons using custom PNG icons résolus dynamiquement
         self.btn_align_left = QToolButton()
-        self.btn_align_left.setIcon(QIcon("../Images/justify left.png"))
+        self.btn_align_left.setIcon(self._get_icon("justify left.png"))
         self.btn_align_left.setIconSize(QSize(18, 18))
         self.btn_align_left.setToolTip(_("Align Left"))
         self.btn_align_left.clicked.connect(lambda: self._set_alignment(Qt.AlignmentFlag.AlignLeft))
         toolbar.addWidget(self.btn_align_left)
 
         self.btn_align_center = QToolButton()
-        self.btn_align_center.setIcon(QIcon("../Images/justify center.png"))
+        self.btn_align_center.setIcon(self._get_icon("justify center.png"))
         self.btn_align_center.setIconSize(QSize(18, 18))
         self.btn_align_center.setToolTip(_("Center"))
         self.btn_align_center.clicked.connect(lambda: self._set_alignment(Qt.AlignmentFlag.AlignCenter))
         toolbar.addWidget(self.btn_align_center)
 
         self.btn_align_right = QToolButton()
-        self.btn_align_right.setIcon(QIcon("../Images/justify right.png"))
+        self.btn_align_right.setIcon(self._get_icon("justify right.png"))
         self.btn_align_right.setIconSize(QSize(18, 18))
         self.btn_align_right.setToolTip(_("Align Right"))
         self.btn_align_right.clicked.connect(lambda: self._set_alignment(Qt.AlignmentFlag.AlignRight))
         toolbar.addWidget(self.btn_align_right)
 
         self.btn_align_justify = QToolButton()
-        self.btn_align_justify.setIcon(QIcon("../Images/justify.png"))
+        self.btn_align_justify.setIcon(self._get_icon("justify.png"))
         self.btn_align_justify.setIconSize(QSize(18, 18))
         self.btn_align_justify.setToolTip(_("Justify"))
         self.btn_align_justify.clicked.connect(lambda: self._set_alignment(Qt.AlignmentFlag.AlignJustify))

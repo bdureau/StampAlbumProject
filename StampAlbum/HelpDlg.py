@@ -3,8 +3,7 @@ Application Help Dialog Module
 ------------------------------
 Displays local HTML help documentation adapted to the active locale language.
 """
-#from os import walk
-#from PyQt6.QtCore import QPointF, Qt, QPoint, QByteArray, QRectF
+
 import gettext
 from pathlib import Path
 from PyQt6.QtWidgets import (
@@ -12,7 +11,7 @@ from PyQt6.QtWidgets import (
     QFormLayout, QDialogButtonBox
 )
 
-from StampAlbum.AppLanguage import get_language
+from AppLanguage import get_language
 gettext.find("HelpDlg")
 translate = gettext.translation('HelpDlg', localedir='locale', languages=[get_language()], fallback=True)
 translate.install()

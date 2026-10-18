@@ -21,7 +21,7 @@ from pathlib import Path
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment
 from openpyxl.utils import get_column_letter
-
+from PyQt6 import QtGui
 from PyQt6.QtCore import Qt, QSize
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
@@ -34,6 +34,8 @@ from PyQt6.QtGui import QPixmap, QIcon, QAction
 
 # Localization setup following StampAlbum's architecture
 from SCAppLanguage import get_language
+
+from SCAboutDlg import SCAboutDlg
 
 gettext.find("StampCatalogue")
 translate = gettext.translation(
@@ -303,6 +305,12 @@ class MainWindow(QMainWindow):
         self.db_dir = self.base_dir / "Databases"
         self.icons_dir = self.base_dir / "Images"
 
+        icon_path = self.icons_dir / "StampCatalogue.png"
+        if icon_path.exists():
+            self.setWindowIcon(QtGui.QIcon(str(icon_path)))
+        else:
+            self.setWindowIcon(QtGui.QIcon('StampCatalogue.png'))
+
         # Load Configuration
         self.config_manager = ConfigManager(self.base_dir / "StampCatalogue.cfg")
 
@@ -353,7 +361,7 @@ class MainWindow(QMainWindow):
 
         - Si exécuté en EXE : renvoie le répertoire contenant l'exécutable.
         - Si exécuté depuis Python (.py dans un sous-dossier) : remonte au dossier parent
-          si 'Databases', 'Images' ou 'photos' s'y trouve, sinon renvoie le dossier du script.
+          si 'Databases', 'Images' ou 'Photos' s'y trouve, sinon renvoie le dossier du script.
         """
         if getattr(sys, 'frozen', False):
             # Mode exécutable (EXE)
@@ -364,7 +372,7 @@ class MainWindow(QMainWindow):
             parent_dir = script_dir.parent
 
             # Vérifie si l'un des dossiers de ressources existe dans le dossier parent
-            if any((parent_dir / folder).exists() for folder in ["Databases", "Images", "photos", "Help", "locale"]):
+            if any((parent_dir / folder).exists() for folder in ["Databases", "Images", "Photos", "Help", "locale"]):
                 return parent_dir
 
             return script_dir
@@ -603,7 +611,7 @@ class MainWindow(QMainWindow):
 
         main_layout.addWidget(splitter)
 
-    def _open_settings(self):
+    def _open_settings_old(self):
         """Open settings dialog and save updated INI configuration."""
         dialog = ConfigurationDialog(
             current_lang=self.config_manager.get_language(),
@@ -619,7 +627,28 @@ class MainWindow(QMainWindow):
                 _("Configuration saved to StampCatalogue.cfg.\nPlease restart the application to apply changes.")
             )
 
-    def _show_about(self):
+    def _open_settings(self):
+        """Open settings dialog and save updated INI configuration."""
+        dialog = ConfigurationDialog(
+            current_lang=self.config_manager.get_language(),
+            current_db_type=self.config_manager.get_db_type(),
+            parent=self
+        )
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            new_lang, new_db_type = dialog.get_settings()
+            self.config_manager.set_settings(new_lang, new_db_type)
+
+            # Recharger la langue en cache
+            import SCAppLanguage
+            SCAppLanguage.get_language(force_reload=True)
+
+            QMessageBox.information(
+                self,
+                _("Settings Saved"),
+                _("Configuration saved to StampCatalogue.cfg.\nPlease restart the application to apply language changes.")
+            )
+
+    def _show_about_old(self):
         """Display 'About' dialog with application description."""
         about_text = _(
             "StampCatalogue v1.2\n\n"
@@ -632,6 +661,11 @@ class MainWindow(QMainWindow):
             "Year: 2026"
         )
         QMessageBox.about(self, _("About StampCatalogue"), about_text)
+
+    def _show_about(self):
+        """Affiche la boîte de dialogue 'À propos' personnalisée."""
+        dialog = SCAboutDlg(self)
+        dialog.exec()
 
     def _open_manual(self):
         """Open language-specific manual file."""
@@ -939,9 +973,9 @@ class MainWindow(QMainWindow):
         # Build potential absolute image paths
         possible_paths = [
             self.base_dir / "Images" / self.current_country / rel_filename,
-            self.base_dir / "photos" / self.current_country / rel_filename,
+            self.base_dir / "Photos" / self.current_country / rel_filename,
             self.base_dir / "Images" / rel_filename,
-            self.base_dir / "photos" / rel_filename,
+            self.base_dir / "Photos" / rel_filename,
             self.base_dir / rel_filename
         ]
 

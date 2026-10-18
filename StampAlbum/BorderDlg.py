@@ -14,19 +14,19 @@ class BorderDlg(QDialog):
 
     def __init__(self, current_style=None, parent=None):
         super().__init__(parent)
-        self.setWindowTitle(_("Choisir un style de bordure"))
+        self.setWindowTitle(_("Choose a border style"))
         self.resize(300, 100)
 
         layout = QVBoxLayout(self)
 
-        self.label = QLabel(_("Sélectionnez le nouveau style de bordure :"))
+        self.label = QLabel(_("Select the New border style :"))
         layout.addWidget(self.label)
 
         self.combo = QComboBox()
-        self.combo.addItem(_("Triple (Classique)"), PageBorder.STYLE_TRIPLE)
-        self.combo.addItem(_("Simple (Cadre double)"), PageBorder.STYLE_SIMPLE)
-        self.combo.addItem(_("Grec (Coins rentrants)"), PageBorder.STYLE_GREEK)
-        self.combo.addItem(_("Dentelle (Philatélie)"), PageBorder.STYLE_DENTELLE)
+        self.combo.addItem(_("Triple (Classic)"), PageBorder.STYLE_TRIPLE)
+        self.combo.addItem(_("Simple (Frame)"), PageBorder.STYLE_SIMPLE)
+        self.combo.addItem(_("Greek (Notched)"), PageBorder.STYLE_GREEK)
+        self.combo.addItem(_("Dentelle (Philately)"), PageBorder.STYLE_DENTELLE)
 
         # Pré-sélectionne le style actuel de la page
         if current_style:

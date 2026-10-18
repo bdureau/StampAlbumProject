@@ -1,0 +1,356 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2026-10-18 13:12+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=cp1252\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+
+
+#: StampCatalogue.py:90
+msgid "Settings"
+msgstr ""
+
+#: StampCatalogue.py:104
+msgid "Language:"
+msgstr ""
+
+#: StampCatalogue.py:111
+msgid "Database Type:"
+msgstr ""
+
+#: StampCatalogue.py:242 StampCatalogue.py:246 StampCatalogue.py:735
+#: StampCatalogue.py:741
+msgid "All"
+msgstr ""
+
+#: StampCatalogue.py:269
+msgid "Create New Collection"
+msgstr ""
+
+#: StampCatalogue.py:276
+msgid "e.g. France Mint 1900-1950"
+msgstr ""
+
+#: StampCatalogue.py:277
+msgid "Collection Name:"
+msgstr ""
+
+#: StampCatalogue.py:281
+msgid "Country:"
+msgstr ""
+
+#: StampCatalogue.py:299
+msgid "StampCatalogue - Stamp Collection Manager"
+msgstr ""
+
+#: StampCatalogue.py:389
+msgid "New Collection..."
+msgstr ""
+
+#: StampCatalogue.py:390
+msgid "Create a new collection"
+msgstr ""
+
+#: StampCatalogue.py:395 StampCatalogue.py:709
+msgid "Delete Collection"
+msgstr ""
+
+#: StampCatalogue.py:396
+msgid "Delete current collection"
+msgstr ""
+
+#: StampCatalogue.py:401
+msgid "Export Mancolist (Excel)"
+msgstr ""
+
+#: StampCatalogue.py:402
+msgid "Export missing stamps to Excel"
+msgstr ""
+
+#: StampCatalogue.py:407
+msgid "Settings..."
+msgstr ""
+
+#: StampCatalogue.py:408
+msgid "Configure application settings"
+msgstr ""
+
+#: StampCatalogue.py:413
+msgid "User Manual"
+msgstr ""
+
+#: StampCatalogue.py:414
+msgid "Open user manual"
+msgstr ""
+
+#: StampCatalogue.py:419
+msgid "About"
+msgstr ""
+
+#: StampCatalogue.py:420 StampCatalogue.py:634
+msgid "About StampCatalogue"
+msgstr ""
+
+#: StampCatalogue.py:425
+msgid "Quit"
+msgstr ""
+
+#: StampCatalogue.py:427
+msgid "Quit application"
+msgstr ""
+
+#: StampCatalogue.py:435
+msgid "&Collection"
+msgstr ""
+
+#: StampCatalogue.py:442
+msgid "&Tools"
+msgstr ""
+
+#: StampCatalogue.py:446
+msgid "&Configuration"
+msgstr ""
+
+#: StampCatalogue.py:450
+msgid "&Help"
+msgstr ""
+
+#: StampCatalogue.py:456
+msgid "Main Toolbar"
+msgstr ""
+
+#: StampCatalogue.py:475
+msgid "Collection Selection"
+msgstr ""
+
+#: StampCatalogue.py:478
+msgid "Active Collection:"
+msgstr ""
+
+#: StampCatalogue.py:487
+msgid "Catalogue Filters"
+msgstr ""
+
+#: StampCatalogue.py:490
+msgid "Type:"
+msgstr ""
+
+#: StampCatalogue.py:495 StampCatalogue.py:550
+msgid "Year:"
+msgstr ""
+
+#: StampCatalogue.py:500
+msgid "Catalog N°:"
+msgstr ""
+
+#: StampCatalogue.py:502
+msgid "e.g. 154..."
+msgstr ""
+
+#: StampCatalogue.py:516 StampCatalogue.py:1022
+msgid "Yvert N°"
+msgstr ""
+
+#: StampCatalogue.py:517 StampCatalogue.py:1023
+msgid "Year"
+msgstr ""
+
+#: StampCatalogue.py:518 StampCatalogue.py:1024
+msgid "Type"
+msgstr ""
+
+#: StampCatalogue.py:519 StampCatalogue.py:1025
+msgid "Value / Color"
+msgstr ""
+
+#: StampCatalogue.py:520 StampCatalogue.py:1026
+msgid "Description"
+msgstr ""
+
+#: StampCatalogue.py:521 StampCatalogue.py:1027
+msgid "Status"
+msgstr ""
+
+#: StampCatalogue.py:534 StampCatalogue.py:961 StampCatalogue.py:1055
+msgid "No Photo Available"
+msgstr ""
+
+#: StampCatalogue.py:541
+msgid "Stamp Details"
+msgstr ""
+
+#: StampCatalogue.py:551
+msgid "Yvert N°:"
+msgstr ""
+
+#: StampCatalogue.py:552
+msgid "Value / Color:"
+msgstr ""
+
+#: StampCatalogue.py:553
+msgid "Description 1:"
+msgstr ""
+
+#: StampCatalogue.py:558
+msgid "Collection Status"
+msgstr ""
+
+#: StampCatalogue.py:563 StampCatalogue.py:775 StampCatalogue.py:815
+#: StampCatalogue.py:968
+msgid "Not Owned"
+msgstr ""
+
+#: StampCatalogue.py:564 StampCatalogue.py:778
+msgid "Owned"
+msgstr ""
+
+#: StampCatalogue.py:565 StampCatalogue.py:780 StampCatalogue.py:997
+msgid "Manco (Wanted)"
+msgstr ""
+
+#: StampCatalogue.py:566
+msgid "Ordered"
+msgstr ""
+
+#: StampCatalogue.py:571 StampCatalogue.py:810
+msgid "Mint Never Hinged (** MNH)"
+msgstr ""
+
+#: StampCatalogue.py:572
+msgid "Mint Hinged (* MH)"
+msgstr ""
+
+#: StampCatalogue.py:573
+msgid "Used (Cancelled)"
+msgstr ""
+
+#: StampCatalogue.py:574
+msgid "On Cover"
+msgstr ""
+
+#: StampCatalogue.py:587
+msgid "Status:"
+msgstr ""
+
+#: StampCatalogue.py:588
+msgid "Condition:"
+msgstr ""
+
+#: StampCatalogue.py:589
+msgid "Quantity:"
+msgstr ""
+
+#: StampCatalogue.py:590
+msgid "Purchase Price:"
+msgstr ""
+
+#: StampCatalogue.py:591
+msgid "Notes:"
+msgstr ""
+
+#: StampCatalogue.py:593
+msgid "Save to Collection"
+msgstr ""
+
+#: StampCatalogue.py:618
+msgid "Settings Saved"
+msgstr ""
+
+#: StampCatalogue.py:619
+msgid ""
+"Configuration saved to StampCatalogue.cfg.\n"
+"Please restart the application to apply changes."
+msgstr ""
+
+#: StampCatalogue.py:624
+msgid ""
+"StampCatalogue v1.2\n"
+"\n"
+"A standalone desktop application designed for philatelists to:\n"
+"- Manage multiple stamp collections across different countries.\n"
+"- Browse country-specific stamp catalogues.\n"
+"- Track stamp ownership status, condition, purchase price, and notes.\n"
+"- Export mancolists (missing stamps) directly to Excel.\n"
+"\n"
+"Author: Boris du Reau / AI Assistant\n"
+"Year: 2026"
+msgstr ""
+
+#: StampCatalogue.py:655
+msgid "Could not open manual:"
+msgstr ""
+
+#: StampCatalogue.py:655 StampCatalogue.py:690 StampCatalogue.py:700
+msgid "Error"
+msgstr ""
+
+#: StampCatalogue.py:659
+msgid "Manual Not Found"
+msgstr ""
+
+#: StampCatalogue.py:660
+msgid "User manual file not found:"
+msgstr ""
+
+#: StampCatalogue.py:683
+msgid "No country Databases found in 'Databases/'."
+msgstr ""
+
+#: StampCatalogue.py:683
+msgid "Warning"
+msgstr ""
+
+#: StampCatalogue.py:690
+msgid "Collection name cannot be empty."
+msgstr ""
+
+#: StampCatalogue.py:700
+msgid "A collection with this name already exists."
+msgstr ""
+
+#: StampCatalogue.py:710
+msgid "Are you sure you want to delete this collection and all its tracked stamps?"
+msgstr ""
+
+#: StampCatalogue.py:995 StampCatalogue.py:997
+msgid "Missing"
+msgstr ""
+
+#: StampCatalogue.py:1002
+msgid "Information"
+msgstr ""
+
+#: StampCatalogue.py:1002
+msgid "No missing stamps found for this collection."
+msgstr ""
+
+#: StampCatalogue.py:1009
+msgid "Save Mancolist"
+msgstr ""
+
+#: StampCatalogue.py:1016
+msgid "Mancolist"
+msgstr ""
+
+#: StampCatalogue.py:1028
+msgid "Notes"
+msgstr ""
+
+#: StampCatalogue.py:1047
+msgid ""
+"Mancolist exported successfully:\n"
+msgstr ""
+
+#: StampCatalogue.py:1047
+msgid "Success"
+msgstr ""
+

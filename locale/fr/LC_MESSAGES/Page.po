@@ -14,4 +14,25 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: pygettext.py 1.5\n"
 
+#: Page.py:225
+msgid "Add Text"
+msgstr "Ajouter du texte"
+
+#: Page.py:248
+msgid "Add Rich Text"
+msgstr "Ajouter du text riche"
+
+#: Page.py:268
+msgid "Clear page"
+msgstr "Effacer la page"
+
+#: Page.py:727
+msgid "Add Image"
+msgstr "Ajouter une image"
+
+#: Page.py:960 Page.py:964
+msgid "Change bordure"
+msgstr "Changer l\'encadrement"
+
+
 

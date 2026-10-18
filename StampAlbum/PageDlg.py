@@ -6,10 +6,10 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtGui import QPixmap
 from PageBorder import PageBorder
-from StampAlbum.SAAppPaths import get_config_value
+from SAAppPaths import get_config_value
 
 import gettext
-from StampAlbum.AppLanguage import get_language
+from AppLanguage import get_language
 gettext.find("PageDlg")
 translate = gettext.translation('PageDlg', localedir='locale', languages=[get_language()], fallback=True)
 translate.install()
@@ -36,7 +36,7 @@ class PageDlg(QDialog):
             script_dir = Path(__file__).resolve().parent
             parent_dir = script_dir.parent
 
-            if any((parent_dir / folder).exists() for folder in ["Databases", "Images", "photos", "docs","Help", "locale"]):
+            if any((parent_dir / folder).exists() for folder in ["Databases", "Images", "Photos", "docs","Help", "locale"]):
                 return parent_dir
 
             return script_dir

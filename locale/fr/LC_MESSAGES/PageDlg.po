@@ -31,3 +31,23 @@ msgstr "Paysage"
 #: PageDlg.py:48
 msgid "Select the page:"
 msgstr "Choisir la page:"
+
+#: PageDlg.py:90
+msgid "Triple (Classic)"
+msgstr "Triple (Classique)"
+
+#: PageDlg.py:91
+msgid "Simple (Frame)"
+msgstr "Simple (Filet)"
+
+#: PageDlg.py:92
+msgid "Greek (Notched)"
+msgstr "Grecque (Encoches)"
+
+#: PageDlg.py:93
+msgid "Dentelle (Philately)"
+msgstr "Dentelle (Philatélie)"
+
+#: PageDlg.py:103
+msgid "Border type:"
+msgstr "Type d\'encadrement"

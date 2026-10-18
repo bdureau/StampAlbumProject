@@ -15,12 +15,12 @@ from PyQt6.QtWidgets import (
     QLineEdit, QFormLayout, QVBoxLayout, QDialogButtonBox, QPlainTextEdit
 )
 from PyQt6.QtGui import QPixmap, QStandardItem
-from StampAlbum.Databases import DB
-from StampAlbum.Stamp import Stamp
-from StampAlbum.SAAppPaths import get_config_value, get_photos_dir, get_images_dir, list_countries
+from Databases import DB
+from Stamp import Stamp
+from SAAppPaths import get_config_value, get_photos_dir, get_images_dir, list_countries
 
 import gettext
-from StampAlbum.AppLanguage import get_language
+from AppLanguage import get_language
 # Set up gettext localization
 gettext.find("StampDlg")
 translate = gettext.translation('StampDlg', localedir='locale', languages=[get_language()], fallback=True)

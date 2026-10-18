@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2026-10-09 13:39+0200\n"
+"POT-Creation-Date: 2026-10-18 22:17+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -15,19 +15,39 @@ msgstr ""
 "Generated-By: pygettext.py 1.5\n"
 
 
-#: PageDlg.py:24
+#: PageDlg.py:21
 msgid "Create new Page"
 msgstr ""
 
-#: PageDlg.py:40
+#: PageDlg.py:69
 msgid "Portrait"
 msgstr ""
 
-#: PageDlg.py:41
+#: PageDlg.py:70
 msgid "Landscape"
 msgstr ""
 
-#: PageDlg.py:48
+#: PageDlg.py:77
 msgid "Select the page:"
+msgstr ""
+
+#: PageDlg.py:90
+msgid "Triple (Classic)"
+msgstr ""
+
+#: PageDlg.py:91
+msgid "Simple (Frame)"
+msgstr ""
+
+#: PageDlg.py:92
+msgid "Greek (Notched)"
+msgstr ""
+
+#: PageDlg.py:93
+msgid "Dentelle (Philately)"
+msgstr ""
+
+#: PageDlg.py:103
+msgid "Border type:"
 msgstr ""
 

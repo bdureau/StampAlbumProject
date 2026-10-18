@@ -17,7 +17,7 @@ import csv
 import sqlite3
 import configparser
 from pathlib import Path
-
+from PyQt6 import QtGui
 from PyQt6.QtCore import Qt, QUrl
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
@@ -26,7 +26,9 @@ from PyQt6.QtWidgets import (
     QFileDialog, QGroupBox, QFormLayout, QTextEdit, QSplitter,
     QDialog, QDialogButtonBox, QRadioButton, QToolBar
 )
-from PyQt6.QtGui import QPixmap, QKeySequence, QDesktopServices, QUndoStack, QUndoCommand, QIcon
+from PyQt6.QtGui import QPixmap, QKeySequence, QDesktopServices, QUndoStack, QUndoCommand, QIcon, QAction
+
+from SDAboutDlg import SDAboutDlg
 
 # Try importing pyodbc for Microsoft Access support
 try:
@@ -587,8 +589,15 @@ class MainWindow(QMainWindow):
         self.current_db_type = self.config_manager.db_type
         self.db_adapter = None
         self.current_country = None
-        #self.current_db_type = "sqlite"
         self.is_dirty = False
+
+        self.images_dir = self.base_dir / "Images"
+
+        icon_path = self.images_dir / "StampDB.png"
+        if icon_path.exists():
+            self.setWindowIcon(QtGui.QIcon(str(icon_path)))
+        else:
+            self.setWindowIcon(QtGui.QIcon('StampDB.png'))
 
         self.undo_stack = QUndoStack(self)
         self.undo_stack.cleanChanged.connect(self._update_dirty_state)
@@ -600,53 +609,15 @@ class MainWindow(QMainWindow):
         self._init_toolbar()
         self._load_country_list()
 
-    def _get_app_dir_old(self) -> Path:
-        if getattr(sys, 'frozen', False):
-            return Path(sys.executable).resolve().parent
-        return Path(__file__).resolve().parent
-
-    def _get_app_dir_old2(self) -> Path:
-        """
-        Détermine le répertoire racine de l'application.
-
-        - Si exécuté en EXE : renvoie le répertoire où se trouve l'exécutable.
-        - Si exécuté depuis Python (.py dans un sous-dossier) : remonte au dossier parent
-          si 'Databases' ou 'Images' s'y trouve, sinon renvoie le dossier du script.
-        """
-        if getattr(sys, 'frozen', False):
-            # Mode exécutable (EXE) : le dossier de l'exécutable
-            return Path(sys.executable).resolve().parent
-        else:
-            # Mode script Python (.py)
-            script_dir = Path(__file__).resolve().parent
-            parent_dir = script_dir.parent
-
-            # Si le script est dans un sous-dossier et que 'Databases' ou 'Images' existe au niveau parent
-            if (parent_dir / "Databases").exists() or (parent_dir / "Images").exists():
-                return parent_dir
-
-            return script_dir
-
     def _get_app_dir(self) -> Path:
-        """
-        Détermine le répertoire racine de l'application.
-
-        - Si exécuté en EXE : renvoie le répertoire contenant l'exécutable.
-        - Si exécuté depuis Python (.py dans un sous-dossier) : remonte au dossier parent
-          si 'Databases', 'Images' ou 'photos' s'y trouve, sinon renvoie le dossier du script.
-        """
+        """Détermine le répertoire racine de l'application."""
         if getattr(sys, 'frozen', False):
-            # Mode exécutable (EXE)
             return Path(sys.executable).resolve().parent
         else:
-            # Mode script Python (.py)
             script_dir = Path(__file__).resolve().parent
             parent_dir = script_dir.parent
-
-            # Vérifie si l'un des dossiers de ressources existe dans le dossier parent
-            if any((parent_dir / folder).exists() for folder in ["Databases", "Images", "photos"]):
+            if any((parent_dir / folder).exists() for folder in ["Databases", "Images", "Photos"]):
                 return parent_dir
-
             return script_dir
 
     def _detect_available_countries(self):
@@ -714,7 +685,7 @@ class MainWindow(QMainWindow):
         # Main Splitter
         splitter = QSplitter(Qt.Orientation.Horizontal)
 
-        # Stamps Table (6 colonnes : Description 1 puis Description)
+        # Stamps Table
         self.table = QTableWidget()
         self.table.setColumnCount(6)
         self.table.setHorizontalHeaderLabels([
@@ -729,7 +700,6 @@ class MainWindow(QMainWindow):
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.table.setSelectionMode(QTableWidget.SelectionMode.ExtendedSelection)
 
-        # Activation du tri au clic sur les entêtes de colonnes
         self.table.setSortingEnabled(True)
 
         self.table.itemSelectionChanged.connect(self._on_stamp_selected)
@@ -756,7 +726,6 @@ class MainWindow(QMainWindow):
         self.edit_type = QLineEdit()
         self.edit_valcolor = QLineEdit()
 
-        # Inversion : description1 puis description
         self.edit_desc1 = QTextEdit()
         self.edit_desc1.setMaximumHeight(50)
         self.edit_desc = QTextEdit()
@@ -813,129 +782,99 @@ class MainWindow(QMainWindow):
 
         main_layout.addWidget(splitter)
 
-    def _init_menubar_old(self):
-        """Initialize main menu bar."""
-        menubar = self.menuBar()
-
-        # File / Database Menu
-        file_menu = menubar.addMenu(_("&File"))
-
-        self.act_create_db = file_menu.addAction(_("Create New Empty SQLite DB..."))
-        self.act_create_db.triggered.connect(self.create_new_sqlite_db)
-
-        self.act_save_db = file_menu.addAction(_("Save Changes"))
-        self.act_save_db.setShortcut(QKeySequence.StandardKey.Save)
-        self.act_save_db.triggered.connect(self.save_changes)
-
-        file_menu.addSeparator()
-
-        act_db_info = file_menu.addAction(_("Current Database Info..."))
-        act_db_info.triggered.connect(self.open_db_info)
-
-        file_menu.addSeparator()
-
-        self.act_convert_access = file_menu.addAction(_("Import MS Access DB to SQLite..."))
-        self.act_convert_access.triggered.connect(self.import_ms_access_to_sqlite)
-
-        act_import_csv = file_menu.addAction(_("Import CSV..."))
-        act_import_csv.triggered.connect(self.import_csv)
-
-        act_export_csv = file_menu.addAction(_("Export CSV..."))
-        act_export_csv.triggered.connect(self.export_csv)
-
-        file_menu.addSeparator()
-
-        self.act_exit_app = file_menu.addAction(_("&Exit"))
-        self.act_exit_app.setShortcut(QKeySequence.StandardKey.Quit)
-        self.act_exit_app.triggered.connect(self.close)
-
-        # Edit Menu (Undo / Redo)
-        edit_menu = menubar.addMenu(_("&Edit"))
-
-        act_undo = self.undo_stack.createUndoAction(self, _("&Undo"))
-        act_undo.setShortcut(QKeySequence.StandardKey.Undo)
-        edit_menu.addAction(act_undo)
-
-        act_redo = self.undo_stack.createRedoAction(self, _("&Redo"))
-        act_redo.setShortcut(QKeySequence.StandardKey.Redo)
-        edit_menu.addAction(act_redo)
-
-        # Config Menu
-        config_menu = menubar.addMenu(_("&Config"))
-        act_config = config_menu.addAction(_("Setup Application..."))
-        act_config.triggered.connect(self.open_config)
-
-        # Help Menu
-        help_menu = menubar.addMenu(_("&Help"))
-
-        act_help = help_menu.addAction(_("User Manual"))
-        act_help.triggered.connect(self.open_manual)
-
-        act_about = help_menu.addAction(_("About StampDatabase"))
-        act_about.triggered.connect(self.open_about)
-
     def _init_menubar(self):
-        """Initialize main menu bar."""
+        """Initialize main menu bar with explicit actions."""
         menubar = self.menuBar()
 
         # File / Database Menu
         file_menu = menubar.addMenu(_("&File"))
 
-        self.act_create_db = file_menu.addAction(_("Create New Empty SQLite DB..."))
+        self.act_create_db = QAction(_("Create New Empty SQLite DB..."), self)
         self.act_create_db.setIcon(QIcon(str(self.base_dir / "Images" / "database_add.png")))
         self.act_create_db.triggered.connect(self.create_new_sqlite_db)
+        file_menu.addAction(self.act_create_db)
 
-        self.act_save_db = file_menu.addAction(_("Save Changes"))
+        self.act_save_db = QAction(_("Save Changes"), self)
         self.act_save_db.setIcon(QIcon(str(self.base_dir / "Images" / "save.png")))
         self.act_save_db.setShortcut(QKeySequence.StandardKey.Save)
         self.act_save_db.triggered.connect(self.save_changes)
+        file_menu.addAction(self.act_save_db)
 
         file_menu.addSeparator()
 
-        act_db_info = file_menu.addAction(_("Current Database Info..."))
-        act_db_info.triggered.connect(self.open_db_info)
+        self.act_db_info = QAction(_("Current Database Info..."), self)
+        self.act_db_info.triggered.connect(self.open_db_info)
+        file_menu.addAction(self.act_db_info)
 
         file_menu.addSeparator()
 
-        self.act_convert_access = file_menu.addAction(_("Import MS Access DB to SQLite..."))
+        self.act_convert_access = QAction(_("Import MS Access DB to SQLite..."), self)
         self.act_convert_access.triggered.connect(self.import_ms_access_to_sqlite)
+        file_menu.addAction(self.act_convert_access)
 
-        act_import_csv = file_menu.addAction(_("Import CSV..."))
-        act_import_csv.triggered.connect(self.import_csv)
+        self.act_import_csv = QAction(_("Import CSV..."), self)
+        self.act_import_csv.setIcon(QIcon(str(self.base_dir / "Images" / "import_csv.png")))
+        self.act_import_csv.triggered.connect(self.import_csv)
+        file_menu.addAction(self.act_import_csv)
 
-        act_export_csv = file_menu.addAction(_("Export CSV..."))
-        act_export_csv.triggered.connect(self.export_csv)
+        self.act_export_csv = QAction(_("Export CSV..."), self)
+        self.act_export_csv.setIcon(QIcon(str(self.base_dir / "Images" / "export_to_csv.png")))
+        self.act_export_csv.triggered.connect(self.export_csv)
+        file_menu.addAction(self.act_export_csv)
 
         file_menu.addSeparator()
 
-        self.act_exit_app = file_menu.addAction(_("&Exit"))
+        self.act_exit_app = QAction(_("&Exit"), self)
         self.act_exit_app.setIcon(QIcon(str(self.base_dir / "Images" / "exit.png")))
         self.act_exit_app.setShortcut(QKeySequence.StandardKey.Quit)
         self.act_exit_app.triggered.connect(self.close)
-        # Edit Menu (Undo / Redo)
+        file_menu.addAction(self.act_exit_app)
+
+        # Edit Menu
         edit_menu = menubar.addMenu(_("&Edit"))
 
-        act_undo = self.undo_stack.createUndoAction(self, _("&Undo"))
-        act_undo.setShortcut(QKeySequence.StandardKey.Undo)
-        edit_menu.addAction(act_undo)
+        self.act_undo = QAction(_("&Undo"), self)
+        self.act_undo.setIcon(QIcon(str(self.base_dir / "Images" / "undo.png")))
+        self.act_undo.setShortcut(QKeySequence.StandardKey.Undo)
+        self.act_undo.setEnabled(self.undo_stack.canUndo())
+        self.act_undo.triggered.connect(self.undo_stack.undo)
+        self.undo_stack.canUndoChanged.connect(self.act_undo.setEnabled)
+        edit_menu.addAction(self.act_undo)
 
-        act_redo = self.undo_stack.createRedoAction(self, _("&Redo"))
-        act_redo.setShortcut(QKeySequence.StandardKey.Redo)
-        edit_menu.addAction(act_redo)
+        self.act_redo = QAction(_("&Redo"), self)
+        self.act_redo.setIcon(QIcon(str(self.base_dir / "Images" / "redo.png")))
+        self.act_redo.setShortcut(QKeySequence.StandardKey.Redo)
+        self.act_redo.setEnabled(self.undo_stack.canRedo())
+        self.act_redo.triggered.connect(self.undo_stack.redo)
+        self.undo_stack.canRedoChanged.connect(self.act_redo.setEnabled)
+        edit_menu.addAction(self.act_redo)
+
+        edit_menu.addSeparator()
+
+        self.act_select_all = QAction(_("Select All"), self)
+        self.act_select_all.setShortcut(QKeySequence.StandardKey.SelectAll)
+        self.act_select_all.triggered.connect(self.table.selectAll)
+        edit_menu.addAction(self.act_select_all)
 
         # Config Menu
         config_menu = menubar.addMenu(_("&Config"))
-        act_config = config_menu.addAction(_("Setup Application..."))
-        act_config.triggered.connect(self.open_config)
+        self.act_config = QAction(_("Setup Application..."), self)
+        self.act_config.setIcon(QIcon(str(self.base_dir / "Images" / "config.png")))
+        self.act_config.triggered.connect(self.open_config)
+        config_menu.addAction(self.act_config)
 
         # Help Menu
         help_menu = menubar.addMenu(_("&Help"))
 
-        act_help = help_menu.addAction(_("User Manual"))
-        act_help.triggered.connect(self.open_manual)
+        self.act_help = QAction(_("User Manual"), self)
+        self.act_help.setIcon(QIcon(str(self.base_dir / "Images" / "help.png")))
+        self.act_help.triggered.connect(self.open_manual)
+        help_menu.addAction(self.act_help)
 
-        act_about = help_menu.addAction(_("About StampDatabase"))
-        act_about.triggered.connect(self.open_about)
+        self.act_about = QAction(_("About StampDatabase"), self)
+        self.act_about.setIcon(QIcon(str(self.base_dir / "Images" / "about.png")))
+        self.act_about.triggered.connect(self.open_about)
+        help_menu.addAction(self.act_about)
 
     def _init_toolbar(self):
         """Initialize top shortcut ToolBar."""
@@ -945,6 +884,16 @@ class MainWindow(QMainWindow):
 
         toolbar.addAction(self.act_create_db)
         toolbar.addAction(self.act_save_db)
+        toolbar.addSeparator()
+        toolbar.addAction(self.act_undo)
+        toolbar.addAction(self.act_redo)
+        toolbar.addSeparator()
+        toolbar.addAction(self.act_import_csv)
+        toolbar.addAction(self.act_export_csv)
+        toolbar.addSeparator()
+        toolbar.addAction(self.act_config)
+        toolbar.addAction(self.act_help)
+        toolbar.addAction(self.act_about)
         toolbar.addSeparator()
         toolbar.addAction(self.act_exit_app)
 
@@ -1067,7 +1016,7 @@ class MainWindow(QMainWindow):
             data = dialog.get_data()
             country = data["country"]
             if not country:
-                QMessageBox.warning(self, _("Error"), _("Country name cannot be empty."))
+                QMessageBox.warning(self, _("Error"), _("Collection name cannot be empty."))
                 return
 
             db_path = self.db_dir / f"{country}.db"
@@ -1188,7 +1137,6 @@ class MainWindow(QMainWindow):
         if not self.db_adapter:
             return
 
-        # Bloquer temporairement le tri pendant le remplissage pour éviter les conflits
         self.table.setSortingEnabled(False)
 
         stamps = self.db_adapter.get_stamps(
@@ -1211,10 +1159,8 @@ class MainWindow(QMainWindow):
 
             self.table.item(row_idx, 0).setData(Qt.ItemDataRole.UserRole, stamp)
 
-        # Réactivation du tri dynamique
         self.table.setSortingEnabled(True)
 
-        # Sélectionner le premier timbre par défaut et charger sa fiche
         if self.table.rowCount() > 0:
             self.table.selectRow(0)
             self._on_stamp_selected()
@@ -1464,9 +1410,9 @@ class MainWindow(QMainWindow):
 
         possible_paths = [
             self.base_dir / "Images" / self.current_country / rel_filename,
-            self.base_dir / "photos" / self.current_country / rel_filename,
+            self.base_dir / "Photos" / self.current_country / rel_filename,
             self.base_dir / "Images" / rel_filename,
-            self.base_dir / "photos" / rel_filename,
+            self.base_dir / "Photos" / rel_filename,
             self.base_dir / rel_filename
         ]
 
@@ -1574,7 +1520,7 @@ class MainWindow(QMainWindow):
         except Exception as e:
             QMessageBox.critical(self, _("Export Error"), f"{_('Error exporting CSV:')}\n{str(e)}")
 
-    def open_config(self):
+    def open_config_old2(self):
         """Open Application Configuration Dialog and update StampDatabase.cfg upon acceptance."""
         dialog = ConfigDialog(self.config_manager, self)
         if dialog.exec() == QDialog.DialogCode.Accepted:
@@ -1602,6 +1548,40 @@ class MainWindow(QMainWindow):
                 _("Configuration"),
                 _("Configuration updated successfully.\nNote: Changing the language may require restarting the application.")
             )
+
+    def open_config(self):
+        """Open Application Configuration Dialog and update StampDatabase.cfg upon acceptance."""
+        dialog = ConfigDialog(self.config_manager, self)
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            new_settings = dialog.get_selected_config()
+            selected_db_type = new_settings["db_type"]
+            selected_language = new_settings["language"]
+
+            # Vérification de la disponibilité de MS Access si sélectionné
+            if selected_db_type == "access" and not test_ms_access_support():
+                self.show_access_warning_popup()
+                selected_db_type = "sqlite"
+
+            # Sauvegarde effective dans le fichier StampDatabase.cfg
+            self.config_manager.save_config(
+                language=selected_language,
+                db_type=selected_db_type,
+                last_country=self.current_country or ""
+            )
+
+            # Recharger la langue en cache
+            import SDAppLanguage
+            SDAppLanguage.get_language(force_reload=True)
+
+            self.current_db_type = selected_db_type
+            self._load_country_list()
+
+            QMessageBox.information(
+                self,
+                _("Configuration"),
+                _("Configuration updated successfully.\nPlease restart the application to apply language changes.")
+            )
+
     def open_manual(self):
         """Open user manual PDF."""
         manual_path = self.base_dir / "Help" / "StampAlbum Manuel utilisateur 03-11-2024.pdf"
@@ -1610,7 +1590,7 @@ class MainWindow(QMainWindow):
         else:
             QMessageBox.warning(self, _("Manual Error"), _("User manual file not found."))
 
-    def open_about(self):
+    def open_about_old(self):
         """Display About Dialog."""
         QMessageBox.about(
             self,
@@ -1621,6 +1601,11 @@ class MainWindow(QMainWindow):
               "Author: Boris du Reau<br><br>"
               "Part of the StampAlbum Suite.")
         )
+
+    def open_about(self):
+        """Display About Dialog."""
+        dialog = SDAboutDlg(self)
+        dialog.exec()
 
     def closeEvent(self, event):
         """Handle application close with unsaved changes prompt."""
