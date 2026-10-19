@@ -1391,8 +1391,13 @@ class Window(QMainWindow):
 
     def help(self):
         """Open user help PDF document in default system viewer."""
+        lang = get_language()
         docs_dir = self._get_resource_dir("Help")
-        help_file = docs_dir / "StampAlbum Manuel utilisateur 03-11-2024.pdf"
+
+        if lang == "fr":
+            help_file = docs_dir / "StampAlbum Manuel utilisateur 18-10-2026.pdf"
+        else:
+            help_file = docs_dir / "Stamp Album user Manual 18-10-2026.pdf"
 
         if not help_file.is_file():
             QMessageBox.warning(self, _("Help"), _("Help file not found:") + f"\n{help_file}")
