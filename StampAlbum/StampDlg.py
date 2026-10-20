@@ -416,13 +416,31 @@ class StampDlg(QDialog):
 
                 stampSubNbr = retStampInfo[6]
 
-                photoName = self.getPhotoName(str(stampNbr), str(stampType), stampSubNbr)
-                # Chemin portable (Windows / macOS / Linux)
-                photo_path = get_photos_dir() / self.currentCountry / photoName
-                if not photo_path.is_file():
-                    photo_path = get_images_dir() / "blanc.jpg"
-                self.fullPhotoPath = str(photo_path)
+                # photoName = self.getPhotoName(str(stampNbr), str(stampType), stampSubNbr)
+                # # Chemin portable (Windows / macOS / Linux)
+                # photo_path = get_photos_dir() / self.currentCountry / photoName
+                # if not photo_path.is_file():
+                #     photo_path = get_images_dir() / "blanc.jpg"
+                # self.fullPhotoPath = str(photo_path)
+                photoName = self.getPhotoName(str(stampNbr), str(stampType), stampSubNbr)  # [cite: 18]
+                folder_path = get_photos_dir() / self.currentCountry  # [cite: 18]
+                photo_path = folder_path / photoName  # [cite: 18]
 
+                # Si le fichier exact n'est pas trouvé sous Linux, on cherche insensiblement à la casse
+                if not photo_path.is_file() and folder_path.is_dir():
+                    target_name_lower = photoName.lower()
+                    # Recherche du fichier correspondant dans le dossier en ignorant la casse
+                    matching_file = next((f for f in folder_path.iterdir() if f.name.lower() == target_name_lower),
+                                         None)
+
+                    if matching_file:
+                        photo_path = matching_file
+
+                # Si toujours introuvable, fallback sur l'image blanche
+                if not photo_path.is_file():  # [cite: 18]
+                    photo_path = get_images_dir() / "blanc.jpg"  # [cite: 18]
+
+                self.fullPhotoPath = str(photo_path)  # [cite: 18]
                 if self.photo is not None:
                     pix = QPixmap(self.fullPhotoPath)
                     if not pix.isNull():

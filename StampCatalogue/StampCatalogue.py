@@ -966,7 +966,7 @@ class MainWindow(QMainWindow):
 
         return nbr
 
-    def _load_stamp_image(self, stamp_nbr, stamp_type, stamp_sub_nbr=""):
+    def _load_stamp_image_old(self, stamp_nbr, stamp_type, stamp_sub_nbr=""):
         """Display stamp photo using exact getPhotoName and scaling rules."""
         rel_filename = self.getPhotoName(stamp_nbr, stamp_type, stamp_sub_nbr)
 
@@ -980,6 +980,56 @@ class MainWindow(QMainWindow):
         ]
 
         found_path = next((p for p in possible_paths if p.exists()), None)
+
+        if found_path:
+            pixmap = QPixmap(str(found_path))
+            if not pixmap.isNull():
+                if pixmap.width() > pixmap.height():
+                    scaled_pixmap = pixmap.scaledToWidth(200)
+                else:
+                    scaled_pixmap = pixmap.scaledToHeight(200)
+
+                self.img_label.setPixmap(scaled_pixmap)
+                return
+
+        self.img_label.setText(_("No Photo Available"))
+
+    def _find_file_case_insensitive(self, folder_path: Path, filename: str) -> Path:
+        """Recherche un fichier dans un dossier en ignorant la casse des caractères."""
+        if not folder_path.is_dir():
+            return None
+
+        # 1. Test direct (rapide pour Windows ou si la casse correspond exactement sous Linux)
+        exact_path = folder_path / filename
+        if exact_path.exists():
+            return exact_path
+
+        # 2. Recherche insensible à la casse pour Linux
+        target_lower = filename.lower()
+        for item in folder_path.iterdir():
+            if item.is_file() and item.name.lower() == target_lower:
+                return item
+
+        return None
+
+    def _load_stamp_image(self, stamp_nbr, stamp_type, stamp_sub_nbr=""):
+        """Display stamp photo using case-insensitive resolution for Linux."""
+        rel_filename = self.getPhotoName(stamp_nbr, stamp_type, stamp_sub_nbr)
+
+        # Liste des dossiers potentiels où chercher l'image
+        candidate_folders = [
+            self.base_dir / "Images" / str(self.current_country),
+            self.base_dir / "Photos" / str(self.current_country),
+            self.base_dir / "Images",
+            self.base_dir / "Photos",
+            self.base_dir
+        ]
+
+        found_path = None
+        for folder in candidate_folders:
+            found_path = self._find_file_case_insensitive(folder, rel_filename)
+            if found_path:
+                break
 
         if found_path:
             pixmap = QPixmap(str(found_path))
