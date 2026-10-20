@@ -1,10 +1,10 @@
-# Stamp Album & StampCatalogue Suite
+# StampAlbum
 
 [![Python 3.x](https://img.shields.io/badge/python-3.x-blue.svg)](https://www.python.org/)
 [![PyQt6](https://img.shields.io/badge/GUI-PyQt6-green.svg)](https://riverbankcomputing.com/software/pyqt/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**Stamp Album Suite** is a comprehensive set of modern desktop applications designed for philatelists to design custom album pages, manage stamp collections, and track missing stamps.
+**StampAlbum** is a comprehensive modern desktop application designed for philatelists to design custom album pages.
 
 Originally created in VBA (Excel) in the early 2000s, the suite has been modernized and re-engineered in Python 3 and PyQt6.
 
@@ -12,12 +12,10 @@ Originally created in VBA (Excel) in the early 2000s, the suite has been moderni
 
 ---
 
-## 📦 Applications Included
+## 📦 Application Included
 
-The suite consists of two standalone tools:
 
-1. **Stamp Album Creator (`main.py`)**: A rich graphical editor to layout, format, and print custom stamp album pages.
-2. **StampCatalogue (`StampCatalogue.py`)**: An independent collection and inventory manager to track owned/missing stamps across multiple custom collections and export Excel mancolists.
+**Stamp Album Creator (`StampAlbum.py`)**: A rich graphical editor to layout, format, and print custom stamp album pages.
 
 ---
 
@@ -50,21 +48,7 @@ The suite consists of two standalone tools:
 
 ---
 
-### 📚 StampCatalogue (Collection & Mancolist Manager)
-* **Central Collection Management:**
-  * Centralized `collections.db` storing unlimited user-created collections (e.g., *"France Mint 1900-1950"*, *"Monaco Used"*).
-  * Opens country databases in **read-only mode** to guarantee catalogue integrity.
-* **Filter & Search Module:**
-  * Search stamps easily by Country, Type/Category, Year, or Yvert Catalog Number.
-* **Detailed Stamp Record & Image Viewer:**
-  * Complete stamp details (Face value, color, description).
-  * Exact photo resolving engine matching Stamp Album catalogue conventions (`getPhotoName`).
-* **Ownership Tracking:**
-  * Track status (*Not Owned*, *Owned*, *Manco/Wanted*, *Ordered*), conditions (*MNH \*\**, *MH \**, *Cancelled*, *On Cover*), quantities, purchase prices, and custom notes.
-* **Excel Mancolist Generation:**
-  * Export styled, auto-formatted `.xlsx` Excel spreadsheets of missing or wanted stamps for any active collection using `openpyxl`.
 
----
 
 ## 🌐 Multi-Language Support
 
