@@ -125,7 +125,8 @@ class AddStampCommand(QUndoCommand):
     def redo(self):
         self.main_window.db_adapter.insert_stamp(self.stamp_data)
         self.main_window._refresh_table()
-
+        # Sélectionner et faire défiler jusqu'au nouveau timbre inséré
+        self.main_window._select_stamp_by_key_or_nbr(self.stamp_key, self.stamp_data[1])
 
 class DeleteStampsCommand(QUndoCommand):
     """QUndoCommand implementation for deleting one or multiple stamp records."""
@@ -723,7 +724,9 @@ class MainWindow(QMainWindow):
         self.edit_nbr = QLineEdit()
         self.edit_sub_nbr = QLineEdit()
         self.edit_year = QLineEdit()
-        self.edit_type = QLineEdit()
+        #self.edit_type = QLineEdit()
+        self.edit_type = QComboBox()
+        self.edit_type.setEditable(True)
         self.edit_valcolor = QLineEdit()
 
         self.edit_desc1 = QTextEdit()
@@ -1125,6 +1128,13 @@ class MainWindow(QMainWindow):
         self.combo_type.addItems(self.db_adapter.load_types())
         self.combo_type.blockSignals(False)
 
+        # Charger les types existants dans la liste déroulante de l'éditeur
+        self.edit_type.blockSignals(True)
+        self.edit_type.clear()
+        if self.db_adapter:
+            self.edit_type.addItems(self.db_adapter.load_types())
+        self.edit_type.blockSignals(False)
+
         self.combo_year.blockSignals(True)
         self.combo_year.clear()
         self.combo_year.addItem(_("All"))
@@ -1178,7 +1188,9 @@ class MainWindow(QMainWindow):
         self.edit_nbr.setText(str(nbr or ""))
         self.edit_sub_nbr.setText(str(sub_nbr or ""))
         self.edit_year.setText(str(year or ""))
-        self.edit_type.setText(str(stype or ""))
+        #self.edit_type.setText(str(stype or ""))
+        self.edit_type.setCurrentText(str(stype or ""))
+
         self.edit_valcolor.setText(str(valcolor or ""))
         self.edit_desc1.setPlainText(str(desc1 or ""))
         self.edit_desc.setPlainText(str(desc or ""))
@@ -1203,7 +1215,8 @@ class MainWindow(QMainWindow):
             stamp_key,
             self.edit_nbr.text().strip(),
             self.edit_year.text().strip(),
-            self.edit_type.text().strip(),
+            #self.edit_type.text().strip(),
+            self.edit_type.currentText().strip(),
             self.edit_valcolor.text().strip(),
             self.edit_desc1.toPlainText().strip(),
             self.edit_desc.toPlainText().strip(),
@@ -1217,7 +1230,7 @@ class MainWindow(QMainWindow):
         cmd = UpdateStampCommand(self, stamp_key, old_stamp_data, new_stamp_data)
         self.undo_stack.push(cmd)
 
-    def _on_add_stamp_record(self):
+    def _on_add_stamp_record_old(self):
         """Add a new empty stamp record."""
         if not self.db_adapter:
             return
@@ -1238,6 +1251,44 @@ class MainWindow(QMainWindow):
             ""
         )
 
+        cmd = AddStampCommand(self, new_stamp_data)
+        self.undo_stack.push(cmd)
+
+    def _on_add_stamp_record(self):
+        """Add a new empty stamp record and select it."""
+        if not self.db_adapter:
+            return
+
+        new_key = str(self.db_adapter.get_max_key() + 1)
+        new_stamp_data = (
+            new_key,
+            "0",
+            "2026",
+            "Poste",
+            "",
+            "",
+            _("New Stamp Description"),
+            "20",
+            "25",
+            "1000",
+            "1000",
+            ""
+        )
+
+        # Réinitialiser temporairement les filtres pour garantir que le nouveau timbre est visible dans le tableau
+        self.combo_type.blockSignals(True)
+        self.combo_year.blockSignals(True)
+        self.edit_search_nbr.blockSignals(True)
+
+        self.combo_type.setCurrentText(_("All"))
+        self.combo_year.setCurrentText(_("All"))
+        self.edit_search_nbr.clear()
+
+        self.combo_type.blockSignals(False)
+        self.combo_year.blockSignals(False)
+        self.edit_search_nbr.blockSignals(False)
+
+        # Exécuter la commande d'ajout
         cmd = AddStampCommand(self, new_stamp_data)
         self.undo_stack.push(cmd)
 
@@ -1292,6 +1343,13 @@ class MainWindow(QMainWindow):
         self.db_adapter.update_stamp(key, nbr, year, stype, valcolor, desc1, desc, width, height, seq, ascii_seq, sub_nbr)
 
         self._refresh_table()
+        # Recharger les types pour inclure un éventuel nouveau type saisi
+        current_val = self.edit_type.currentText()
+        self.edit_type.blockSignals(True)
+        self.edit_type.clear()
+        self.edit_type.addItems(self.db_adapter.load_types())
+        self.edit_type.setCurrentText(current_val)
+        self.edit_type.blockSignals(False)
 
     def _update_dirty_state(self, is_clean):
         self.is_dirty = not is_clean
@@ -1480,6 +1538,29 @@ class MainWindow(QMainWindow):
 
         self.img_label.setText(_("No Photo Available"))
 
+    def _select_stamp_by_key_or_nbr(self, target_key: str, target_nbr: str):
+        """Recherche le timbre nouvellement créé dans le tableau, le sélectionne et fait défiler la vue dessus."""
+        if not self.table or self.table.rowCount() == 0:
+            return
+
+        for row in range(self.table.rowCount()):
+            item_nbr = self.table.item(row, 0)
+            if not item_nbr:
+                continue
+
+            # Récupérer les métadonnées complètes stockées sur la cellule
+            stamp_data = item_nbr.data(Qt.ItemDataRole.UserRole)
+            if stamp_data:
+                key = stamp_data[0]
+                nbr = stamp_data[1]
+
+                # Vérifier la correspondance par clé ou par numéro
+                if str(key) == str(target_key) or str(nbr) == str(target_nbr):
+                    self.table.selectRow(row)
+                    self.table.scrollToItem(item_nbr, QTableWidget.ScrollHint.EnsureVisible)
+                    self._on_stamp_selected()
+                    break
+
     def import_csv(self):
         """Import CSV file and ADD/INSERT all records into the active database."""
         if not self.db_adapter:
@@ -1569,35 +1650,6 @@ class MainWindow(QMainWindow):
         except Exception as e:
             QMessageBox.critical(self, _("Export Error"), f"{_('Error exporting CSV:')}\n{str(e)}")
 
-    def open_config_old2(self):
-        """Open Application Configuration Dialog and update StampDatabase.cfg upon acceptance."""
-        dialog = ConfigDialog(self.config_manager, self)
-        if dialog.exec() == QDialog.DialogCode.Accepted:
-            new_settings = dialog.get_selected_config()
-            selected_db_type = new_settings["db_type"]
-            selected_language = new_settings["language"]
-
-            # Vérification de la disponibilité de MS Access si sélectionné
-            if selected_db_type == "access" and not test_ms_access_support():
-                self.show_access_warning_popup()
-                selected_db_type = "sqlite"
-
-            # Sauvegarde effective dans le fichier StampDatabase.cfg
-            self.config_manager.save_config(
-                language=selected_language,
-                db_type=selected_db_type,
-                last_country=self.current_country or ""
-            )
-
-            self.current_db_type = selected_db_type
-            self._load_country_list()
-
-            QMessageBox.information(
-                self,
-                _("Configuration"),
-                _("Configuration updated successfully.\nNote: Changing the language may require restarting the application.")
-            )
-
     def open_config(self):
         """Open Application Configuration Dialog and update StampDatabase.cfg upon acceptance."""
         dialog = ConfigDialog(self.config_manager, self)
@@ -1632,24 +1684,25 @@ class MainWindow(QMainWindow):
             )
 
     def open_manual(self):
+        print("open_manual")
+        """Open language-specific manual file."""
+        #lang = self.config_manager.get_language()
+        lang = self.config_manager.language
+        print(lang)
+        doc_dir = self.base_dir / "Help"
+        print(lang)
+        if lang == "fr":
+            manual_path = doc_dir / "StampDatabase Manuel utilisateur 19-10-2026.pdf"
+        else:
+            manual_path = doc_dir / "StampDatabase User Manual 19-10-2026.pdf"
+
+        print(manual_path)
         """Open user manual PDF."""
-        manual_path = self.base_dir / "Help" / "StampAlbum Manuel utilisateur 03-11-2024.pdf"
+        #manual_path = self.base_dir / "Help" / "StampAlbum Manuel utilisateur 03-11-2024.pdf"
         if manual_path.exists():
             QDesktopServices.openUrl(QUrl.fromLocalFile(str(manual_path)))
         else:
             QMessageBox.warning(self, _("Manual Error"), _("User manual file not found."))
-
-    def open_about_old(self):
-        """Display About Dialog."""
-        QMessageBox.about(
-            self,
-            _("About StampDatabase"),
-            _("<b>StampDatabase</b><br>"
-              "Catalogue Administration Tool<br>"
-              "Version 1.0.0 (2002-2026)<br>"
-              "Author: Boris du Reau<br><br>"
-              "Part of the StampAlbum Suite.")
-        )
 
     def open_about(self):
         """Display About Dialog."""

@@ -328,33 +328,6 @@ class MainWindow(QMainWindow):
         self._init_ui()
         self._load_collections()
 
-    def _get_app_dir_old(self) -> Path:
-        if getattr(sys, 'frozen', False):
-            return Path(sys.executable).resolve().parent
-        return Path(__file__).resolve().parent
-
-    def _get_app_dir_old2(self) -> Path:
-        """
-        Détermine le répertoire racine de l'application.
-
-        - Si exécuté en EXE : renvoie le répertoire où se trouve l'exécutable.
-        - Si exécuté depuis Python (.py dans un sous-dossier) : remonte au dossier parent
-          si 'Databases' ou 'Images' s'y trouve, sinon renvoie le dossier du script.
-        """
-        if getattr(sys, 'frozen', False):
-            # Mode exécutable (EXE) : le dossier de l'exécutable
-            return Path(sys.executable).resolve().parent
-        else:
-            # Mode script Python (.py)
-            script_dir = Path(__file__).resolve().parent
-            parent_dir = script_dir.parent
-
-            # Si le script est dans un sous-dossier et que 'Databases' ou 'Images' existe au niveau parent
-            if (parent_dir / "Databases").exists() or (parent_dir / "Images").exists():
-                return parent_dir
-
-            return script_dir
-
     def _get_app_dir(self) -> Path:
         """
         Détermine le répertoire racine de l'application.
@@ -611,22 +584,6 @@ class MainWindow(QMainWindow):
 
         main_layout.addWidget(splitter)
 
-    def _open_settings_old(self):
-        """Open settings dialog and save updated INI configuration."""
-        dialog = ConfigurationDialog(
-            current_lang=self.config_manager.get_language(),
-            current_db_type=self.config_manager.get_db_type(),
-            parent=self
-        )
-        if dialog.exec() == QDialog.DialogCode.Accepted:
-            new_lang, new_db_type = dialog.get_settings()
-            self.config_manager.set_settings(new_lang, new_db_type)
-            QMessageBox.information(
-                self,
-                _("Settings Saved"),
-                _("Configuration saved to StampCatalogue.cfg.\nPlease restart the application to apply changes.")
-            )
-
     def _open_settings(self):
         """Open settings dialog and save updated INI configuration."""
         dialog = ConfigurationDialog(
@@ -648,20 +605,6 @@ class MainWindow(QMainWindow):
                 _("Configuration saved to StampCatalogue.cfg.\nPlease restart the application to apply language changes.")
             )
 
-    def _show_about_old(self):
-        """Display 'About' dialog with application description."""
-        about_text = _(
-            "StampCatalogue v1.2\n\n"
-            "A standalone desktop application designed for philatelists to:\n"
-            "- Manage multiple stamp collections across different countries.\n"
-            "- Browse country-specific stamp catalogues.\n"
-            "- Track stamp ownership status, condition, purchase price, and notes.\n"
-            "- Export mancolists (missing stamps) directly to Excel.\n\n"
-            "Author: Boris du Reau / AI Assistant\n"
-            "Year: 2026"
-        )
-        QMessageBox.about(self, _("About StampCatalogue"), about_text)
-
     def _show_about(self):
         """Affiche la boîte de dialogue 'À propos' personnalisée."""
         dialog = SCAboutDlg(self)
@@ -670,21 +613,25 @@ class MainWindow(QMainWindow):
     def _open_manual(self):
         """Open language-specific manual file."""
         lang = self.config_manager.get_language()
-        doc_dir = self.base_dir / "docs"
+        doc_dir = self.base_dir / "Help"
 
         # Try language-specific file, fall back to English
-        manual_path = doc_dir / f"manual_{lang}.pdf"
-        if not manual_path.exists():
-            manual_path = doc_dir / "manual_en.pdf"
+        # manual_path = doc_dir / f"manual_{lang}.pdf"
+        # if not manual_path.exists():
+        #     manual_path = doc_dir / "manual_en.pdf"
+        if lang == "fr":
+            help_file = doc_dir / "StampCatalogue Documentation Utilisateur19-10-2026.pdf"
+        else:
+            help_file = doc_dir / "StampCatalogue User Guide19-10-2026.pdf"
 
-        if manual_path.exists():
+        if help_file.exists():
             try:
                 if sys.platform == 'win32':
-                    os.startfile(manual_path)
+                    os.startfile(help_file)
                 elif sys.platform == 'darwin':
-                    subprocess.run(["open", str(manual_path)])
+                    subprocess.run(["open", str(help_file)])
                 else:
-                    subprocess.run(["xdg-open", str(manual_path)])
+                    subprocess.run(["xdg-open", str(help_file)])
             except Exception as e:
                 QMessageBox.critical(self, _("Error"), f"{_('Could not open manual:')}\n{str(e)}")
         else:
@@ -965,34 +912,6 @@ class MainWindow(QMainWindow):
                 nbr = "T01-000-" + stampNumber_str + subNbr + ".jpg"
 
         return nbr
-
-    def _load_stamp_image_old(self, stamp_nbr, stamp_type, stamp_sub_nbr=""):
-        """Display stamp photo using exact getPhotoName and scaling rules."""
-        rel_filename = self.getPhotoName(stamp_nbr, stamp_type, stamp_sub_nbr)
-
-        # Build potential absolute image paths
-        possible_paths = [
-            self.base_dir / "Images" / self.current_country / rel_filename,
-            self.base_dir / "Photos" / self.current_country / rel_filename,
-            self.base_dir / "Images" / rel_filename,
-            self.base_dir / "Photos" / rel_filename,
-            self.base_dir / rel_filename
-        ]
-
-        found_path = next((p for p in possible_paths if p.exists()), None)
-
-        if found_path:
-            pixmap = QPixmap(str(found_path))
-            if not pixmap.isNull():
-                if pixmap.width() > pixmap.height():
-                    scaled_pixmap = pixmap.scaledToWidth(200)
-                else:
-                    scaled_pixmap = pixmap.scaledToHeight(200)
-
-                self.img_label.setPixmap(scaled_pixmap)
-                return
-
-        self.img_label.setText(_("No Photo Available"))
 
     def _find_file_case_insensitive(self, folder_path: Path, filename: str) -> Path:
         """Recherche un fichier dans un dossier en ignorant la casse des caractères."""
