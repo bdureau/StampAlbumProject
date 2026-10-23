@@ -24,10 +24,6 @@ msgstr "Modifier timbre"
 msgid "&Change image ..."
 msgstr "&Changer image..."
 
-#: EditStampDlg.py:64 EditStampDlg.py:86
-msgid "Pochette type"
-msgstr "Type de pochette"
-
 #: EditStampDlg.py:77
 msgid "Title:"
 msgstr "Titre:"
@@ -39,3 +35,19 @@ msgstr "Numéro"
 #: EditStampDlg.py:79
 msgid "Value"
 msgstr "Valeure"
+
+#: EditStampDlg.py:64 EditStampDlg.py:86
+msgid "Pochette type"
+msgstr "Type de pochette"
+
+#: EditStampDlg.py:101
+msgid "Database error"
+msgstr "Erreur base de données"
+
+#: EditStampDlg.py:142
+msgid "Select picture"
+msgstr "Choisir image"
+
+
+
+

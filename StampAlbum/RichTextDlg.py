@@ -17,7 +17,8 @@ from PyQt6.QtWidgets import (
 )
 
 from AppLanguage import get_language
-from SAAppPaths import get_images_dir
+#from SAAppPaths import get_images_dir
+from SAAppPaths import get_images_dir, get_config_value
 
 # Set up gettext localization
 gettext.find("RichTextDlg")
@@ -40,6 +41,10 @@ class RichTextDlg(QDialog):
             self.editor.blockSignals(True)
             self.editor.setHtml(self.text_item.toHtml())
             self.editor.blockSignals(False)
+        else:
+            # Appliquer la police par défaut au curseur du nouvel éditeur
+            default_font_name = get_config_value('default font', 'Arial')
+            self.editor.setFontFamily(default_font_name)
 
     def _get_icon(self, icon_name: str) -> QIcon:
         """
@@ -65,6 +70,11 @@ class RichTextDlg(QDialog):
         # Font family picker
         self.font_combo = QFontComboBox()
         self.font_combo.setToolTip(_("Font Family"))
+
+        # Charger la police par défaut depuis la configuration
+        default_font_name = get_config_value('default font', 'Arial')
+        self.font_combo.setCurrentFont(QFont(default_font_name))
+
         self.font_combo.currentFontChanged.connect(self._set_font_family)
         toolbar.addWidget(self.font_combo)
 

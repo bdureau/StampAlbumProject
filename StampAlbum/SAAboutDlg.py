@@ -92,6 +92,12 @@ class AboutDlg(QDialog):
 
         # OK Button
         button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok)
+
+        # --- Traduction du bouton OK ---
+        ok_button = button_box.button(QDialogButtonBox.StandardButton.Ok)
+        if ok_button:
+            ok_button.setText(_("OK"))
+
         button_box.accepted.connect(self.accept)
         main_layout.addWidget(button_box)
 

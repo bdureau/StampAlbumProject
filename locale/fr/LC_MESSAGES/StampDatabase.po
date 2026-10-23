@@ -314,7 +314,7 @@ msgstr "Erreur de conversion"
 
 #: StampDatabase.py:1057
 msgid "Error importing Access database:"
-msgstr ""
+msgstr "Erreur d\'importation de la base Access"
 
 #: StampDatabase.py:1062
 msgid "Creating a new database is only supported for SQLite."
@@ -366,7 +366,7 @@ msgstr "Changements non sauvegardé"
 
 #: StampDatabase.py:1368
 msgid "You have unsaved database changes. Do you want to save them now?"
-msgstr ""
+msgstr "Vous avez des modification de base non sauvegarder. Voulez vous les sauvegarder maintenant?"
 
 #: StampDatabase.py:1500
 msgid "Import CSV File"
@@ -374,7 +374,7 @@ msgstr "Importer fichier CSV"
 
 #: StampDatabase.py:1542
 msgid "Error importing CSV:"
-msgstr ""
+msgstr "Erreur d\'importation du CSV"
 
 #: StampDatabase.py:1542
 msgid "Import Error"
@@ -382,7 +382,7 @@ msgstr "Erreur d\'importation"
 
 #: StampDatabase.py:1557
 msgid "Export CSV File"
-msgstr ""
+msgstr "Exporter fichier CSV"
 
 #: StampDatabase.py:1573
 msgid "Catalogue exported to CSV successfully."
@@ -390,7 +390,7 @@ msgstr ""
 
 #: StampDatabase.py:1573
 msgid "Export Success"
-msgstr ""
+msgstr "Succés de l\'export"
 
 #: StampDatabase.py:1575
 msgid "Error exporting CSV:"

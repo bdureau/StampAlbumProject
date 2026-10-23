@@ -57,7 +57,7 @@ class DB:
 
     def _connect_access(self, path: Path):
         if pyodbc is None:
-            raise RuntimeError("pyodbc is required to open Microsoft Access Databases")
+            raise RuntimeError(_("pyodbc is required to open Microsoft Access Databases"))
         if not path.is_file():
             raise FileNotFoundError(f"Database not found: {path}")
         return pyodbc.connect(f"Driver={{Microsoft Access Driver (*.mdb, *.accdb)}};DBQ={path};")

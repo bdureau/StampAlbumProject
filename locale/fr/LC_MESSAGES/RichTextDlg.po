@@ -17,7 +17,7 @@ msgstr ""
 
 #: RichTextDlg.py:28
 msgid "Rich Text Editor"
-msgstr ""
+msgstr "Editeur de text Riche"
 
 #: RichTextDlg.py:46
 msgid "Font Family"

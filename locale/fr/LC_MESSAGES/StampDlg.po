@@ -58,7 +58,7 @@ msgstr "Type de timbre:"
 
 #: StampDlg.py:137
 msgid "Selected country:"
-msgstr "Choisir le pays:"
+msgstr "Pays choisi:"
 
 #: StampDlg.py:138
 msgid "Witdh:"
@@ -88,6 +88,31 @@ msgstr "Description du timbre 2:"
 msgid "&Create"
 msgstr "&Créer"
 
+#: StampDlg.py:186
+msgid "&Create from size"
+msgstr "Créer taille"
+
 #: StampDlg.py:157
 msgid "&Done"
 msgstr "&Fermer"
+
+#: StampDlg.py:226
+msgid "No database"
+msgstr "Pas de base"
+
+#: StampDlg.py:227
+msgid "No country database was found in the 'Databases' folder."
+msgstr "Pas de base pays trouvée dans le dossier 'Database'"
+
+#: StampDlg.py:237 StampDlg.py:457
+msgid "Database error"
+msgstr "Erreur de base"
+
+#: StampDlg.py:647
+msgid "Invalid size"
+msgstr "Taille invalide"
+
+#: StampDlg.py:647
+msgid "Width and height must be numbers (mm)."
+msgstr "Largeur et hauteur doivent etre des entier (mm)"
+

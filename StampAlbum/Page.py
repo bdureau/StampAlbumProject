@@ -135,10 +135,18 @@ class Page(QGraphicsScene):
         scale = printer.resolution() / 96.0
         source = QtCore.QRectF(0, 0, self.width(), self.height())
         target = QRectF(0, 0, source.width() * scale, source.height() * scale)
+
+        # Sauvegarde du fond actuel
+        saved_brush = self.backgroundBrush()
+
         guides = self.hiddenGuides()
         try:
+            # Force un fond blanc pur pour l'impression
+            self.setBackgroundBrush(QBrush(Qt.GlobalColor.white))
             self.render(painter, target, source)
         finally:
+            # Restaure le fond (avec grille s'il y en avait une) et réaffiche les guides
+            self.setBackgroundBrush(saved_brush)
             for g in guides:
                 g.show()
 
@@ -196,7 +204,7 @@ class Page(QGraphicsScene):
         border.setPos(margin_left, margin_top2)
         self.addItem(border)
 
-    def addTextLabel(self, text, x=20, y=20, font=None, align=Qt.AlignmentFlag.AlignCenter, labelType="textLabel"):
+    def addTextLabel_old(self, text, x=20, y=20, font=None, align=Qt.AlignmentFlag.AlignCenter, labelType="textLabel"):
         """Add a text label to the page with alignment and font attributes."""
         textLabel = QGraphicsTextItem(text)
         textLabel.setData(0, labelType)
@@ -224,7 +232,38 @@ class Page(QGraphicsScene):
 
         self.addItemWithUndo(textLabel, _("Add Text"))
 
-    def addRichText(self, html_content="", x=50, y=50, label_type="richTextLabel"):
+    def addTextLabel(self, text, x=20, y=20, font=None, align=Qt.AlignmentFlag.AlignCenter, labelType="textLabel"):
+        """Add a text label to the page with alignment and font attributes."""
+        textLabel = QGraphicsTextItem(text)
+        textLabel.setData(0, labelType)
+
+        # Si aucune police n'est spécifiée, on récupère la police par défaut de la configuration
+        if font is None:
+            default_font_family = get_config_value('default font', 'Arial')
+            font = QFont(default_font_family, 10)  # On applique la famille configurée
+
+        textLabel.setFont(font)
+        textLabel.setTextWidth(textLabel.boundingRect().size().width())
+
+        cursor = textLabel.textCursor()
+        cursor.select(QTextCursor.SelectionType.Document)
+        format = QTextBlockFormat()
+        format.setAlignment(align)
+        cursor.mergeBlockFormat(format)
+        cursor.clearSelection()
+        textLabel.setTextCursor(cursor)
+
+        textLabel.setPos(x, y)
+
+        textLabel.setTextInteractionFlags(Qt.TextInteractionFlag.NoTextInteraction)
+        textLabel.setFlags(
+            QGraphicsTextItem.GraphicsItemFlag.ItemIsMovable |
+            QGraphicsTextItem.GraphicsItemFlag.ItemIsSelectable
+        )
+
+        self.addItemWithUndo(textLabel, _("Add Text"))
+
+    def addRichText_old(self, html_content="", x=50, y=50, label_type="richTextLabel"):
         """Add a rich-text block supporting HTML content."""
         text_item = QGraphicsTextItem()
         text_item.setData(0, label_type)
@@ -234,6 +273,36 @@ class Page(QGraphicsScene):
         else:
             text_item.setHtml(
                 "<p style='font-family:Sans-Serif; font-size:12pt;'>Double-click to edit rich text...</p>")
+
+        text_item.setTextWidth(200)
+        text_item.setPos(x, y)
+
+        text_item.setTextInteractionFlags(Qt.TextInteractionFlag.NoTextInteraction)
+        text_item.setFlags(
+            QGraphicsTextItem.GraphicsItemFlag.ItemIsMovable |
+            QGraphicsTextItem.GraphicsItemFlag.ItemIsSelectable
+        )
+
+        if hasattr(self, 'addItemWithUndo'):
+            self.addItemWithUndo(text_item, _("Add Rich Text"))
+        else:
+            self.addItem(text_item)
+
+        return text_item
+
+    def addRichText(self, html_content="", x=50, y=50, label_type="richTextLabel"):
+        """Add a rich-text block supporting HTML content."""
+        text_item = QGraphicsTextItem()
+        text_item.setData(0, label_type)
+
+        if html_content:
+            text_item.setHtml(html_content)
+        else:
+            # Récupération de la police par défaut configurée
+            default_font_family = get_config_value('default font', 'Sans-Serif')
+            text_item.setHtml(
+                f"<p style='font-family:{default_font_family}; font-size:12pt;'>Double-click to edit rich text...</p>"
+            )
 
         text_item.setTextWidth(200)
         text_item.setPos(x, y)
@@ -468,7 +537,22 @@ class Page(QGraphicsScene):
             align = dlg.eTXT.alignment()
             self.addTextLabel(text, 50, 50, font, align)
 
-    def newCopyRight(self):
+    def _get_bottom_footer_y(self, offset_above_border=18.0) -> float:
+        """
+        Calcule la position Y idéale du pied de page (copyright, numéro de page)
+        pour qu'il se place légèrement au-dessus du bas du cadre.
+        """
+        border_item = next((it for it in self.items() if it.data(0) == "borderGroup"), None)
+        if border_item:
+            # Récupère le bas exact du cadre/bordure
+            border_bottom = border_item.sceneBoundingRect().bottom()
+            return border_bottom - offset_above_border
+        else:
+            # S'il n'y a pas encore de cadre, on se base sur la hauteur de la scène
+            px_h = self.sceneRect().height()
+            return px_h - 50.0
+
+    def newCopyRight_old(self):
         """Add a copyright footer to the page."""
         text = get_config_value('copyright', "CopyRight © Boris du Reau 2003-2026")
 
@@ -478,6 +562,40 @@ class Page(QGraphicsScene):
             self.addTextLabel(text, 80, 1045, font, Qt.AlignmentFlag.AlignLeft, "labelCopyRight")
         else:
             self.addTextLabel(text, 60, 710, font, Qt.AlignmentFlag.AlignLeft, "labelCopyRight")
+
+    def newCopyRight(self):
+        """Add a copyright footer to the page."""
+        text = get_config_value('copyright', "CopyRight © Boris du Reau 2003-2026")
+
+        font = QFont()
+        font.setPointSize(6)
+
+        # Calcul dynamique de la position Y et X par rapport au cadre
+        y_pos = self._get_bottom_footer_y(offset_above_border=28.0)
+
+        border_item = next((it for it in self.items() if it.data(0) == "borderGroup"), None)
+        if border_item:
+            x_pos = border_item.sceneBoundingRect().left() + 10.0
+        else:
+            x_pos = 80.0 if self.pageType == "portrait" else 60.0
+
+        self.addTextLabel(text, x_pos, y_pos, font, Qt.AlignmentFlag.AlignLeft, "labelCopyRight")
+
+    def newPageNbr_old(self):
+        """Prompt user and create a page number label."""
+        textLabel = QGraphicsTextItem("")
+        textLabelFont = textLabel.font()
+        textLabelFont.setPointSize(8)
+        textLabel.setFont(textLabelFont)
+
+        dlg = TextDlg(textLabel)
+        res = dlg.exec()
+
+        if res == 1:
+            text = dlg.eTXT.toPlainText()
+            font = dlg.eTXT.font()
+            align = dlg.eTXT.alignment()
+            self.addPageNbr(text, font, align)
 
     def newPageNbr(self):
         """Prompt user and create a page number label."""
@@ -495,7 +613,7 @@ class Page(QGraphicsScene):
             align = dlg.eTXT.alignment()
             self.addPageNbr(text, font, align)
 
-    def addPageNbr(self, pageName, font, align=Qt.AlignmentFlag.AlignLeft):
+    def addPageNbr_old(self, pageName, font, align=Qt.AlignmentFlag.AlignLeft):
         """Position page number label at the bottom right of the page."""
         textLabel = QGraphicsTextItem(pageName)
         textLabel.setFont(font)
@@ -506,6 +624,25 @@ class Page(QGraphicsScene):
         else:
             self.addTextLabel(pageName, (self.page_height_mm / (25.4 / 96)) - 60 - textWidth, 710, font, align,
                               "labelPageNbr")
+
+    def addPageNbr(self, pageName, font, align=Qt.AlignmentFlag.AlignLeft):
+        """Position page number label at the bottom right inside the border frame."""
+        textLabel = QGraphicsTextItem(pageName)
+        textLabel.setFont(font)
+        textWidth = textLabel.boundingRect().size().width()
+
+        y_pos = self._get_bottom_footer_y(offset_above_border=28.0)
+
+        border_item = next((it for it in self.items() if it.data(0) == "borderGroup"), None)
+        if border_item:
+            # Calcule la position X par rapport au bord droit du cadre
+            border_right = border_item.sceneBoundingRect().right()
+            x_pos = border_right - textWidth - 10.0
+        else:
+            px_w = self.sceneRect().width()
+            x_pos = px_w - 60.0 - textWidth
+
+        self.addTextLabel(pageName, x_pos, y_pos, font, align, "labelPageNbr")
 
     def addPageYear(self):
         """Prompt user for year and place a header year label."""
@@ -524,7 +661,7 @@ class Page(QGraphicsScene):
             align = dlg.eTXT.alignment()
             self.addYear(text, font, align)
 
-    def addYear(self, year, font, align):
+    def addYear_old(self, year, font, align):
         """Position year header label at top center of the page."""
         textLabel = QGraphicsTextItem(year)
         textLabel.setFont(font)
@@ -536,6 +673,23 @@ class Page(QGraphicsScene):
         else:
             self.addTextLabel(year, (px_h - textWidth) / 2, 80, font, Qt.AlignmentFlag.AlignLeft, "labelYear")
 
+    def addYear(self, year, font, align):
+        """Position year header label at top center inside/above the border frame."""
+        textLabel = QGraphicsTextItem(year)
+        textLabel.setFont(font)
+        textWidth = textLabel.boundingRect().size().width()
+
+        border_item = next((it for it in self.items() if it.data(0) == "borderGroup"), None)
+        if border_item:
+            border_rect = border_item.sceneBoundingRect()
+            x_pos = border_rect.left() + (border_rect.width() - textWidth) / 2.0
+            y_pos = border_rect.top() + 10.0
+        else:
+            px_w = self.sceneRect().width()
+            x_pos = (px_w - textWidth) / 2.0
+            y_pos = 80.0
+
+        self.addTextLabel(year, x_pos, y_pos, font, align, "labelYear")
     @undoable_move("Align Top")
     def alignTop(self):
         topY = 0.0
@@ -824,7 +978,7 @@ class Page(QGraphicsScene):
 
         self.mouse_press_positions.clear()
 
-    def autoArrangeStamps(self):
+    def autoArrangeStamps_old(self):
         """Organise et aligne harmonieusement les timbres sélectionnés ou tous les timbres."""
         # 1. Sélectionner les timbres à organiser
         selected_stamps = [
@@ -923,6 +1077,266 @@ class Page(QGraphicsScene):
             current_y += row_heights[i] + v_gap
 
         # 5. Enregistrer le déplacement pour la fonction "Undo" (Annuler)
+        moved_items = []
+        old_moved_positions = []
+        for it, old_pos in zip(stamps, old_positions):
+            if it.pos() != old_pos:
+                moved_items.append(it)
+                old_moved_positions.append(old_pos)
+
+        if moved_items:
+            cmd = MoveCommand(moved_items, old_moved_positions)
+            self.undoStack.push(cmd)
+
+    def autoArrangeStamps_old2(self):
+        """Organise et aligne harmonieusement les timbres sans jamais dépasser la bordure de page."""
+        # 1. Sélectionner les timbres à organiser
+        selected_stamps = [
+            it for it in self.selectedItems()
+            if it.parentItem() is None and it.data(0) == "stampGroup"
+        ]
+        stamps = selected_stamps if len(selected_stamps) > 1 else [
+            it for it in self.items()
+            if it.parentItem() is None and it.data(0) == "stampGroup"
+        ]
+
+        if not stamps:
+            return
+
+        # Sauvegarder les positions pour le "Undo"
+        old_positions = [it.pos() for it in stamps]
+
+        # 2. Déterminer la zone limite (Inner Rect) de la bordure ou des marges de page
+        border_item = next((it for it in self.items() if it.data(0) == "borderGroup"), None)
+        if border_item:
+            # Récupère le rectangle exact de la bordure dans la scène
+            border_rect = border_item.sceneBoundingRect()
+            # Marge de sécurité interne par rapport à la ligne de bordure
+            padding = 10.0
+            min_x_limit = border_rect.left() + padding
+            max_x_limit = border_rect.right() - padding
+            min_y_limit = border_rect.top() + padding
+            max_y_limit = border_rect.bottom() - padding
+        else:
+            # Fallback sur les dimensions de la scène avec marges par défaut
+            px_w = self.sceneRect().width()
+            px_h = self.sceneRect().height()
+            min_x_limit = 50.0
+            max_x_limit = px_w - 50.0
+            min_y_limit = 100.0
+            max_y_limit = px_h - 100.0
+
+        available_w = max(100.0, max_x_limit - min_x_limit)
+        available_h = max(100.0, max_y_limit - min_y_limit)
+
+        # 3. Regrouper les timbres en rangées (clustering basé sur Y)
+        stamps_by_y = sorted(stamps, key=lambda s: s.y())
+        rows = []
+        y_threshold = 100.0  # Tolérance de proximité Y
+
+        for stamp in stamps_by_y:
+            placed = False
+            for row in rows:
+                avg_y = sum(s.y() for s in row) / len(row)
+                if abs(stamp.y() - avg_y) < y_threshold:
+                    row.append(stamp)
+                    placed = True
+                    break
+            if not placed:
+                rows.append([stamp])
+
+        # Trier chaque rangée de gauche à droite, puis les rangées de haut en bas
+        for row in rows:
+            row.sort(key=lambda s: s.x())
+        rows.sort(key=lambda r: sum(s.y() for s in r) / len(r))
+
+        # 4. Calcul des espacements verticaux
+        row_heights = [max(s.boundingRect().height() for s in row) for row in rows]
+        total_rows_h = sum(row_heights)
+
+        if len(rows) > 1:
+            raw_v_gap = (available_h - total_rows_h) / (len(rows) - 1)
+            # Réduire l'espacement si les rangées sont nombreuses pour ne pas déborder
+            v_gap = max(10.0, min(raw_v_gap, 80.0))
+        else:
+            v_gap = 20.0
+
+        # Répartir le bloc verticalement au centre de la zone disponible
+        total_block_h = total_rows_h + (len(rows) - 1) * v_gap
+        current_y = min_y_limit + max(0.0, (available_h - total_block_h) / 2.0)
+
+        # 5. Appliquer les nouvelles positions avec contraintes de bordure stricte
+        for i, row in enumerate(rows):
+            total_stamps_w = sum(s.boundingRect().width() for s in row)
+
+            # Calcul de l'espacement horizontal dynamique selon la largeur de la rangée
+            if len(row) > 1:
+                raw_h_spacing = (available_w - total_stamps_w) / (len(row) - 1)
+                h_spacing = max(10.0, min(raw_h_spacing, 40.0))
+            else:
+                h_spacing = 0.0
+
+            row_width = total_stamps_w + (len(row) - 1) * h_spacing
+            start_x = min_x_limit + max(0.0, (available_w - row_width) / 2.0)
+
+            # Alignement vertical des cadres (stampBox) dans la rangée
+            box_offsets = []
+            for stamp in row:
+                box = next((c for c in stamp.childItems() if c.data(0) == "stampBox"), None)
+                box_offsets.append(box.y() if box else 0.0)
+
+            target_box_offset = max(box_offsets) if box_offsets else 0.0
+
+            current_x = start_x
+            for j, stamp in enumerate(row):
+                y_adjust = target_box_offset - box_offsets[j]
+
+                # Position visée
+                target_x = current_x - stamp.boundingRect().x()
+                target_y = current_y + y_adjust - stamp.boundingRect().y()
+
+                # Clamping / Sécurité stricte : empêche le timbre de dépasser de la bordure
+                stamp_w = stamp.boundingRect().width()
+                stamp_h = stamp.boundingRect().height()
+
+                final_x = max(min_x_limit, min(target_x, max_x_limit - stamp_w))
+                final_y = max(min_y_limit, min(target_y, max_y_limit - stamp_h))
+
+                stamp.setPos(final_x, final_y)
+                current_x += stamp_w + h_spacing
+
+            current_y += row_heights[i] + v_gap
+
+        # 6. Enregistrer le déplacement pour la fonction Undo
+        moved_items = []
+        old_moved_positions = []
+        for it, old_pos in zip(stamps, old_positions):
+            if it.pos() != old_pos:
+                moved_items.append(it)
+                old_moved_positions.append(old_pos)
+
+        if moved_items:
+            cmd = MoveCommand(moved_items, old_moved_positions)
+            self.undoStack.push(cmd)
+
+    def autoArrangeStamps(self):
+        """Organise les timbres par ordre de numéro sans chevauchement ni dépassement de bordure."""
+        # 1. Sélectionner les timbres à organiser
+        selected_stamps = [
+            it for it in self.selectedItems()
+            if it.parentItem() is None and it.data(0) == "stampGroup"
+        ]
+        stamps = selected_stamps if len(selected_stamps) > 1 else [
+            it for it in self.items()
+            if it.parentItem() is None and it.data(0) == "stampGroup"
+        ]
+
+        if not stamps:
+            return
+
+        # Sauvegarder les positions d'origine pour la fonction "Undo" (Ctrl+Z)
+        old_positions = [it.pos() for it in stamps]
+
+        # 2. Tri intelligent par numéro de timbre (se suivant)
+        def get_stamp_number_key(stamp):
+            """Extrait le texte du numéro de timbre pour un tri naturel (ex: 1, 2, 10 au lieu de 1, 10, 2)."""
+            nbr_item = next((c for c in stamp.childItems() if c.data(0) == "stampNbr"), None)
+            text = nbr_item.toPlainText().strip() if nbr_item else ""
+
+            # Découpage du numéro pour trier correctement les chiffres et lettres (ex: "T01-12", "12a")
+            import re
+            parts = re.split(r'(\d+)', text)
+            return [int(p) if p.isdigit() else p.lower() for p in parts if p]
+
+        stamps.sort(key=get_stamp_number_key)
+
+        # 3. Déterminer la zone limite (cadre interne) de la bordure
+        border_item = next((it for it in self.items() if it.data(0) == "borderGroup"), None)
+        if border_item:
+            border_rect = border_item.sceneBoundingRect()
+            padding = 10.0  # Marge de sécurité interne
+            min_x_limit = border_rect.left() + padding
+            max_x_limit = border_rect.right() - padding
+            min_y_limit = border_rect.top() + padding
+            max_y_limit = border_rect.bottom() - padding
+        else:
+            px_w = self.sceneRect().width()
+            px_h = self.sceneRect().height()
+            min_x_limit = 50.0
+            max_x_limit = px_w - 50.0
+            min_y_limit = 100.0
+            max_y_limit = px_h - 100.0
+
+        available_w = max(100.0, max_x_limit - min_x_limit)
+
+        # 4. Paramètres d'espacement minimal
+        h_spacing = 20.0  # Marge horizontale entre deux timbres
+        v_spacing = 25.0  # Marge verticale entre deux rangées
+
+        # 5. Découpage automatique des timbres en rangées sans chevauchement horizontal
+        rows = []
+        current_row = []
+        current_row_w = 0.0
+
+        for stamp in stamps:
+            stamp_w = stamp.boundingRect().width()
+
+            # Vérifier si l'ajout du timbre dépasse la largeur maximale disponible
+            if current_row and (current_row_w + h_spacing + stamp_w > available_w):
+                rows.append(current_row)
+                current_row = [stamp]
+                current_row_w = stamp_w
+            else:
+                if current_row:
+                    current_row_w += h_spacing + stamp_w
+                else:
+                    current_row_w = stamp_w
+                current_row.append(stamp)
+
+        if current_row:
+            rows.append(current_row)
+
+        # 6. Placement et centrage des rangées dans la page
+        row_heights = [max(s.boundingRect().height() for s in row) for row in rows]
+        total_block_h = sum(row_heights) + (len(rows) - 1) * v_spacing
+
+        # Centrer verticalement le groupe complet de rangées
+        current_y = min_y_limit + max(0.0, (max_y_limit - min_y_limit - total_block_h) / 2.0)
+
+        for i, row in enumerate(rows):
+            total_stamps_w = sum(s.boundingRect().width() for s in row)
+            actual_row_w = total_stamps_w + (len(row) - 1) * h_spacing
+
+            # Centrer chaque rangée horizontalement à l'intérieur des bordures
+            current_x = min_x_limit + max(0.0, (available_w - actual_row_w) / 2.0)
+
+            # Alignement vertical sur les poches (stampBox)
+            box_offsets = []
+            for stamp in row:
+                box = next((c for c in stamp.childItems() if c.data(0) == "stampBox"), None)
+                box_offsets.append(box.y() if box else 0.0)
+
+            target_box_offset = max(box_offsets) if box_offsets else 0.0
+
+            for j, stamp in enumerate(row):
+                y_adjust = target_box_offset - box_offsets[j]
+
+                target_x = current_x - stamp.boundingRect().x()
+                target_y = current_y + y_adjust - stamp.boundingRect().y()
+
+                # Clamping / Sécurité stricte anti-débordement
+                stamp_w = stamp.boundingRect().width()
+                stamp_h = stamp.boundingRect().height()
+
+                final_x = max(min_x_limit, min(target_x, max_x_limit - stamp_w))
+                final_y = max(min_y_limit, min(target_y, max_y_limit - stamp_h))
+
+                stamp.setPos(final_x, final_y)
+                current_x += stamp_w + h_spacing
+
+            current_y += row_heights[i] + v_spacing
+
+        # 7. Enregistrer le déplacement global dans l'historique d'annulation (Undo)
         moved_items = []
         old_moved_positions = []
         for it, old_pos in zip(stamps, old_positions):

@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2026-10-18 20:55+0200\n"
+"POT-Creation-Date: 2026-10-23 21:50+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -36,30 +36,38 @@ msgid "Dentelle (Philately)"
 msgstr ""
 
 #: ConfigDlg.py:86
-msgid "Default Copyright:"
-msgstr ""
-
-#: ConfigDlg.py:87
-msgid "Language:"
-msgstr ""
-
-#: ConfigDlg.py:88
-msgid "Paper format:"
-msgstr ""
-
-#: ConfigDlg.py:89
-msgid "Border type:"
+msgid "OK"
 msgstr ""
 
 #: ConfigDlg.py:90
+msgid "Cancel"
+msgstr ""
+
+#: ConfigDlg.py:96
+msgid "Default Copyright:"
+msgstr ""
+
+#: ConfigDlg.py:97
+msgid "Language:"
+msgstr ""
+
+#: ConfigDlg.py:98
+msgid "Paper format:"
+msgstr ""
+
+#: ConfigDlg.py:99
+msgid "Border type:"
+msgstr ""
+
+#: ConfigDlg.py:100
 msgid "Default Font:"
 msgstr ""
 
-#: ConfigDlg.py:91
+#: ConfigDlg.py:101
 msgid "Default Country:"
 msgstr ""
 
-#: ConfigDlg.py:92
+#: ConfigDlg.py:102
 msgid "Default Database:"
 msgstr ""
 

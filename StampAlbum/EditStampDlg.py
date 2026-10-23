@@ -139,7 +139,7 @@ class EditStampDlg(QDialog):
     def loadImage(self):
         options = QFileDialog.Option.DontUseNativeDialog
         # ne pas nommer la 2e valeur "_" : cela masquerait la fonction de traduction gettext
-        fileName, _filter = QFileDialog.getOpenFileName(self, "Select picture", "",
+        fileName, _filter = QFileDialog.getOpenFileName(self, _("Select picture"), "",
                                                         ("all pictures (*.jpg *.jpeg *.png);;PNG (*.png)"),
                                                         options=options)
         if not fileName:

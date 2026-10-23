@@ -3,6 +3,7 @@ from PyQt6.QtWidgets import QDialog, QVBoxLayout, QComboBox, QDialogButtonBox, Q
 from PageBorder import PageBorder
 from AppLanguage import get_language
 
+
 gettext.find("BorderDlg")
 translate = gettext.translation('BorderDlg', localedir='locale', languages=[get_language()], fallback=True)
 translate.install()
@@ -35,6 +36,17 @@ class BorderDlg(QDialog):
                 self.combo.setCurrentIndex(index)
 
         layout.addWidget(self.combo)
+
+        self.buttonBox = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+
+        # --- Traduction des boutons ---
+        ok_button = self.buttonBox.button(QDialogButtonBox.StandardButton.Ok)
+        if ok_button:
+            ok_button.setText(_("OK"))
+
+        cancel_button = self.buttonBox.button(QDialogButtonBox.StandardButton.Cancel)
+        if cancel_button:
+            cancel_button.setText(_("Cancel"))
 
         self.buttonBox = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         self.buttonBox.accepted.connect(self.accept)

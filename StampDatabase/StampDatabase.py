@@ -27,6 +27,7 @@ from PyQt6.QtWidgets import (
     QDialog, QDialogButtonBox, QRadioButton, QToolBar
 )
 from PyQt6.QtGui import QPixmap, QKeySequence, QDesktopServices, QUndoStack, QUndoCommand, QIcon, QAction
+from PyQt6.QtWidgets import QStyledItemDelegate
 
 from SDAboutDlg import SDAboutDlg
 
@@ -59,6 +60,39 @@ def test_ms_access_support() -> bool:
         return any("Microsoft Access Driver" in driver for driver in drivers)
     except Exception:
         return False
+
+class TypeDelegate(QStyledItemDelegate):
+    """Délégué permettant d'afficher une QComboBox éditable dans la colonne Type du tableau."""
+
+    def __init__(self, parent=None, main_window=None):
+        super().__init__(parent)
+        self.main_window = main_window
+
+    def createEditor(self, parent, option, index):
+        """Crée l'éditeur QComboBox éditable lors du double-clic sur la cellule."""
+        combo = QComboBox(parent)
+        combo.setEditable(True)
+
+        # Récupérer la liste des types existants depuis la base de données
+        if self.main_window and self.main_window.db_adapter:
+            combo.addItems(self.main_window.db_adapter.load_types())
+
+        return combo
+
+    def setEditorData(self, editor, index):
+        """Initialise la valeur de la QComboBox avec le texte actuel de la cellule."""
+        current_text = index.model().data(index, Qt.ItemDataRole.DisplayRole)
+        editor.setCurrentText(str(current_text or ""))
+
+    def setModelData(self, editor, model, index):
+        """Applique la modification dans le tableau et enregistre le changement."""
+        new_text = editor.currentText().strip()
+        model.setData(index, new_text, Qt.ItemDataRole.EditRole)
+
+        # Si l'édition est effectuée sur la ligne active, synchroniser et déclencher l'enregistrement
+        if self.main_window:
+            self.main_window.edit_type.setCurrentText(new_text)
+            self.main_window._on_apply_record_edit()
 
 class AppConfigManager:
     def __init__(self, config_path: Path):
@@ -688,6 +722,7 @@ class MainWindow(QMainWindow):
 
         # Stamps Table
         self.table = QTableWidget()
+        self.table.setItemDelegateForColumn(2, TypeDelegate(self.table, main_window=self))
         self.table.setColumnCount(6)
         self.table.setHorizontalHeaderLabels([
             _("Yvert N°"),
@@ -1162,7 +1197,11 @@ class MainWindow(QMainWindow):
 
             self.table.setItem(row_idx, 0, QTableWidgetItem(str(nbr or "")))
             self.table.setItem(row_idx, 1, QTableWidgetItem(str(year or "")))
-            self.table.setItem(row_idx, 2, QTableWidgetItem(str(stype or "")))
+            #self.table.setItem(row_idx, 2, QTableWidgetItem(str(stype or "")))
+            type_item = QTableWidgetItem(str(stype or ""))
+            # Activer le drapeau d'édition pour la cellule du type
+            type_item.setFlags(type_item.flags() | Qt.ItemFlag.ItemIsEditable)
+            self.table.setItem(row_idx, 2, type_item)
             self.table.setItem(row_idx, 3, QTableWidgetItem(str(valcolor or "")))
             self.table.setItem(row_idx, 4, QTableWidgetItem(str(desc1 or "")))
             self.table.setItem(row_idx, 5, QTableWidgetItem(str(desc or "")))
@@ -1461,33 +1500,6 @@ class MainWindow(QMainWindow):
                 nbr = "T01-000-" + stampNumber_str + subNbr + ".jpg"
 
         return nbr
-
-    def _load_stamp_image_old(self, stamp_nbr, stamp_type, stamp_sub_nbr=""):
-        """Locate and display stamp image."""
-        rel_filename = self.getPhotoName(stamp_nbr, stamp_type, stamp_sub_nbr)
-
-        possible_paths = [
-            self.base_dir / "Images" / self.current_country / rel_filename,
-            self.base_dir / "Photos" / self.current_country / rel_filename,
-            self.base_dir / "Images" / rel_filename,
-            self.base_dir / "Photos" / rel_filename,
-            self.base_dir / rel_filename
-        ]
-
-        found_path = next((p for p in possible_paths if p.exists()), None)
-
-        if found_path:
-            pixmap = QPixmap(str(found_path))
-            if not pixmap.isNull():
-                if pixmap.width() > pixmap.height():
-                    scaled_pixmap = pixmap.scaledToWidth(200)
-                else:
-                    scaled_pixmap = pixmap.scaledToHeight(200)
-
-                self.img_label.setPixmap(scaled_pixmap)
-                return
-
-        self.img_label.setText(_("No Photo Available"))
 
     def _find_file_case_insensitive(self, folder_path: Path, filename: str) -> Path:
         """Recherche un fichier dans un dossier en ignorant la casse des caractères."""

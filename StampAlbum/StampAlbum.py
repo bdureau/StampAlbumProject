@@ -13,14 +13,15 @@ Year: 2022-2026
 import sys
 from PyQt6.QtCore import QLibraryInfo, QLocale, QTranslator
 from PyQt6.QtWidgets import QApplication
-
+from PyQt6.QtGui import QIcon
 from MainWindow import Window
+from SAAppPaths import get_images_dir
 
 
 def main():
     """Application entry point."""
     app = QApplication(sys.argv)
-
+    QApplication.setWindowIcon(QIcon(str(get_images_dir() / "stamp_book.png")))
     # Load system Qt translation for native dialog buttons (OK, Cancel, Yes, No)
     qt_translator = QTranslator()
     translations_path = QLibraryInfo.path(QLibraryInfo.LibraryPath.TranslationsPath)

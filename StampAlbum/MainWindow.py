@@ -69,7 +69,6 @@ class Window(QMainWindow):
             self.setWindowIcon(QtGui.QIcon('stamp_book.png'))
 
         # Set initial main window dimensions
-        # self.resize(int(222 / (25.4 / 96)), 800)
         self.resize(900, 850)
 
         # Track page count and recent stamp dialog selections
@@ -799,7 +798,7 @@ class Window(QMainWindow):
         """Open and deserialize a compressed (.sta) album XML file."""
         qm = QMessageBox()
         ret = qm.question(
-            self, "Delete all pages", "Are you sure you want to delete all the pages?",
+            self, _("Delete all pages"), _("Are you sure you want to delete all the pages?"),
             qm.StandardButton.Yes | qm.StandardButton.No
         )
 
@@ -810,7 +809,7 @@ class Window(QMainWindow):
 
         # Choisir le fichier AVANT d'effacer l'album : un "Annuler" ne doit rien perdre
         fileName, _filter = QFileDialog.getOpenFileName(
-            self, "Open Album file", "", "Album Files (*.sta)", options=options
+            self, _("Open Album file"), "", _("Album Files (*.sta)"), options=options
         )
         if not fileName:
             return
@@ -1152,7 +1151,7 @@ class Window(QMainWindow):
         """Serialize album structure into a gzip-compressed XML file (.sta)."""
         options = QFileDialog.Option.DontUseNativeDialog
         fileName, _filter = QFileDialog.getSaveFileName(
-            self, "Save Album", "", "Album Files (*.sta)", options=options
+            self, _("Save Album"), "", _("Album Files (*.sta)"), options=options
         )
         if fileName:
             if fileName.find(".") != -1:
@@ -1279,7 +1278,7 @@ class Window(QMainWindow):
         pdf_name = (self.currentAlbumName + ".pdf") if self.currentAlbumName else ""
         if not pdf_name:
             options = QFileDialog.Option.DontUseNativeDialog
-            pdf_name, _filter = QFileDialog.getSaveFileName(self, "Save album as PDF", "album.pdf",
+            pdf_name, _filter = QFileDialog.getSaveFileName(self, _("Save album as PDF"), "album.pdf",
                                                             "(*.pdf)", options=options)
             if not pdf_name:
                 return
@@ -1329,7 +1328,7 @@ class Window(QMainWindow):
     def printPagePDF(self):
         """Export active page to a PDF file."""
         options = QFileDialog.Option.DontUseNativeDialog
-        fileName2, _filter = QFileDialog.getSaveFileName(self, "Save current page", "album.pdf",
+        fileName2, _filter = QFileDialog.getSaveFileName(self, _("Save current page"), "album.pdf",
                                                          "(*.pdf)", options=options)
         if not fileName2:
             return
@@ -1570,7 +1569,7 @@ class Window(QMainWindow):
     def newImage(self):
         """Prompt user for image file and add it to the scene."""
         options = QFileDialog.Option.DontUseNativeDialog
-        fileName, _filter = QFileDialog.getOpenFileName(self, "Select picture", "",
+        fileName, _filter = QFileDialog.getOpenFileName(self, _("Select picture"), "",
                                                         ("all pictures (*.jpg *.jpeg *.png);;PNG (*.png)"),
                                                         options=options)
         if not fileName:
@@ -1867,7 +1866,7 @@ class Window(QMainWindow):
         except Exception as e:
             import traceback
             traceback.print_exc()
-            QMessageBox.critical(self, _("Erreur d'importation"), f"Une erreur est survenue :\n{str(e)}")
+            QMessageBox.critical(self, _("Import Error"), f"An error just happened :\n{str(e)}")
 
     def renameTabs(self, *args):
         """Renomme séquentiellement tous les onglets, avec une étoile si modifiés."""

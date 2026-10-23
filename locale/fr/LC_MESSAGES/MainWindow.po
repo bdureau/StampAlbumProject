@@ -244,6 +244,10 @@ msgstr "Etes vous certains de vouloir quitter l\'application?"
 msgid "Exit"
 msgstr "Quitter"
 
+#: MainWindow.py:628
+msgid "Effacer les guides"
+msgstr ""
+
 #: MainWindow.py:550
 msgid "Are you sure you want clear the current page?"
 msgstr "Etes vous certain de vouloir effacer la page courante?"
@@ -276,6 +280,41 @@ msgstr "Etes vous certain d\'effacer toutes les pages?"
 msgid "Delete all pages"
 msgstr "Effacer toutes les pages"
 
+#: MainWindow.py:688
+msgid "Open Album file"
+msgstr "Ouvrir fichier album"
+
+#: MainWindow.py:888
+msgid "Save Album"
+msgstr "Sauvegarder album"
+
+#: MainWindow.py:1281
+msgid "Save album as PDF"
+msgstr ""
+
+#: MainWindow.py:1070
+msgid "Save current page"
+msgstr "Sauvegarder page courante"
+
+#: MainWindow.py:1402
+msgid "Help"
+msgstr ""
+
+#: MainWindow.py:1402
+msgid "Help file not found:"
+msgstr ""
+
+#: MainWindow.py:1036
+msgid "Are you sure you want to delete those objects?"
+msgstr "Etes vous certains de vouloir effacer tous les objets selectionnés?"
+
+#: MainWindow.py:1273
+msgid "Delete Object"
+msgstr "Effacer objets"
+
+#: MainWindow.py:1295
+msgid "Select picture"
+msgstr "Choisir image"
 
 #: MainWindow.py:1736
 msgid "Import from AlbumEasy"
@@ -293,18 +332,6 @@ msgstr ""
 "Voulez vous remplacer l\'album courant ?\n"
 "(Choisir\'Non\' pour l\'ajouter)"
 
-#: MainWindow.py:688
-msgid "Open Album file"
-msgstr "Ouvrir fichier album"
-
-#: MainWindow.py:888
-msgid "Save Album"
-msgstr "Sauvegarder album"
-
-#: MainWindow.py:1070
-msgid "Save current page"
-msgstr "Sauvegarder page courante"
-
 #: MainWindow.py:890
 msgid "About Stamp Album"
 msgstr "A propos de Stamp Album"
@@ -317,14 +344,6 @@ msgstr ""
 "Stamp Album ver5.0 \n"
 " Copyright Boris du Reau 2026"
 
-#: MainWindow.py:1036
-msgid "Are you sure you want to delete those objects?"
-msgstr "Etes vous certains de vouloir effacer tous les objets selectionnés?"
-
-#: MainWindow.py:1273
-msgid "Delete Object"
-msgstr "Effacer objets"
-
-#: MainWindow.py:1295
-msgid "Select picture"
-msgstr "Choisir image"
+#: MainWindow.py:1869
+msgid "Import Error"
+msgstr "Erreur d\'importation"

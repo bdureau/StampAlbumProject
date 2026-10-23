@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2026-10-18 20:54+0200\n"
+"POT-Creation-Date: 2026-10-23 21:49+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -15,27 +15,35 @@ msgstr ""
 "Generated-By: pygettext.py 1.5\n"
 
 
-#: BorderDlg.py:17
+#: BorderDlg.py:18
 msgid "Choose a border style"
 msgstr ""
 
-#: BorderDlg.py:22
+#: BorderDlg.py:23
 msgid "Select the New border style :"
 msgstr ""
 
-#: BorderDlg.py:26
+#: BorderDlg.py:27
 msgid "Triple (Classic)"
 msgstr ""
 
-#: BorderDlg.py:27
+#: BorderDlg.py:28
 msgid "Simple (Frame)"
 msgstr ""
 
-#: BorderDlg.py:28
+#: BorderDlg.py:29
 msgid "Greek (Notched)"
 msgstr ""
 
-#: BorderDlg.py:29
+#: BorderDlg.py:30
 msgid "Dentelle (Philately)"
+msgstr ""
+
+#: BorderDlg.py:45
+msgid "OK"
+msgstr ""
+
+#: BorderDlg.py:49
+msgid "Cancel"
 msgstr ""
 

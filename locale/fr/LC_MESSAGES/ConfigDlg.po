@@ -36,6 +36,14 @@ msgstr "Grecque (Encoches)"
 msgid "Dentelle (Philately)"
 msgstr "Dentelle (Philatélie)"
 
+#: ConfigDlg.py:86
+msgid "OK"
+msgstr "Confirmer"
+
+#: ConfigDlg.py:90
+msgid "Cancel"
+msgstr "Annuler"
+
 #: ConfigDlg.py:55
 msgid "Default Copyright:"
 msgstr "Copyright par défaut:"

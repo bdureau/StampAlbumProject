@@ -22,3 +22,10 @@ msgstr "Mise à jour du text"
 msgid "Add new text"
 msgstr "Ajouter un nouveau text"
 
+#: TextDlg.py:145
+msgid "OK"
+msgstr "Confirmer"
+
+#: TextDlg.py:149
+msgid "Cancel"
+msgstr "Annuler"

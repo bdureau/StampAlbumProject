@@ -39,3 +39,10 @@ msgstr "Grecque (Encoches)"
 msgid "Dentelle (Philately)"
 msgstr "Dentelle (Philatélie)"
 
+#: BorderDlg.py:45
+msgid "OK"
+msgstr "Confirmer"
+
+#: BorderDlg.py:49
+msgid "Cancel"
+msgstr "Annuler"

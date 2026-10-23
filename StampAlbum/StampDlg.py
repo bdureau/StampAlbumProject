@@ -186,14 +186,12 @@ class StampDlg(QDialog):
         createButton2 = QPushButton(self.tr(_("&Create from size")))
         createButton2.setDefault(True)
 
-
         okButton = QPushButton(self.tr(_("&Done")))
 
         buttonBox = QDialogButtonBox(Qt.Orientation.Horizontal)
 
         buttonBox.addButton(createButton, QDialogButtonBox.ButtonRole.ActionRole)
         buttonBox.addButton(createButton2, QDialogButtonBox.ButtonRole.ActionRole)
-
         buttonBox.addButton(okButton, QDialogButtonBox.ButtonRole.ActionRole)
 
         okButton.clicked.connect(self.accept)

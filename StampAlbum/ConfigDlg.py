@@ -79,6 +79,16 @@ class ConfigDlg(QDialog):
 
         # OK / Cancel Buttons
         bb = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+
+        # Traduction explicite des libellés de boutons
+        ok_button = bb.button(QDialogButtonBox.StandardButton.Ok)
+        if ok_button:
+            ok_button.setText(_("OK"))
+
+        cancel_button = bb.button(QDialogButtonBox.StandardButton.Cancel)
+        if cancel_button:
+            cancel_button.setText(_("Cancel"))
+
         bb.accepted.connect(self.accept)
         bb.rejected.connect(self.reject)
 
@@ -179,5 +189,4 @@ class ConfigDlg(QDialog):
 
     def accept(self):
         self.saveConfig()
-        # QDialog.accept() fait retourner "Accepted" à exec() (close() renvoyait Rejected)
         super().accept()
