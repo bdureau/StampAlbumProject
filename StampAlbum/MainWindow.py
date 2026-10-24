@@ -225,7 +225,12 @@ class Window(QMainWindow):
         self.zoomCombo.currentTextChanged.connect(self.onZoomComboChanged)
 
         # Status bar zoom display widget
-        self.statusZoomLabel = QLabel("Zoom: 100%", self.statusBar())
+        self.statusFileLabel = QLabel(_("No album loaded"), self)
+        #self.statusZoomLabel = QLabel("Zoom: 100%", self.statusBar())
+        self.statusZoomLabel = QLabel("Zoom: 100%", self)
+        # Bottom Left: addWidget() places items on the left side
+        self.statusBar().addWidget(self.statusFileLabel, 1)
+        # Bottom Right: addPermanentWidget() places items on the far right
         self.statusBar().addPermanentWidget(self.statusZoomLabel)
 
     def selectAll(self):
@@ -495,9 +500,9 @@ class Window(QMainWindow):
         zoomToolBar.addWidget(self.zoomCombo)
         self.addToolBar(zoomToolBar)
 
-        statusBar = QStatusBar(self)
-        statusBar.setObjectName("statusBar")
-        self.setStatusBar(statusBar)
+        #statusBar = QStatusBar(self)
+        #statusBar.setObjectName("statusBar")
+        #self.setStatusBar(statusBar)
 
     def _connectActions(self):
         """Connect UI actions to their respective handler functions."""
@@ -553,7 +558,7 @@ class Window(QMainWindow):
         self.changeBorderAllAction.triggered.connect(self.changeBorderAllPages)
         self.importAlbumEasyAction.triggered.connect(self.importAlbumEasy)
 
-    def closeEvent(self, event):
+    def closeEvent_old(self, event):
         """Prompt user confirmation before closing the application window."""
         qm = QMessageBox()
         ret = qm.question(self, _('Exit'), _("Are you sure you want to exit the application?"),
@@ -563,6 +568,41 @@ class Window(QMainWindow):
             event.accept()
         else:
             event.ignore()
+
+    def closeEvent(self, event):
+        """Prompt user confirmation before closing the application window."""
+        qm = QMessageBox(self)
+        qm.setIcon(QMessageBox.Icon.Question)
+        qm.setWindowTitle(_('Exit'))
+        qm.setText(_("Are you sure you want to exit the application?"))
+        qm.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+
+        # Récupération des boutons QPushButton pour changer leur texte
+        yes_btn = qm.button(QMessageBox.StandardButton.Yes)
+        if yes_btn:
+            yes_btn.setText(_("&Yes"))
+
+        no_btn = qm.button(QMessageBox.StandardButton.No)
+        if no_btn:
+            no_btn.setText(_("&No"))
+
+        ret = qm.exec()
+
+        if ret == QMessageBox.StandardButton.Yes:
+            event.accept()
+        else:
+            event.ignore()
+
+    def updateStatusFile(self, file_path: str = ""):
+        """Update the bottom-left status bar label with the active album file name."""
+        if hasattr(self, 'statusFileLabel') and self.statusFileLabel and not sip.isdeleted(self.statusFileLabel):
+            if file_path:
+                display_name = Path(file_path).name
+                self.statusFileLabel.setText(f"{_('Album:')} {display_name}")
+                self.statusFileLabel.setToolTip(str(file_path))
+            else:
+                self.statusFileLabel.setText(_("No album loaded"))
+                self.statusFileLabel.setToolTip("")
 
     def undo(self):
         """Annule la dernière action sur la page active."""
@@ -655,7 +695,7 @@ class Window(QMainWindow):
 
         return page
 
-    def clearPageObjects(self):
+    def clearPageObjects_old(self):
         """Clear all graphic items on the current active page."""
         qm = QMessageBox()
         ret = qm.question(self, _('Delete all objects'), _("Are you sure you want clear the current page?"),
@@ -666,7 +706,31 @@ class Window(QMainWindow):
             if scene:
                 scene.clearPage()
 
-    def deleteCurrentPage(self):
+    def clearPageObjects(self):
+        """Clear all graphic items on the current active page."""
+        qm = QMessageBox(self)
+        qm.setIcon(QMessageBox.Icon.Question)
+        qm.setWindowTitle(_('Delete all objects'))
+        qm.setText(_("Are you sure you want clear the current page?"))
+        qm.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+
+        # Traduction des boutons
+        yes_btn = qm.button(QMessageBox.StandardButton.Yes)
+        if yes_btn:
+            yes_btn.setText(_("&Yes"))
+
+        no_btn = qm.button(QMessageBox.StandardButton.No)
+        if no_btn:
+            no_btn.setText(_("&No"))
+
+        ret = qm.exec()
+
+        if ret == QMessageBox.StandardButton.Yes:
+            scene = self.getCurrentPageScene()
+            if scene:
+                scene.clearPage()
+
+    def deleteCurrentPage_old(self):
         """Remove the active page tab from the album."""
         qm = QMessageBox()
         ret = qm.question(self, _('Delete current page'), _("Are you sure you want to delete the current page?"),
@@ -681,14 +745,43 @@ class Window(QMainWindow):
                 self.tabs.setCurrentIndex(x)
                 self.tabs.setTabText(self.tabs.currentIndex(), "Page " + str(x + 1))
 
+    def deleteCurrentPage(self):
+        """Remove the active page tab from the album."""
+        qm = QMessageBox(self)
+        qm.setIcon(QMessageBox.Icon.Question)
+        qm.setWindowTitle(_('Delete current page'))
+        qm.setText(_("Are you sure you want to delete the current page?"))
+        qm.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+
+        # Traduction des boutons
+        yes_btn = qm.button(QMessageBox.StandardButton.Yes)
+        if yes_btn:
+            yes_btn.setText(_("&Yes"))
+
+        no_btn = qm.button(QMessageBox.StandardButton.No)
+        if no_btn:
+            no_btn.setText(_("&No"))
+
+        ret = qm.exec()
+
+        if ret == QMessageBox.StandardButton.No:
+            return
+        if self.tabs.count().real > 0:
+            self.tabs.removeTab(self.tabs.currentIndex())
+
+            for x in range(0, self.tabs.count().real):
+                self.tabs.setCurrentIndex(x)
+                self.tabs.setTabText(self.tabs.currentIndex(), "Page " + str(x + 1))
+
     def deleteAllPages(self):
         """Remove all pages from the tab widget."""
         for x in range(self.tabs.count()):
             self.tabs.removeTab(self.tabs.currentIndex())
         self.pageCount = 0
         self.currentAlbumName = ""
+        self.updateStatusFile("")
 
-    def deleteAlbum(self):
+    def deleteAlbum_old(self):
         """Delete the entire album and reset state."""
         qm = QMessageBox()
         ret = qm.question(self, _('Delete album'), _("Are you sure you want to delete the entire album?"),
@@ -698,6 +791,23 @@ class Window(QMainWindow):
             return
         self.deleteAllPages()
         self.currentAlbumName = ""
+
+    def deleteAlbum(self):
+        """Delete the entire album and reset state."""
+        qm = QMessageBox(self)
+        qm.setIcon(QMessageBox.Icon.Question)
+        qm.setWindowTitle(_('Delete album'))
+        qm.setText(_("Are you sure you want to delete the entire album?"))
+        qm.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+
+        # Traduction des boutons
+        yes_btn = qm.button(QMessageBox.StandardButton.Yes)
+        if yes_btn:
+            yes_btn.setText(_("&Yes"))
+
+        no_btn = qm.button(QMessageBox.StandardButton.No)
+        if no_btn:
+            no_btn.setText(_("&No"))
 
     def newBorder(self):
         """Add a new page border using the paper size and style configured in settings."""
@@ -724,7 +834,7 @@ class Window(QMainWindow):
                     0, 19 / (25.4 / 96.0), 0
                 )
 
-    def newFile(self):
+    def newFile_old(self):
         """Clear existing pages and start a fresh album file."""
         qm = QMessageBox()
         ret = qm.question(self, _('Delete all pages'), _("Are you sure you want to delete all the pages?"),
@@ -732,6 +842,31 @@ class Window(QMainWindow):
 
         if ret == qm.StandardButton.No:
             return
+        self.deleteAllPages()
+        self.newPage(None, True)
+
+    def newFile(self):
+        """Clear existing pages and start a fresh album file."""
+        qm = QMessageBox(self)
+        qm.setIcon(QMessageBox.Icon.Question)
+        qm.setWindowTitle(_('Delete all pages'))
+        qm.setText(_("Are you sure you want to delete all the pages?"))
+        qm.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+
+        # Traduction des boutons
+        yes_btn = qm.button(QMessageBox.StandardButton.Yes)
+        if yes_btn:
+            yes_btn.setText(_("&Yes"))
+
+        no_btn = qm.button(QMessageBox.StandardButton.No)
+        if no_btn:
+            no_btn.setText(_("&No"))
+
+        ret = qm.exec()
+
+        if ret == QMessageBox.StandardButton.No:
+            return
+
         self.deleteAllPages()
         self.newPage(None, True)
 
@@ -796,13 +931,33 @@ class Window(QMainWindow):
 
     def openAlbumFile(self):
         """Open and deserialize a compressed (.sta) album XML file."""
-        qm = QMessageBox()
-        ret = qm.question(
-            self, _("Delete all pages"), _("Are you sure you want to delete all the pages?"),
-            qm.StandardButton.Yes | qm.StandardButton.No
-        )
+        # qm = QMessageBox()
+        # ret = qm.question(
+        #     self, _("Delete all pages"), _("Are you sure you want to delete all the pages?"),
+        #     qm.StandardButton.Yes | qm.StandardButton.No
+        # )
+        #
+        # if ret == qm.StandardButton.No:
+        #     return
 
-        if ret == qm.StandardButton.No:
+        qm = QMessageBox(self)
+        qm.setIcon(QMessageBox.Icon.Question)
+        qm.setWindowTitle(_("Delete all pages"))
+        qm.setText(_("Are you sure you want to delete all the pages?"))
+        qm.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+
+        # Traduction des boutons
+        yes_btn = qm.button(QMessageBox.StandardButton.Yes)
+        if yes_btn:
+            yes_btn.setText(_("&Yes"))
+
+        no_btn = qm.button(QMessageBox.StandardButton.No)
+        if no_btn:
+            no_btn.setText(_("&No"))
+
+        ret = qm.exec()
+
+        if ret == QMessageBox.StandardButton.No:
             return
 
         options = QFileDialog.Option.DontUseNativeDialog
@@ -823,6 +978,8 @@ class Window(QMainWindow):
             f = open(fileName, 'r')
 
         self.currentAlbumName = fileName
+        self.updateStatusFile(fileName)
+
         mytree = ET.parse(f)
         f.close()
         myroot = mytree.getroot()
@@ -1162,6 +1319,7 @@ class Window(QMainWindow):
             return
 
         self.currentAlbumName = fileName
+        self.updateStatusFile(fileName + '.sta')
         root = ET.Element("album", version=FILE_FORMAT_VERSION)
 
         for x in range(self.tabs.count()):

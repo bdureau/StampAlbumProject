@@ -240,6 +240,14 @@ msgstr "Importer AlbumEasy..."
 msgid "Are you sure you want to exit the application?"
 msgstr "Etes vous certains de vouloir quitter l\'application?"
 
+#: MainWindow.py:578
+msgid "&Yes"
+msgstr "Oui"
+
+#: MainWindow.py:582
+msgid "&No"
+msgstr "Non"
+
 #: MainWindow.py:472
 msgid "Exit"
 msgstr "Quitter"

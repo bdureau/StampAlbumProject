@@ -386,7 +386,7 @@ msgstr "Exporter fichier CSV"
 
 #: StampDatabase.py:1573
 msgid "Catalogue exported to CSV successfully."
-msgstr ""
+msgstr "Le Catalogue a été expoté en CSV avec succès."
 
 #: StampDatabase.py:1573
 msgid "Export Success"
@@ -394,31 +394,33 @@ msgstr "Succés de l\'export"
 
 #: StampDatabase.py:1575
 msgid "Error exporting CSV:"
-msgstr ""
+msgstr "Erreur lors de l\'export en CSV:"
 
 #: StampDatabase.py:1575
 msgid "Export Error"
-msgstr ""
+msgstr "Erreur d\'export"
 
 #: StampDatabase.py:1602
 msgid "Configuration"
-msgstr ""
+msgstr "Configuration"
 
 #: StampDatabase.py:1603
 msgid ""
 "Configuration updated successfully.\n"
 "Note: Changing the language may require restarting the application."
 msgstr ""
+"Configuration mise à jour avec succès.\n"
+"Pour info: Changer la langue demande un redémarage de l\'application."
 
 #: StampDatabase.py:1611
 msgid "Manual Error"
-msgstr ""
+msgstr "Erreur avec le manuel"
 
 #: StampDatabase.py:1611
 msgid "User manual file not found."
-msgstr ""
+msgstr "Le fichier du manuel utilisateur est absent."
 
 #: StampDatabase.py:1618
 msgid "<b>StampDatabase</b><br>Catalogue Administration Tool<br>Version 1.0.0 (2002-2026)<br>Author: Boris du Reau<br><br>Part of the StampAlbum Suite."
-msgstr ""
+msgstr "<b>StampDatabase</b><br>Outils d\'Administration du Catalogue<br>Version 1.0.0 (2002-2026)<br>Auteur: Boris du Reau<br><br>Part of the StampAlbum Suite."
 

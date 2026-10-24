@@ -51,3 +51,11 @@ msgstr "Dentelle (Philatélie)"
 #: PageDlg.py:103
 msgid "Border type:"
 msgstr "Type d\'encadrement"
+
+#: PageDlg.py:117
+msgid "OK"
+msgstr "Confirmer"
+
+#: PageDlg.py:121
+msgid "Cancel"
+msgstr "Annuler"

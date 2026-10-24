@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2026-10-23 21:54+0200\n"
+"POT-Creation-Date: 2026-10-24 00:15+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -235,105 +235,113 @@ msgstr ""
 msgid "Import AlbumEasy..."
 msgstr ""
 
-#: MainWindow.py:559
-msgid "Are you sure you want to exit the application?"
-msgstr ""
-
-#: MainWindow.py:559
+#: MainWindow.py:559 MainWindow.py:571
 msgid "Exit"
 msgstr ""
 
-#: MainWindow.py:628
+#: MainWindow.py:559 MainWindow.py:572
+msgid "Are you sure you want to exit the application?"
+msgstr ""
+
+#: MainWindow.py:578
+msgid "&Yes"
+msgstr ""
+
+#: MainWindow.py:582
+msgid "&No"
+msgstr ""
+
+#: MainWindow.py:653
 msgid "Effacer les guides"
 msgstr ""
 
-#: MainWindow.py:661
+#: MainWindow.py:686
 msgid "Are you sure you want clear the current page?"
 msgstr ""
 
-#: MainWindow.py:661
+#: MainWindow.py:686
 msgid "Delete all objects"
 msgstr ""
 
-#: MainWindow.py:672
+#: MainWindow.py:697
 msgid "Are you sure you want to delete the current page?"
 msgstr ""
 
-#: MainWindow.py:672
+#: MainWindow.py:697
 msgid "Delete current page"
 msgstr ""
 
-#: MainWindow.py:694
+#: MainWindow.py:719
 msgid "Are you sure you want to delete the entire album?"
 msgstr ""
 
-#: MainWindow.py:694
+#: MainWindow.py:719
 msgid "Delete album"
 msgstr ""
 
-#: MainWindow.py:730 MainWindow.py:801
+#: MainWindow.py:755 MainWindow.py:826
 msgid "Are you sure you want to delete all the pages?"
 msgstr ""
 
-#: MainWindow.py:730 MainWindow.py:801
+#: MainWindow.py:755 MainWindow.py:826
 msgid "Delete all pages"
 msgstr ""
 
-#: MainWindow.py:812
+#: MainWindow.py:837
 msgid "Open Album file"
 msgstr ""
 
-#: MainWindow.py:812 MainWindow.py:1154
+#: MainWindow.py:837 MainWindow.py:1179
 msgid "Album Files (*.sta)"
 msgstr ""
 
-#: MainWindow.py:1154
+#: MainWindow.py:1179
 msgid "Save Album"
 msgstr ""
 
-#: MainWindow.py:1281
+#: MainWindow.py:1306
 msgid "Save album as PDF"
 msgstr ""
 
-#: MainWindow.py:1331
+#: MainWindow.py:1356
 msgid "Save current page"
 msgstr ""
 
-#: MainWindow.py:1402
+#: MainWindow.py:1427
 msgid "Help"
 msgstr ""
 
-#: MainWindow.py:1402
+#: MainWindow.py:1427
 msgid "Help file not found:"
 msgstr ""
 
-#: MainWindow.py:1546
+#: MainWindow.py:1571
 msgid "Are you sure you want to delete those objects?"
 msgstr ""
 
-#: MainWindow.py:1546
+#: MainWindow.py:1571
 msgid "Delete Object"
 msgstr ""
 
-#: MainWindow.py:1572
+#: MainWindow.py:1597
 msgid "Select picture"
 msgstr ""
 
-#: MainWindow.py:1684
+#: MainWindow.py:1709
 msgid "Import from AlbumEasy"
 msgstr ""
 
-#: MainWindow.py:1691
+#: MainWindow.py:1716
 msgid "Import AlbumEasy"
 msgstr ""
 
-#: MainWindow.py:1692
+#: MainWindow.py:1717
 msgid ""
 "Do you want to replace the actual album ?\n"
 "(Choose 'No' to append it)"
 msgstr ""
 
-#: MainWindow.py:1869
-msgid "Erreur d'importation"
+#: MainWindow.py:1894
+msgid "Import Error"
 msgstr ""
 

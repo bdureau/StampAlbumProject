@@ -111,6 +111,15 @@ class PageDlg(QDialog):
         bb = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok |
                               QDialogButtonBox.StandardButton.Cancel)
 
+        # --- Traduction des boutons ---
+        ok_button = bb.button(QDialogButtonBox.StandardButton.Ok)
+        if ok_button:
+            ok_button.setText(_("OK"))
+
+        cancel_button = bb.button(QDialogButtonBox.StandardButton.Cancel)
+        if cancel_button:
+            cancel_button.setText(_("Cancel"))
+
         bb.accepted.connect(self.accept)
         bb.rejected.connect(self.reject)
         vLayout1.addWidget(bb)
