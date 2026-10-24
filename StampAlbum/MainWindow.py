@@ -24,6 +24,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtGui import QBrush, QPainter, QPixmap, QFont, QTextCursor, QTextBlockFormat
 from PyQt6.QtPrintSupport import QPrintPreviewDialog, QPrinter
 from Stamp import Stamp
+from CustomStampDlg import CustomStampDlg
 
 from Page import Page
 from ConfigDlg import ConfigDlg
@@ -169,6 +170,7 @@ class Window(QMainWindow):
         # Stamp Menu
         stampMenu = menuBar.addMenu(_("&Stamp"))
         stampMenu.addAction(self.newStampAction)
+        stampMenu.addAction(self.newCustomStampAction)
         stampMenu.addAction(self.editStampAction)
 
         # Alignment Menu
@@ -329,6 +331,8 @@ class Window(QMainWindow):
         self.cutAction.setIcon(self._get_icon("cut.png"))
 
         self.newStampAction = QAction(_("New Stamp ..."), self)
+        self.newCustomStampAction = QAction(_("New Custom Stamp ..."), self)
+        self.newCustomStampAction.setIcon(self._get_icon("stamp_custom.png"))
         self.editStampAction = QAction(_("Edit Current Stamp ..."), self)
         self.newStampAction.setIcon(self._get_icon("stamp.png"))
 
@@ -483,6 +487,7 @@ class Window(QMainWindow):
 
         stampToolBar = QToolBar("Stamp", self)
         stampToolBar.addAction(self.newStampAction)
+        stampToolBar.addAction(self.newCustomStampAction)
         self.addToolBar(stampToolBar)
 
         objectToolBar = QToolBar("Objects", self)
@@ -531,6 +536,7 @@ class Window(QMainWindow):
         self.setupAppAction.triggered.connect(self.configApp)
 
         self.newStampAction.triggered.connect(self.createNewStamp)
+        self.newCustomStampAction.triggered.connect(self.createNewCustomStamp)
         self.editStampAction.triggered.connect(self.editStamp)
 
         self.newPageAction.triggered.connect(self.newPage)
@@ -1534,6 +1540,13 @@ class Window(QMainWindow):
                 self.lastStampObj['type'] = stamp['type']
                 self.lastStampObj['country'] = stamp['country']
                 self.lastStampObj['nbr'] = stamp['nbr']
+
+    def createNewCustomStamp(self):
+        """Ouvre le dialogue de création d'un timbre libre et l'ajoute sur la page active."""
+        scene = self.getCurrentPageScene()
+        if scene:
+            dlg = CustomStampDlg(scene=scene, parent=self)
+            dlg.exec()
 
     def editStamp(self):
         """Edit currently selected stamp item."""

@@ -1,15 +1,11 @@
-from PyQt6.QtCore import QPointF, Qt, QPoint, QByteArray, QRectF
-from PyQt6 import QtCore, QtGui
+from pathlib import Path
+from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
-    QMessageBox,
-    QGraphicsRectItem, QFileDialog,
-    QGraphicsScene, QComboBox, QRadioButton, QButtonGroup, QGroupBox, QListWidgetItem,
-    QGraphicsView, QApplication, QLabel, QMainWindow, QMenuBar, QMenu, QHBoxLayout, QListView,
-    QToolBar,  QGraphicsTextItem, QGraphicsItemGroup, QDialog, QPushButton, QListWidget,
-    QLineEdit, QFormLayout, QStatusBar, QTabWidget, QWidget, QVBoxLayout, QDialogButtonBox, QPlainTextEdit
+    QMessageBox, QFileDialog, QLabel, QHBoxLayout,
+    QDialog, QPushButton, QListWidget, QLineEdit,
+    QFormLayout, QVBoxLayout, QDialogButtonBox, QPlainTextEdit
 )
-from PyQt6.QtGui import QBrush, QPainter, QPen, QPixmap, QPolygonF, QImage, QIcon, QStandardItem, QAction,QColor
-from PyQt6.QtPrintSupport import QPrintPreviewDialog, QPrinter, QPrintDialog
+from PyQt6.QtGui import QPixmap, QDragEnterEvent, QDropEvent
 from Databases import DB
 from SAAppPaths import list_countries
 
@@ -21,7 +17,38 @@ translate.install()
 _ = translate.gettext
 
 
+class DropImageLabel(QLabel):
+    """Custom QLabel that supports image file drag and drop operations."""
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setAcceptDrops(True)
+        self.parent_dialog = parent
+
+    def dragEnterEvent(self, event: QDragEnterEvent):
+        """Accept drag event if it contains supported local image file URLs."""
+        if event.mimeData().hasUrls():
+            for url in event.mimeData().urls():
+                ext = Path(url.toLocalFile()).suffix.lower()
+                if ext in [".png", ".jpg", ".jpeg", ".bmp", ".gif", ".webp"]:
+                    event.acceptProposedAction()
+                    return
+        event.ignore()
+
+    def dropEvent(self, event: QDropEvent):
+        """Extract dropped image path and pass it to the parent dialog."""
+        for url in event.mimeData().urls():
+            file_path = url.toLocalFile()
+            if file_path and self.parent_dialog is not None:
+                self.parent_dialog.set_image_from_path(file_path)
+                event.acceptProposedAction()
+                return
+        event.ignore()
+
+
 class EditStampDlg(QDialog):
+    """Dialog allowing users to edit attributes and image of an existing stamp."""
+
     def __init__(self, stampObj, parent=None):
         super(EditStampDlg, self).__init__(parent)
         self.setWindowTitle(_("Edit stamp"))
@@ -39,32 +66,41 @@ class EditStampDlg(QDialog):
         self.eValue.setPlainText(stampObj['stampValue_text'])
         self.eValue.setFixedHeight(30)
 
-        # image
-        self.photo = QLabel()
+        # Image preview label with Drag and Drop support
+        self.photo = DropImageLabel(self)
         self.photo.setFixedHeight(200)
         self.photo.setFixedWidth(200)
+        self.photo.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.photo.setStyleSheet("border: 2px dashed #999; background: #fafafa;")
 
-        # Image pleine résolution conservée à part : le QLabel n'affiche qu'une vignette
-        # de 200 px, la relire avec photo.pixmap() dégradait l'image à chaque édition.
+        # Keep full-resolution pixmap in memory to avoid degrading quality through the 200px thumbnail preview
         self.fullPixmap = stampObj.get('pixmapItem_image')
         if not isinstance(self.fullPixmap, QPixmap):
             self.fullPixmap = QPixmap()
         self._showPreview(self.fullPixmap)
 
-        # change image button
-        imageButton = QPushButton(self.tr(_("&Change image ...")))
+        # Manual image browse button
+        imageButton = QPushButton(_("&Change image ..."))
         buttonBox = QDialogButtonBox(Qt.Orientation.Horizontal)
-
         buttonBox.addButton(imageButton, QDialogButtonBox.ButtonRole.ActionRole)
         imageButton.clicked.connect(self.loadImage)
 
-        # pochettes type
-
-        # ok /cancel button
+        # OK and Cancel standard dialog buttons
         bb = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+
+        # Translate buttons
+        ok_btn = bb.button(QDialogButtonBox.StandardButton.Ok)
+        if ok_btn:
+            ok_btn.setText(_("OK"))
+
+        cancel_btn = bb.button(QDialogButtonBox.StandardButton.Cancel)
+        if cancel_btn:
+            cancel_btn.setText(_("Cancel"))
+
         bb.accepted.connect(self.accept)
         bb.rejected.connect(self.reject)
 
+        # Right form layout
         flo = QFormLayout()
         flo.addRow(_("Title:"), self.eTitle)
         flo.addRow(_("Nbr"), self.eNbr)
@@ -73,7 +109,7 @@ class EditStampDlg(QDialog):
         flo.addRow(buttonBox)
         flo.addRow(bb)
 
-        # pochettes type
+        # Left mount box list layout
         vLayout1 = QVBoxLayout()
         pochettesType = QLabel(_("Pochette type"))
         self.pochetteList = QListWidget()
@@ -81,6 +117,7 @@ class EditStampDlg(QDialog):
         vLayout1.addWidget(pochettesType)
         vLayout1.addWidget(self.pochetteList)
 
+        # Main horizontal layout
         hLayout2 = QHBoxLayout()
         hLayout2.addLayout(vLayout1)
         hLayout2.addLayout(flo)
@@ -89,11 +126,12 @@ class EditStampDlg(QDialog):
         self.populateData(stampObj)
 
     def populateData(self, stampObj):
+        """Populate mount box list and select the stamp's current box."""
         self.db = None
-        # Liste des pays selon le moteur configuré (.db ou .mdb)
+        # Retrieve country database list according to configured engine (.db or .mdb)
         self.stampCountries = list_countries()
 
-        # Seule la base master est utile ici (liste des pochettes)
+        # Only the master database is needed here to load mount box types
         if self.stampCountries:
             try:
                 self.db = DB(self.stampCountries[0])
@@ -104,12 +142,12 @@ class EditStampDlg(QDialog):
         if self.db is None:
             return
 
-        # get the list of available stamp box from the master db
+        # Load available mount boxes from the master DB
         retBoxList = self.db.loadBoxList()
         self.pochetteList.clear()
         self.pochetteList.addItems(retBoxList)
 
-        retPochette ="Pochette " + str(stampObj['stampBox_boxWidth']) + "x" + str(stampObj['stampBox_boxHeight'])
+        retPochette = "Pochette " + str(stampObj['stampBox_boxWidth']) + "x" + str(stampObj['stampBox_boxHeight'])
         if len(retPochette) > 0:
             pochetteItem = self.pochetteList.findItems(retPochette, Qt.MatchFlag.MatchExactly)
 
@@ -119,35 +157,42 @@ class EditStampDlg(QDialog):
                 self.pochetteList.setCurrentRow(0)
 
     def getBoxInfo(self, box):
+        """Retrieve box dimensions from the active database."""
         ret = []
         if self.db is not None:
             ret = self.db.getCurrentBox(box)
         return ret
 
     def _showPreview(self, pix):
+        """Scale and display pixmap thumbnail inside the preview label."""
         if pix is None or pix.isNull():
             return
         if pix.width() > pix.height():
-            self.photo.setPixmap(pix.scaledToWidth(200))
+            self.photo.setPixmap(pix.scaledToWidth(200, Qt.TransformationMode.SmoothTransformation))
         else:
-            self.photo.setPixmap(pix.scaledToHeight(200))
+            self.photo.setPixmap(pix.scaledToHeight(200, Qt.TransformationMode.SmoothTransformation))
 
     def getPixmap(self):
-        """Image pleine résolution à utiliser pour le timbre."""
+        """Return the full-resolution QPixmap to assign to the stamp object."""
         return self.fullPixmap
 
-    def loadImage(self):
-        options = QFileDialog.Option.DontUseNativeDialog
-        # ne pas nommer la 2e valeur "_" : cela masquerait la fonction de traduction gettext
-        fileName, _filter = QFileDialog.getOpenFileName(self, _("Select picture"), "",
-                                                        ("all pictures (*.jpg *.jpeg *.png);;PNG (*.png)"),
-                                                        options=options)
-        if not fileName:
-            return
-        pix = QPixmap(fileName)
+    def set_image_from_path(self, file_path: str):
+        """Load an image from a given file path and update the preview."""
+        pix = QPixmap(file_path)
         if not pix.isNull():
             self.fullPixmap = pix
             self._showPreview(pix)
+
+    def loadImage(self):
+        """Open a file dialog to select and load an image manually."""
+        options = QFileDialog.Option.DontUseNativeDialog
+        fileName, _filter = QFileDialog.getOpenFileName(
+            self, _("Select picture"), "",
+            _("all pictures (*.jpg *.jpeg *.png);;PNG (*.png)"),
+            options=options
+        )
+        if fileName:
+            self.set_image_from_path(fileName)
 
     def changeFont(self):
         print("change font")

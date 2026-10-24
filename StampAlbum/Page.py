@@ -204,34 +204,6 @@ class Page(QGraphicsScene):
         border.setPos(margin_left, margin_top2)
         self.addItem(border)
 
-    def addTextLabel_old(self, text, x=20, y=20, font=None, align=Qt.AlignmentFlag.AlignCenter, labelType="textLabel"):
-        """Add a text label to the page with alignment and font attributes."""
-        textLabel = QGraphicsTextItem(text)
-        textLabel.setData(0, labelType)
-
-        if font is not None:
-            textLabel.setFont(font)
-        textLabel.setTextWidth(textLabel.boundingRect().size().width())
-
-        cursor = textLabel.textCursor()
-        cursor.select(QTextCursor.SelectionType.Document)
-        format = QTextBlockFormat()
-        format.setAlignment(align)
-        cursor.mergeBlockFormat(format)
-        cursor.clearSelection()
-        textLabel.setTextCursor(cursor)
-
-        textLabel.setPos(x, y)
-
-        # Empêche l'édition directe sur la scène pour forcer l'ouverture de la boîte de dialogue TextDlg
-        textLabel.setTextInteractionFlags(Qt.TextInteractionFlag.NoTextInteraction)
-        textLabel.setFlags(
-            QGraphicsTextItem.GraphicsItemFlag.ItemIsMovable |
-            QGraphicsTextItem.GraphicsItemFlag.ItemIsSelectable
-        )
-
-        self.addItemWithUndo(textLabel, _("Add Text"))
-
     def addTextLabel(self, text, x=20, y=20, font=None, align=Qt.AlignmentFlag.AlignCenter, labelType="textLabel"):
         """Add a text label to the page with alignment and font attributes."""
         textLabel = QGraphicsTextItem(text)
@@ -262,33 +234,6 @@ class Page(QGraphicsScene):
         )
 
         self.addItemWithUndo(textLabel, _("Add Text"))
-
-    def addRichText_old(self, html_content="", x=50, y=50, label_type="richTextLabel"):
-        """Add a rich-text block supporting HTML content."""
-        text_item = QGraphicsTextItem()
-        text_item.setData(0, label_type)
-
-        if html_content:
-            text_item.setHtml(html_content)
-        else:
-            text_item.setHtml(
-                "<p style='font-family:Sans-Serif; font-size:12pt;'>Double-click to edit rich text...</p>")
-
-        text_item.setTextWidth(200)
-        text_item.setPos(x, y)
-
-        text_item.setTextInteractionFlags(Qt.TextInteractionFlag.NoTextInteraction)
-        text_item.setFlags(
-            QGraphicsTextItem.GraphicsItemFlag.ItemIsMovable |
-            QGraphicsTextItem.GraphicsItemFlag.ItemIsSelectable
-        )
-
-        if hasattr(self, 'addItemWithUndo'):
-            self.addItemWithUndo(text_item, _("Add Rich Text"))
-        else:
-            self.addItem(text_item)
-
-        return text_item
 
     def addRichText(self, html_content="", x=50, y=50, label_type="richTextLabel"):
         """Add a rich-text block supporting HTML content."""
@@ -552,17 +497,6 @@ class Page(QGraphicsScene):
             px_h = self.sceneRect().height()
             return px_h - 50.0
 
-    def newCopyRight_old(self):
-        """Add a copyright footer to the page."""
-        text = get_config_value('copyright', "CopyRight © Boris du Reau 2003-2026")
-
-        font = QFont()
-        font.setPointSize(6)
-        if self.pageType == "portrait":
-            self.addTextLabel(text, 80, 1045, font, Qt.AlignmentFlag.AlignLeft, "labelCopyRight")
-        else:
-            self.addTextLabel(text, 60, 710, font, Qt.AlignmentFlag.AlignLeft, "labelCopyRight")
-
     def newCopyRight(self):
         """Add a copyright footer to the page."""
         text = get_config_value('copyright', "CopyRight © Boris du Reau 2003-2026")
@@ -581,22 +515,6 @@ class Page(QGraphicsScene):
 
         self.addTextLabel(text, x_pos, y_pos, font, Qt.AlignmentFlag.AlignLeft, "labelCopyRight")
 
-    def newPageNbr_old(self):
-        """Prompt user and create a page number label."""
-        textLabel = QGraphicsTextItem("")
-        textLabelFont = textLabel.font()
-        textLabelFont.setPointSize(8)
-        textLabel.setFont(textLabelFont)
-
-        dlg = TextDlg(textLabel)
-        res = dlg.exec()
-
-        if res == 1:
-            text = dlg.eTXT.toPlainText()
-            font = dlg.eTXT.font()
-            align = dlg.eTXT.alignment()
-            self.addPageNbr(text, font, align)
-
     def newPageNbr(self):
         """Prompt user and create a page number label."""
         textLabel = QGraphicsTextItem("")
@@ -612,18 +530,6 @@ class Page(QGraphicsScene):
             font = dlg.eTXT.font()
             align = dlg.eTXT.alignment()
             self.addPageNbr(text, font, align)
-
-    def addPageNbr_old(self, pageName, font, align=Qt.AlignmentFlag.AlignLeft):
-        """Position page number label at the bottom right of the page."""
-        textLabel = QGraphicsTextItem(pageName)
-        textLabel.setFont(font)
-        textWidth = textLabel.boundingRect().size().width()
-        if self.pageType == "portrait":
-            self.addTextLabel(pageName, (self.page_width_mm / (25.4 / 96)) - 60 - textWidth, 1045, font, align,
-                              "labelPageNbr")
-        else:
-            self.addTextLabel(pageName, (self.page_height_mm / (25.4 / 96)) - 60 - textWidth, 710, font, align,
-                              "labelPageNbr")
 
     def addPageNbr(self, pageName, font, align=Qt.AlignmentFlag.AlignLeft):
         """Position page number label at the bottom right inside the border frame."""
@@ -660,18 +566,6 @@ class Page(QGraphicsScene):
             font = dlg.eTXT.font()
             align = dlg.eTXT.alignment()
             self.addYear(text, font, align)
-
-    def addYear_old(self, year, font, align):
-        """Position year header label at top center of the page."""
-        textLabel = QGraphicsTextItem(year)
-        textLabel.setFont(font)
-        textWidth = textLabel.boundingRect().size().width()
-        px_w = self.page_width_mm / (25.4 / 96)
-        px_h = self.page_height_mm / (25.4 / 96)
-        if self.pageType == "portrait":
-            self.addTextLabel(year, (px_w - textWidth) / 2, 80, font, align, "labelYear")
-        else:
-            self.addTextLabel(year, (px_h - textWidth) / 2, 80, font, Qt.AlignmentFlag.AlignLeft, "labelYear")
 
     def addYear(self, year, font, align):
         """Position year header label at top center inside/above the border frame."""
